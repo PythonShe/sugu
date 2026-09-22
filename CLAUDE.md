@@ -47,7 +47,8 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu \
 ## 3. Product & License
 
 - License: **Apache-2.0**. Model: BYOK AI with the user's own key, zero
-  telemetry — composition text stays on-device.
+  telemetry — composition and conversion always resolve on-device; a bounded
+  context window may be sent only to the user's own provider (BYOK).
 - Budgets: AI cost well under $1/month for heavy use (2–3 candidates,
   ~50–100 tokens/decision); resident memory well under 200MB.
 - Public-facing docs describe the project only.
