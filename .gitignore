@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+DerivedData/
+build/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Bazel (Mozc tooling)
+bazel-*
+
+# Editors
+.idea/
+.vscode/
+*.swp
