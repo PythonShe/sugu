@@ -28,6 +28,11 @@ The pause in typing after which the AI layer is permitted to act; AI never
 intervenes mid-keystroke.
 _Avoid_: idle time, debounce
 
+**Comparison**:
+Ordering the candidates for one composition — either thorough (every pair
+contested) or by challenge (each candidate contests only the current leader).
+_Avoid_: rerank, ranking-off
+
 **AI Layer**:
 The part of Sugu that reorders or suppresses candidates. By definition it never
 introduces strings the engines did not produce.
