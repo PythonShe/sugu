@@ -108,6 +108,13 @@ public struct Preferences: Codable, Sendable, Equatable {
         return AppRule()
     }
 
+    /// Whether Sugu may read the field's text (left context, document
+    /// vocabulary, reconversion) in this app.
+    public func readsContext(in bundleID: String?) -> Bool {
+        guard let bundleID else { return true }
+        return !noLearnApps.contains(bundleID)
+    }
+
     public func learns(in bundleID: String?) -> Bool {
         guard learningEnabled else { return false }
         guard let bundleID else { return true }

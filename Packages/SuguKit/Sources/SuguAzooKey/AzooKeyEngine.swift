@@ -366,11 +366,27 @@ public final class AzooKeyEngine: CompositionEngine {
         state = CompositionState(
             segments: segments,
             caret: caret,
-            candidates: focusCandidates.enumerated().map { Candidate(text: $1.text, source: .engine(index: $0)) },
+            candidates: focusCandidates.enumerated().map { Candidate(text: $1.text, annotation: readingHint($1), source: .engine(index: $0)) },
             highlightedIndex: highlighted,
             phase: .converting,
-            reading: (fixed.first?.before ?? composing).convertTarget
+            reading: (fixed.first?.before ?? composing).convertTarget,
+            typed: typedText
         )
+    }
+
+    /// Romaji (or kana keys) as typed, for F9/F10.
+    private var typedText: String {
+        (fixed.first?.before ?? composing).input.map { element -> String in
+            if case .character(let c) = element.piece { return String(c) }
+            return ""
+        }.joined()
+    }
+
+    /// The candidate's reading in hiragana, shown as a reading hint when it
+    /// differs from the text.
+    private func readingHint(_ candidate: KanaKanjiConverterModule.Candidate) -> String? {
+        let reading = WidthConversion.hiragana(candidate.data.map(\.ruby).joined())
+        return reading == candidate.text || reading.isEmpty ? nil : reading
     }
 
     private func refreshComposing() {
@@ -391,10 +407,11 @@ public final class AzooKeyEngine: CompositionEngine {
         state = CompositionState(
             segments: segments,
             caret: fixedLength + composing.convertTargetCursorPosition,
-            candidates: predictions.enumerated().map { Candidate(text: $1.text, source: .engine(index: $0)) },
+            candidates: predictions.enumerated().map { Candidate(text: $1.text, annotation: readingHint($1), source: .engine(index: $0)) },
             highlightedIndex: nil,
             phase: .composing,
-            reading: (fixed.first?.before ?? composing).convertTarget
+            reading: (fixed.first?.before ?? composing).convertTarget,
+            typed: typedText
         )
     }
 }

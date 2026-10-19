@@ -107,3 +107,20 @@ any call made without the owner present. Each entry: what, why, reversibility.
   requests candidates for exactly that prefix. The first display therefore
   equals the converter's best sentence, and the list holds clause
   alternatives.
+
+## D-012 · Key bindings without a precedent elsewhere (2026-10-20)
+- Undo-after-commit: ⌃⌫ (Control-Delete), honored only as the key right
+  after a commit; any other key ends the chance. Plain ⌫ keeps its meaning
+  (ADR 0003 d6).
+- Chinese ↔ Japanese: ⌃⇧Space, plus the input menu; かな and 英数 keys
+  select Japanese and English directly. English toggle: Shift tap (default)
+  or Caps Lock, set in General settings.
+- Chinese mode: `v` starts a number/expression composition (common in
+  Chinese input methods; no pinyin syllable starts with v). `-`/`=` and
+  Page Up/Down turn pages. Arrows follow the layout: the list axis moves
+  the highlight, the other axis moves the caret.
+- Japanese mode follows the system input method: Space converts, Space
+  again opens the list; ←/→ move between clauses; ⇧←/⇧→ resize; Esc and ⌫
+  step back to kana.
+- One `InputSession` serves every client, attaching the focused one, so
+  the AzooKey dictionary and librime runtime load once per process.

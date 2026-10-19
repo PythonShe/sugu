@@ -109,6 +109,6 @@ public enum Numerals {
 }
 
 extension Character {
-    var isASCIIDigitCharacter: Bool { ("0"..."9").contains(self) }
-    var asciiDigitValue: Int { Int(unicodeScalars.first!.value) - 0x30 }
+    public var isASCIIDigitCharacter: Bool { unicodeScalars.count == 1 && (0x30...0x39).contains(unicodeScalars.first!.value) }
+    public var asciiDigitValue: Int { Int(unicodeScalars.first!.value) - 0x30 }
 }

@@ -17,7 +17,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Punctuation: width-aware, paired quotes/brackets, per-language tables
 - [x] Computed candidates: dates, Chinese/kanji numerals (incl. 壹贰叁), full-width digits, arithmetic
 - [x] Latin inference + allow-list
-- [ ] `InputSession` state machine: compose / convert / select / commit / cancel / undo-after-commit
+- [x] `InputSession` state machine: compose / convert / select / commit / cancel / undo-after-commit
 - [x] Preferences model (Codable, UserDefaults-backed)
 
 ## 3. Engines
@@ -29,7 +29,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 4. Learning & data
 - [x] `SuguLearning`: SQLite store (learn, pin, delete, forget last hour, expiry); pause + no-learn list are enforced by the input session
-- [ ] Reranking + injection of learned words; user dictionary (explicit words)
+- [x] Reranking + injection of learned words (exact reading); user words share the store
 - [x] File protection + backup exclusion
 - [ ] `SuguDictionaries`: import macOS text replacements, Google IME, ATOK, Sogou, RIME; export
 - [ ] Sync through a user-picked folder

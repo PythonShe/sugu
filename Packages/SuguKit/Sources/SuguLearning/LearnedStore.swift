@@ -87,6 +87,15 @@ public final class LearnedStore {
         return ids.compactMap { words[$0] }.sorted { $0.score(at: now) > $1.score(at: now) }
     }
 
+    /// The best-known reading of a text, for reconversion.
+    public func reading(for text: String, mode: InputMode) -> String? {
+        let now = clock()
+        return words.values
+            .filter { $0.mode == mode && $0.text == text }
+            .max { $0.score(at: now) < $1.score(at: now) }?
+            .reading
+    }
+
     /// Every word, most recently used first, for the inspector.
     public func allWords(mode: InputMode? = nil) -> [LearnedWord] {
         words.values

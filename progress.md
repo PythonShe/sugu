@@ -3,6 +3,12 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- `SuguInput`: `InputSession` (modes, Chinese/Japanese key handling,
+  paging, function keys F6–F10, `v` expressions, width-aware punctuation,
+  undo-after-commit on ⌃⌫, per-app rules and remembered modes, vim Esc,
+  secure input, learning gate) and `CandidateAssembler` (learned, computed,
+  Latin candidates; left-context reranking). 17 session tests with fake
+  engines and a fake field; whole suite green.
 - `SuguLearning`: `LearnedStore` (SQLite, WAL, in-memory index for
   keystroke lookups, events table for "forget the last hour", expiry,
   pinning, user words, import). 7 tests pass.

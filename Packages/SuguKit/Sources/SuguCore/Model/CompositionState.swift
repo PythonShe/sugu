@@ -38,15 +38,22 @@ public struct CompositionState: Sendable, Equatable {
     /// The full reading as typed (pinyin letters, or kana), used for learning
     /// and to restore the composition after undo.
     public var reading: String
+    /// The keys as typed (romaji for Japanese), for F9/F10. Empty when it
+    /// equals `reading`.
+    public var typed: String
 
-    public init(segments: [CompositionSegment] = [], caret: Int = 0, candidates: [Candidate] = [], highlightedIndex: Int? = nil, phase: Phase = .composing, reading: String = "") {
+    public init(segments: [CompositionSegment] = [], caret: Int = 0, candidates: [Candidate] = [], highlightedIndex: Int? = nil, phase: Phase = .composing, reading: String = "", typed: String = "") {
         self.segments = segments
         self.caret = caret
         self.candidates = candidates
         self.highlightedIndex = highlightedIndex
         self.phase = phase
         self.reading = reading
+        self.typed = typed
     }
+
+    /// Keys as typed, falling back to the reading.
+    public var typedText: String { typed.isEmpty ? reading : typed }
 
     public static let empty = CompositionState()
 
