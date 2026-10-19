@@ -1,2 +1,1 @@
-import SuguAzooKey
-public func inputProbe() -> String { azooKeyProbe() }
+// The input session lands in the next change.

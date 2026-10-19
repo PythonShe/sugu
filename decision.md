@@ -98,3 +98,12 @@ any call made without the owner present. Each entry: what, why, reversibility.
   serves Traditional output too. ADR 0002 d4's per-script download becomes a
   single download. It lives in the user data directory, where octagram
   resolves `.gram` files.
+
+## D-011 · Japanese clause boundary from the best sentence (2026-10-20)
+- AzooKey's `firstClauseResults` is sorted longest-first across N-best
+  paths, so its head is not the best path's first clause (it produced
+  "[私はが]九世です"). Sugu takes the best whole sentence and uses the
+  highest-valued first-clause result that prefixes it as the boundary, then
+  requests candidates for exactly that prefix. The first display therefore
+  equals the converter's best sentence, and the list holds clause
+  alternatives.

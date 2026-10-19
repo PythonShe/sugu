@@ -23,7 +23,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 ## 3. Engines
 - [~] `SuguRime`: runtime setup, schema generator (full pinyin + shuangpin variants, script, fuzzy), session wrapper
 - [ ] Grammar model (octagram) toggle per script; dictionary-only fallback
-- [ ] `SuguAzooKey`: converter wrapper, clause conversion, romaji/kana input, prediction
+- [x] `SuguAzooKey`: converter wrapper, clause conversion, romaji/kana input, prediction
 - [ ] Zenzai (experimental): trait, model download, runtime toggle, left context
 - [ ] Engine lazy loading per mode
 
