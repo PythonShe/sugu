@@ -38,6 +38,7 @@ final class InputCoordinator {
         session.isSecureInput = IsSecureEventInputEnabled()
         session.attach(adapter)
         syncCapsLock()
+        AppEnvironment.shared.sync?.pullIfDue()
     }
 
     func deactivate(client: Any?) {

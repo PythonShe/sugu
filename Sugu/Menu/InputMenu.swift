@@ -7,6 +7,8 @@ final class InputMenu {
     private enum Command: Int {
         case chinese = 1, japanese, english
         case reconvert
+        case learnedWords
+        case settings
     }
 
     private let coordinator: InputCoordinator
@@ -27,6 +29,9 @@ final class InputMenu {
         }
         menu.addItem(.separator())
         menu.addItem(Self.item(String(localized: "Reconvert Selection"), command: .reconvert))
+        menu.addItem(.separator())
+        menu.addItem(Self.item(String(localized: "Learned Words…"), command: .learnedWords))
+        menu.addItem(Self.item(String(localized: "Settings…"), command: .settings))
         return menu
     }
 
@@ -36,6 +41,8 @@ final class InputMenu {
         case .japanese: coordinator.select(.japanese)
         case .english: coordinator.select(.english)
         case .reconvert: coordinator.reconvertSelection()
+        case .learnedWords: AppEnvironment.shared.showSettings(.learning)
+        case .settings: AppEnvironment.shared.showSettings()
         case nil: break
         }
     }

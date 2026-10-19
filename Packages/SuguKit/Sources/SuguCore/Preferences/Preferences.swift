@@ -40,6 +40,12 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var learnedWordExpiryDays = 180
     public var noLearnApps: [String] = Preferences.defaultNoLearnApps
 
+    // MARK: Sync
+    /// Folder the user picked for dictionary sync; nil when sync is off.
+    public var syncFolderPath: String?
+    /// Learned words travel through the sync folder only when opted in.
+    public var syncLearnedWords = false
+
     public init() {}
 
     public init(from decoder: any Decoder) throws {
@@ -76,6 +82,8 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.learningEnabled, into: &learningEnabled)
         load(.learnedWordExpiryDays, into: &learnedWordExpiryDays)
         load(.noLearnApps, into: &noLearnApps)
+        load(.syncFolderPath, into: &syncFolderPath)
+        load(.syncLearnedWords, into: &syncLearnedWords)
     }
 
     /// Password managers: Sugu neither learns from nor reads text in them.

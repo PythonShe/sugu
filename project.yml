@@ -34,6 +34,8 @@ targets:
     dependencies:
       - package: SuguKit
         product: SuguInput
+      - package: SuguKit
+        product: SuguDictionaries
     settings:
       base:
         PRODUCT_NAME: Sugu

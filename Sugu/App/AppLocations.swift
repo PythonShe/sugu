@@ -9,7 +9,13 @@ struct AppLocations {
     let bundledLexicon: URL
 
     static let current: AppLocations = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        var base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        #if DEBUG
+        // Development tools point Sugu at a scratch directory.
+        if let override = ProcessInfo.processInfo.environment["SUGU_SUPPORT_BASE"] {
+            base = URL(fileURLWithPath: override, isDirectory: true)
+        }
+        #endif
         let resources = Bundle.main.resourceURL ?? Bundle.main.bundleURL
         return AppLocations(
             support: base.appendingPathComponent("Sugu", isDirectory: true),

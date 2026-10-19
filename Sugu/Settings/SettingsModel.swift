@@ -1,0 +1,172 @@
+import AppKit
+import SuguCore
+import SuguDictionaries
+import SuguInput
+import SuguLearning
+
+/// State behind the settings window. Edits write through to the
+/// preferences store; changes from elsewhere (the input menu, sync) flow
+/// back in through notifications, and panes refresh on `onChange`.
+@MainActor
+final class SettingsModel {
+    enum Change {
+        case preferences, downloads, words, sync
+    }
+
+    var preferences: Preferences {
+        didSet {
+            guard preferences != oldValue else { return }
+            let preferences = preferences
+            environment.preferences.update { $0 = preferences }
+            notify(.preferences)
+        }
+    }
+    private(set) var downloads: [ModelLibrary.Item: ModelLibrary.State] = [:]
+    private(set) var words: [LearnedWord] = []
+    private(set) var lastSync: Date?
+    private(set) var syncFailed = false
+
+    private let environment: AppEnvironment
+    private var observers: [any NSObjectProtocol] = []
+    private var listeners: [(Change) -> Void] = []
+
+    /// Registers a listener for changes; panes refresh their controls here.
+    func observe(_ listener: @escaping (Change) -> Void) {
+        listeners.append(listener)
+    }
+
+    private func notify(_ change: Change) {
+        for listener in listeners { listener(change) }
+    }
+
+    init(environment: AppEnvironment) {
+        self.environment = environment
+        preferences = environment.preferences.preferences
+        reloadDownloads()
+        reloadWords()
+        reloadSync()
+        let center = NotificationCenter.default
+        observers.append(center.addObserver(forName: PreferencesStore.didChangeNotification, object: environment.preferences, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.preferencesChanged() }
+        })
+        observers.append(center.addObserver(forName: LearnedStore.didChangeNotification, object: environment.store, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reloadWords() }
+        })
+        environment.library.onChange = { [weak self] _ in self?.reloadDownloads() }
+        environment.sync?.onChange = { [weak self] in self?.reloadSync() }
+    }
+
+    private func preferencesChanged() {
+        let current = environment.preferences.preferences
+        if current != preferences { preferences = current }
+    }
+
+    private func reloadDownloads() {
+        downloads = Dictionary(uniqueKeysWithValues: ModelLibrary.Item.allCases.map { ($0, environment.library.state(of: $0)) })
+        notify(.downloads)
+    }
+
+    private func reloadWords() {
+        words = environment.store?.allWords() ?? []
+        notify(.words)
+    }
+
+    private func reloadSync() {
+        lastSync = environment.sync?.lastSync
+        syncFailed = environment.sync?.lastError != nil
+        notify(.sync)
+    }
+
+    // MARK: Modes
+
+    func isEnabled(_ mode: InputMode) -> Bool { preferences.enabledModes.contains(mode) }
+
+    func setEnabled(_ mode: InputMode, _ enabled: Bool) {
+        var modes = Set(preferences.enabledModes)
+        if enabled { modes.insert(mode) } else { modes.remove(mode) }
+        modes.insert(.english)
+        preferences.enabledModes = InputMode.allCases.filter(modes.contains)
+    }
+
+    // MARK: Downloads
+
+    func state(of item: ModelLibrary.Item) -> ModelLibrary.State { downloads[item] ?? .notInstalled }
+    func isInstalled(_ item: ModelLibrary.Item) -> Bool { state(of: item) == .installed }
+    func install(_ item: ModelLibrary.Item) { environment.library.install(item) }
+    func cancel(_ item: ModelLibrary.Item) { environment.library.cancel(item) }
+    func remove(_ item: ModelLibrary.Item) { environment.library.remove(item) }
+
+    // MARK: Learned words
+
+    var hasStore: Bool { environment.store != nil }
+
+    func setPinned(_ pinned: Bool, for word: LearnedWord) { environment.store?.setPinned(pinned, id: word.id) }
+    func delete(_ ids: Set<LearnedWord.ID>) { environment.store?.delete(ids: Array(ids)) }
+    func forgetLastHour() { environment.store?.forget() }
+    func deleteAllWords() { environment.store?.deleteAll() }
+
+    @discardableResult
+    func addWord(reading: String, text: String, mode: InputMode) -> Bool {
+        environment.store?.addUserWord(reading: reading, text: text, mode: mode) ?? false
+    }
+
+    // MARK: Dictionaries
+
+    /// Imports dictionary files; returns how many words were new.
+    func importDictionaries(_ urls: [URL]) throws -> Int {
+        guard let store = environment.store else { return 0 }
+        var added = 0
+        for url in urls {
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            if DictionaryFormat.detect(url) == .sugu {
+                added += try store.merge(SuguDictionaryFile.decode(Data(contentsOf: url)))
+            } else {
+                added += try store.importUserWords(DictionaryImporter.read(url).map { ($0.reading, $0.text, $0.mode) })
+            }
+        }
+        return added
+    }
+
+    func exportDictionary(includeLearned: Bool) -> Data {
+        let words = (environment.store?.allWords() ?? []).filter { includeLearned || $0.kind == .user }
+        return SuguDictionaryFile.encode(words)
+    }
+
+    func setSyncFolder(_ url: URL?) {
+        environment.sync?.reset()
+        preferences.syncFolderPath = url?.path
+        if url != nil { environment.sync?.syncNow() }
+        reloadSync()
+    }
+
+    func syncNow() { environment.sync?.syncNow() }
+
+    // MARK: Settings files
+
+    func exportSettings() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(preferences)
+    }
+
+    func importSettings(from url: URL) throws {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        preferences = try JSONDecoder().decode(Preferences.self, from: Data(contentsOf: url))
+    }
+
+    func resetSettings() { preferences = Preferences() }
+
+    func showDataFolder() {
+        let folder = environment.locations.support
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        NSWorkspace.shared.activateFileViewerSelecting([folder])
+    }
+
+    var version: String {
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        return "\(short) (\(build))"
+    }
+}

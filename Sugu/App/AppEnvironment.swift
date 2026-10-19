@@ -16,6 +16,9 @@ final class AppEnvironment {
     let session: InputSession
     let coordinator: InputCoordinator
     let inputMenu: InputMenu
+    let library: ModelLibrary
+    let sync: DictionarySync?
+    private var settings: SettingsWindowController?
 
     private init() {
         let preferences = self.preferences.preferences
@@ -37,6 +40,9 @@ final class AppEnvironment {
             candidateWindow: CandidateWindowController(),
             indicator: ModeIndicatorController()
         )
+        library = ModelLibrary(engines: engines)
+        let preferencesStore = self.preferences
+        sync = store.map { DictionarySync(store: $0, preferences: preferencesStore) }
         inputMenu = InputMenu(coordinator: coordinator, preferences: self.preferences)
     }
 
@@ -45,12 +51,22 @@ final class AppEnvironment {
             MainActor.assumeIsolated { AppEnvironment.shared.preferencesDidChange() }
         }
         NotificationCenter.default.addObserver(forName: LearnedStore.didChangeNotification, object: store, queue: .main) { _ in
-            MainActor.assumeIsolated { AppEnvironment.shared.engines.learnedWordsDidChange() }
+            MainActor.assumeIsolated {
+                AppEnvironment.shared.engines.learnedWordsDidChange()
+                AppEnvironment.shared.sync?.storeDidChange()
+            }
         }
         let days = preferences.preferences.learnedWordExpiryDays
         if days > 0 { _ = store?.expire(olderThan: days) }
         // Load the engine the session starts in, so the first key is fast.
         if session.mode == .chinese { engines.warmUp(.chinese) }
+        sync?.pullIfDue()
+    }
+
+    func showSettings(_ pane: SettingsWindowController.Pane? = nil) {
+        let controller = settings ?? SettingsWindowController(model: SettingsModel(environment: self))
+        settings = controller
+        controller.show(pane)
     }
 
     private func preferencesDidChange() {
