@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- `SuguLearning`: `LearnedStore` (SQLite, WAL, in-memory index for
+  keystroke lookups, events table for "forget the last hour", expiry,
+  pinning, user words, import). 7 tests pass.
 - `SuguAzooKey`: `AzooKeyEngine` with predictions while typing, clause
   conversion (focus, resize, step back), learned words as a dynamic user
   dictionary, Zenzai options wired. First display equals the converter's

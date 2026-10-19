@@ -28,9 +28,9 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [ ] Engine lazy loading per mode
 
 ## 4. Learning & data
-- [ ] `SuguLearning`: SQLite store (learn, pin, delete, forget last hour, pause, expiry, no-learn list)
+- [x] `SuguLearning`: SQLite store (learn, pin, delete, forget last hour, expiry); pause + no-learn list are enforced by the input session
 - [ ] Reranking + injection of learned words; user dictionary (explicit words)
-- [ ] File protection + backup exclusion
+- [x] File protection + backup exclusion
 - [ ] `SuguDictionaries`: import macOS text replacements, Google IME, ATOK, Sogou, RIME; export
 - [ ] Sync through a user-picked folder
 
