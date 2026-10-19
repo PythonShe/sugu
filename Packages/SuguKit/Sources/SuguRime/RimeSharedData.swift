@@ -3,6 +3,10 @@ import Foundation
 /// Writes the bundled, read-only librime data directory: configuration,
 /// the dictionary manifest, spelling rules, OpenCC tables, and dictionary
 /// sources for precompilation. Used by `sugu-tool build-data`.
+///
+/// The schema is not part of it: Sugu writes it into the user directory
+/// from settings, and librime moves a user schema to its trash when the
+/// shared directory holds a copy with a higher version.
 public enum RimeSharedData {
     /// Tables imported into Sugu's Chinese dictionary, in wanxiang's order.
     public static let importedTables = ["zi", "jichu", "cuoyin", "duoyin", "diming", "mingren", "yiren"]
@@ -27,7 +31,6 @@ public enum RimeSharedData {
         try defaultConfig.write(to: directory.appendingPathComponent("default.yaml"), atomically: true, encoding: .utf8)
         try dictionaryManifest(version: version).write(to: directory.appendingPathComponent("\(RimeSchema.dictionaryName).dict.yaml"), atomically: true, encoding: .utf8)
         try tonelessAlgebra.write(to: directory.appendingPathComponent("sugu_algebra.yaml"), atomically: true, encoding: .utf8)
-        try RimeSchema().yaml(version: version).write(to: directory.appendingPathComponent("\(RimeSchema.schemaID).schema.yaml"), atomically: true, encoding: .utf8)
     }
 
     static let defaultConfig = """

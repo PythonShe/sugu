@@ -58,6 +58,10 @@ public final class RimeRuntime {
         let yaml = schema.yaml(version: version)
         if (try? String(contentsOf: schemaURL, encoding: .utf8)) != yaml {
             try yaml.write(to: schemaURL, atomically: true, encoding: .utf8)
+            // librime compares source timestamps in whole seconds, so a
+            // schema rewritten within a second of the last build would be
+            // taken as unchanged. Dropping the compiled copy forces a rebuild.
+            try? FileManager.default.removeItem(at: directories.user.appendingPathComponent("build/\(RimeSchema.schemaID).schema.yaml"))
         }
         if !isInitialized {
             var traits = makeTraits(version: version)
