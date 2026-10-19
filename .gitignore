@@ -16,9 +16,6 @@ build/
 .swiftpm/
 Package.resolved
 
-# Bazel (Mozc tooling)
-bazel-*
-
 # Editors
 .idea/
 .vscode/
