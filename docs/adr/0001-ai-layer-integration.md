@@ -1,5 +1,8 @@
 # AI layer authority, model seam, and token discipline
 
+> **Deferred 2026-10-20.** Withdrawn from v1 scope by ADR 0002, decision 1.
+> Kept as a record awaiting a flip decision; nothing here binds current work.
+
 Sugu's AI layer ranks candidates; it does not compose text. This ADR records the
 complete design of that layer as settled across the design interview of
 2026-09-22: what it may do, how it talks to models, what leaves the device, when
