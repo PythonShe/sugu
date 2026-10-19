@@ -28,9 +28,13 @@ library) and withdraws the AI layer of ADR 0001 from current scope.
 
 4. **Data: rime-wanxiang (CC-BY-4.0).** The base dictionaries (~25 MB) are
    bundled with attribution. The wanxiang grammar model loaded through
-   librime-octagram (BSD-3-Clause) is ~380 MB, so it is an optional download;
-   it becomes the default only after its resident-memory cost is measured
-   against the budget in `AGENTS.md`.
+   librime-octagram (BSD-3-Clause) is ~380 MB per script, so it is an
+   optional download, one per script (`zh-hans`, `zh-hant`), toggled in
+   settings. Generated schemas carry `grammar/language` only while the file is
+   installed; removing it falls back to dictionary ranking. octagram
+   memory-maps the file, so only touched pages are resident. It becomes the
+   default only after its resident-memory cost is measured against the budget
+   in `AGENTS.md`.
 
 5. **rime-ice (GPL-3.0) is never bundled.** Users may download it from
    settings as an alternative dictionary.
