@@ -3,6 +3,17 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- App shell (`Sugu/`, XcodeGen `project.yml`): IMK server and controller,
+  `InputCoordinator` (one shared session, Shift-tap and Caps Lock toggles,
+  duplicate-key filter, secure input), client adapter (IMK mark styles,
+  left context, delete-before-caret for undo), candidate window (Core Text
+  drawing in a non-activating panel; Liquid Glass on macOS 26+, menu
+  material before; vertical/horizontal; paging chevrons, click, scroll;
+  pause gating; VoiceOver announcements; increased-contrast border), caret
+  mode indicator, input menu, generated icons, String Catalog (en, zh-Hans,
+  zh-Hant, ja). `xcodebuild` passes; the app is not installed or launched.
+- `EngineHub`: lazy engines, off-main librime deploy at launch, preference
+  sync (schema redeploy, script, AzooKey options, Zenzai model).
 - `SuguInput`: `InputSession` (modes, Chinese/Japanese key handling,
   paging, function keys F6–F10, `v` expressions, width-aware punctuation,
   undo-after-commit on ⌃⌫, per-app rules and remembered modes, vim Esc,

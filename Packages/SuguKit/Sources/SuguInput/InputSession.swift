@@ -569,7 +569,8 @@ public final class InputSession {
         setHighlight(next)
     }
 
-    private func turnPage(by delta: Int) {
+    /// Turns the candidate list by `delta` pages, as the paging keys do.
+    public func turnPage(by delta: Int) {
         guard !candidates.isEmpty else { return }
         let pages = (candidates.count + pageSize - 1) / pageSize
         let target = min(max(0, page + delta), pages - 1)
