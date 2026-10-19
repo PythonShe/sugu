@@ -54,6 +54,7 @@ public final class EngineHub: EngineProvider {
     private var chinese: RimeEngine?
     private var japanese: AzooKeyEngine?
     private var preparing: Task<Void, Never>?
+    private var userWordsRefresh: Task<Void, Never>?
     /// Set when the last Chinese deployment failed, for the settings window.
     public private(set) var chineseError: (any Error)?
 
@@ -79,16 +80,23 @@ public final class EngineHub: EngineProvider {
             if let japanese { return japanese }
             let engine = AzooKeyEngine(configuration: japaneseConfiguration)
             japanese = engine
-            learnedWordsDidChange()
+            if let store { engine.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) }) }
             return engine
         case .english:
             return nil
         }
     }
 
+    /// Refreshes AzooKey's user words once per run-loop turn, however many
+    /// changes arrive (a commit both notifies the store and calls this).
     public func learnedWordsDidChange() {
-        guard let japanese, let store else { return }
-        japanese.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) })
+        guard japanese != nil, userWordsRefresh == nil else { return }
+        userWordsRefresh = Task { [weak self] in
+            guard let self else { return }
+            userWordsRefresh = nil
+            guard let japanese, let store else { return }
+            japanese.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) })
+        }
     }
 
     // MARK: Lifecycle

@@ -21,6 +21,18 @@ public struct LearnedWord: Sendable, Hashable, Identifiable {
     public var firstUsed: Date
     public var lastUsed: Date
 
+    public init(id: Int64, mode: InputMode, reading: String, text: String, kind: Kind, count: Int, pinned: Bool, firstUsed: Date, lastUsed: Date) {
+        self.id = id
+        self.mode = mode
+        self.reading = reading
+        self.text = text
+        self.kind = kind
+        self.count = count
+        self.pinned = pinned
+        self.firstUsed = firstUsed
+        self.lastUsed = lastUsed
+    }
+
     /// Ranking among words with the same reading: pinned first, then user
     /// words, then by use with a decay of about a month.
     public func score(at now: Date) -> Double {

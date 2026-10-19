@@ -162,6 +162,50 @@ public final class LearnedStore {
         return added
     }
 
+    /// Merges words from Sugu's own file (another Mac, or a sync folder).
+    /// Only words used after `since` are taken, so a word deleted here is
+    /// not brought back by an older copy. A word already in the store keeps
+    /// the higher count, the later use, and its pin if either side has one.
+    /// Returns how many words were new.
+    @discardableResult
+    public func merge(_ incoming: [LearnedWord], since: Date? = nil) throws -> Int {
+        var added = 0
+        try database.transaction {
+            for word in incoming {
+                if let since, word.lastUsed <= since { continue }
+                let reading = LearnedWord.normalize(word.reading, mode: word.mode)
+                guard !reading.isEmpty, !word.text.isEmpty else { continue }
+                let key = IndexKey(mode: word.mode, reading: reading)
+                if let id = index[key]?.first(where: { words[$0]?.text == word.text }), var existing = words[id] {
+                    existing.count = max(existing.count, word.count)
+                    existing.lastUsed = max(existing.lastUsed, word.lastUsed)
+                    existing.firstUsed = min(existing.firstUsed, word.firstUsed)
+                    existing.pinned = existing.pinned || word.pinned
+                    if word.kind == .user { existing.kind = .user }
+                    try database.run(
+                        "UPDATE words SET count = ?, pinned = ?, kind = ?, first_used = ?, last_used = ? WHERE id = ?",
+                        [.integer(Int64(existing.count)), .integer(existing.pinned ? 1 : 0), .integer(Int64(existing.kind.rawValue)),
+                         .real(existing.firstUsed.timeIntervalSinceReferenceDate), .real(existing.lastUsed.timeIntervalSinceReferenceDate), .integer(id)]
+                    )
+                    words[id] = existing
+                } else {
+                    let id = try database.run(
+                        "INSERT INTO words (mode, reading, text, kind, count, pinned, first_used, last_used) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        [.text(word.mode.rawValue), .text(reading), .text(word.text), .integer(Int64(word.kind.rawValue)), .integer(Int64(word.count)),
+                         .integer(word.pinned ? 1 : 0), .real(word.firstUsed.timeIntervalSinceReferenceDate), .real(word.lastUsed.timeIntervalSinceReferenceDate)]
+                    )
+                    var stored = word
+                    stored.id = id
+                    stored.reading = reading
+                    insertInMemory(stored)
+                    added += 1
+                }
+            }
+        }
+        notify()
+        return added
+    }
+
     private func recordUse(reading rawReading: String, text: String, mode: InputMode, kind: LearnedWord.Kind, at now: Date, logEvent: Bool = true) throws {
         let reading = LearnedWord.normalize(rawReading, mode: mode)
         guard !reading.isEmpty, !text.isEmpty else { return }
