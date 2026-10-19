@@ -38,9 +38,10 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu \
 ## 2. App Code Conventions
 
 - Swift 6 language mode (strict concurrency), latest Xcode and Swift.
-- UI is laid out programmatically in code, organized in feature folders with
-  one primary view controller per window. The candidate window is drawn with
-  Core Text and `CALayer` — no Auto Layout or SwiftUI on the keystroke path.
+- UI is AppKit only — no SwiftUI anywhere — laid out programmatically in
+  code, organized in feature folders with one primary view controller per
+  window. The candidate window is drawn with Core Text and `CALayer`, with no
+  Auto Layout on the keystroke path.
 - Every user-facing string is a key in the String Catalog
   (`Localizable.xcstrings`) from the first commit; lookups stay at
   view-controller level.
