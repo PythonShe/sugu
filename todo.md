@@ -10,7 +10,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] `scripts/fetch-data.sh` + `scripts/build-data.sh` → prebuilt Rime tables, OpenCC, syllable/word lists
 - [x] Repo layout: `project.yml`, `Sugu/` app target, `Packages/SuguKit/` local package
 - [x] `.gitignore` generated-artifact rules (+ Xcode `Package.resolved` exception), recorded in `CLAUDE.md`/`AGENTS.md`
-- [ ] Clean `xcodebuild` of the app and `swift test` of SuguKit
+- [x] Clean `xcodebuild` of the app and `swift test` of SuguKit
 
 ## 2. Core (SuguKit, headless, tested)
 - [x] `SuguCore`: modes, key model, candidates, composition snapshot, engine protocol
@@ -21,18 +21,18 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Preferences model (Codable, UserDefaults-backed)
 
 ## 3. Engines
-- [~] `SuguRime`: runtime setup, schema generator (full pinyin + shuangpin variants, script, fuzzy), session wrapper
-- [ ] Grammar model (octagram) toggle per script; dictionary-only fallback
+- [x] `SuguRime`: runtime setup, schema generator (full pinyin + shuangpin variants, script, fuzzy), session wrapper
+- [x] Grammar model (octagram) toggle; dictionary-only fallback (one zh-hans model, D-010)
 - [x] `SuguAzooKey`: converter wrapper, clause conversion, romaji/kana input, prediction
-- [ ] Zenzai (experimental): trait, model download, runtime toggle, left context
+- [x] Zenzai (experimental): trait, model download, runtime toggle, left context
 - [x] Engine lazy loading per mode (`EngineHub`)
 
 ## 4. Learning & data
 - [x] `SuguLearning`: SQLite store (learn, pin, delete, forget last hour, expiry); pause + no-learn list are enforced by the input session
 - [x] Reranking + injection of learned words (exact reading); user words share the store
 - [x] File protection + backup exclusion
-- [ ] `SuguDictionaries`: import macOS text replacements, Google IME, ATOK, Sogou, RIME; export
-- [ ] Sync through a user-picked folder
+- [x] `SuguDictionaries`: import macOS text replacements, Google IME, ATOK, Sogou, RIME; export
+- [x] Sync through a user-picked folder
 
 ## 5. Shell (IMK app)
 - [x] App entry, IMKServer, Info.plist, input-source metadata, icon
@@ -40,17 +40,19 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Candidate window (NSPanel, Core Text, CALayer; vertical/horizontal; paging; system materials)
 - [x] Caret mode indicator
 - [x] Mode toggle keys (Shift tap, Caps Lock, 英数/かな), per-app mode rules, secure-input/terminal English, vim Esc
-- [ ] Mac-standard keys: F6–F10, Option symbols, numpad, caret movement, romaji typo tolerance
+- [~] Mac-standard keys: F6–F10, Option symbols, numpad, caret movement, romaji typo tolerance — verify Option/numpad paths in a session test
 - [~] Reconvert selection, left context, document vocabulary (off by default) — document vocabulary ranking still to wire
 - [ ] Cross-language proper nouns (ADR 0003 d11): `dongjing` → 東京, romaji → Chinese forms; per-app script variant
 - [x] Pause-gated candidate window (off by default)
 - [x] VoiceOver announcements, scaling, increased contrast
-- [~] Input menu (modes, Settings…, Learned Words…)
+- [x] Input menu (modes, Settings…, Learned Words…)
 
 ## 6. Settings (native, toolbar-style window)
-- [ ] General · Chinese · Japanese · Apps · Learning · Dictionaries · Advanced
-- [ ] Downloads manager (grammar models, rime-ice, Zenzai model) with progress + verification
-- [ ] String Catalog for every string (en, zh-Hans, zh-Hant, ja)
+- [x] General · Chinese · Japanese · Apps · Learning · Dictionaries · Advanced (AppKit only, D-017)
+- [x] Downloads manager (grammar models, rime-ice, Zenzai model) with progress + verification
+- [x] String Catalog for every string (en, zh-Hans, zh-Hant, ja)
+
+- [ ] `ThirdPartyNotices.txt` bundled (Acknowledgements button reads it)
 
 ## 7. Proof & delivery
 - [ ] `sugu-bench`: accuracy harness (top-1, keystrokes/char) + latency/memory measurement

@@ -3,6 +3,26 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Settings window in AppKit (toolbar tabs, NSGridView forms, NSTableView
+  lists): modes and toggles, candidate style, pinyin scheme/script/fuzzy,
+  dictionary choice, downloads with progress, Japanese options and Zenzai,
+  per-app rules, learned-word inspector (search, sort, pin, delete, forget
+  last hour, add word), no-learn apps, import/export, sync folder, settings
+  file import/export/reset. Debug-only `--snapshot-settings` renders panes
+  offscreen for review; checked in light, dark and Japanese.
+- All 127 interface strings translated (zh-Hans, zh-Hant, ja).
+- `SuguDictionaries`: importers for Google Japanese Input / Microsoft IME,
+  ATOK (UTF-16), Sogou .scel and text, RIME, Text Replacements plist; Sugu's
+  own format; per-Mac sync files with watermarks. 8 tests.
+- `SuguDownloads` + `ModelLibrary`: pinned URL + SHA-256 downloads for the
+  grammar model, rime-ice (GPL, user download) and Zenzai. rime-ice compiles
+  in 3.6 s and converts correctly through a generated `sugu_ice` dictionary.
+- Grammar model measured: +~90 MB resident (clean mmapped pages; footprint
+  unchanged); on a 10-sentence probe it changed 2 top candidates, both for
+  the worse. Stays opt-in until the accuracy harness says otherwise.
+- Fixed: librime trashed the generated user schema (bundled copy had a
+  higher version), and in-process redeploys within one second were skipped.
+  Engine tests now cover schemes, fuzzy pinyin, script, and AzooKey.
 - App shell (`Sugu/`, XcodeGen `project.yml`): IMK server and controller,
   `InputCoordinator` (one shared session, Shift-tap and Caps Lock toggles,
   duplicate-key filter, secure input), client adapter (IMK mark styles,

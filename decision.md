@@ -124,3 +124,41 @@ any call made without the owner present. Each entry: what, why, reversibility.
   step back to kana.
 - One `InputSession` serves every client, attaching the focused one, so
   the AzooKey dictionary and librime runtime load once per process.
+
+## D-013 · Input source metadata and IMK isolation (2026-10-20)
+- `TISIntendedLanguage` is `zh-Hans` (one source has to be listed under one
+  language); the repertoire lists Hans, Hant, Jpan and Latn.
+- InputMethodKit is not annotated for concurrency. The controller hops into
+  the main actor with `MainActor.assumeIsolated` and passes IMK's objects
+  through `nonisolated(unsafe)` locals; all logic lives in main-actor types.
+- The client adapter never clears marked text it did not set: some apps
+  replace the selection with an empty marked string.
+
+## D-014 · The schema lives only in the user directory (2026-10-20)
+- librime moves a user copy of a schema to `trash/` when the shared copy
+  has a higher version, which silently dropped every setting. The bundled
+  data no longer contains `sugu.schema.yaml`; Sugu always writes it.
+- librime compares source timestamps in whole seconds, so Sugu deletes the
+  compiled schema whenever it rewrites the source.
+
+## D-015 · Pinned downloads; grammar model opt-in (2026-10-20)
+- Each download is pinned to a URL and SHA-256 reviewed for the release:
+  wanxiang `LTS` grammar model (CC-BY-4.0), rime-ice `2026.06.30`
+  `cn_dicts.zip` (GPL-3.0, never bundled, user-initiated only), zenz-v3.1
+  small Q5_K_M at a fixed Hugging Face revision (CC-BY-SA-4.0). A moving
+  upstream file fails verification instead of installing unreviewed data.
+- The grammar model adds ~90 MB of resident clean pages and did not improve
+  a small probe, so it stays an optional download (ADR 0002 d4).
+
+## D-016 · Folder sync (2026-10-20)
+- Each Mac writes only `<random id>.sugudict` in the chosen folder and reads
+  the others, so no file has two writers. A per-file watermark (newest use
+  already merged) keeps words deleted here from returning from an older
+  copy. User words always sync; learned words only when the user opts in
+  (ADR 0003 d24). Settings move by explicit export/import, not sync.
+
+## D-017 · AppKit only (2026-10-20)
+- At the owner's direction, no SwiftUI anywhere. Settings panes are
+  NSGridView forms (right-aligned labels, standard controls) built by a
+  small `SettingsForm` helper; lists are NSTableViews with the standard
+  add/remove control.
