@@ -34,6 +34,16 @@ public final class EngineHub: EngineProvider {
         public var zenzaiModel: URL {
             models.appendingPathComponent("zenzai.gguf")
         }
+
+        /// The generated rime-ice manifest; its presence marks rime-ice as
+        /// installed.
+        public var rimeIceManifest: URL {
+            rimeUser.appendingPathComponent("\(RimeSchema.rimeIceDictionaryName).dict.yaml")
+        }
+
+        public var rimeIceTables: URL {
+            rimeUser.appendingPathComponent(RimeSchema.rimeIceFolder, isDirectory: true)
+        }
     }
 
     public let locations: Locations
@@ -133,11 +143,16 @@ public final class EngineHub: EngineProvider {
         FileManager.default.fileExists(atPath: locations.zenzaiModel.path)
     }
 
+    public var isRimeIceInstalled: Bool {
+        FileManager.default.fileExists(atPath: locations.rimeIceManifest.path)
+    }
+
     private var schema: RimeSchema {
         RimeSchema(
             scheme: preferences.pinyinScheme,
             fuzzy: preferences.fuzzyPinyin,
-            useGrammar: preferences.useGrammarModel && isGrammarModelInstalled
+            useGrammar: preferences.useGrammarModel && isGrammarModelInstalled,
+            dictionary: preferences.chineseDictionary == .rimeIce && isRimeIceInstalled ? .rimeIce : .wanxiang
         )
     }
 

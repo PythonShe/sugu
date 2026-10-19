@@ -7,7 +7,7 @@ import SuguRime
 /// terminal.
 @MainActor
 enum Convert {
-    static func run(data: URL, japanese: Bool, readings: [String]) async throws {
+    static func run(data: URL, user: URL?, schema: RimeSchema, japanese: Bool, readings: [String]) async throws {
         if japanese {
             let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-convert-ja")
             try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
@@ -29,9 +29,11 @@ enum Convert {
             }
             return
         }
-        let user = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-convert")
+        let user = user ?? FileManager.default.temporaryDirectory.appendingPathComponent("sugu-convert")
         let runtime = RimeRuntime(directories: .init(shared: data.appendingPathComponent("Rime"), user: user))
-        try await runtime.prepare(RimeSchema(), version: "dev")
+        let started = Date()
+        try await runtime.prepare(schema, version: "dev")
+        print("deployed in \(milliseconds(since: started)) ms")
         let engine = RimeEngine(runtime: runtime)
         for reading in readings {
             let started = Date()

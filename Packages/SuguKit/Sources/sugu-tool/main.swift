@@ -1,11 +1,13 @@
 import Foundation
+import SuguCore
+import SuguRime
 
 // sugu-tool: build-time and diagnostic commands. Never touches the
 // installed input method or the user's input sources.
 let arguments = Array(CommandLine.arguments.dropFirst())
 let usage = """
 usage: sugu-tool build-data --wanxiang <dir> --opencc <dir> --out <dir> [--version <v>]
-       sugu-tool convert --data <dir> (--chinese | --japanese) <reading>...
+       sugu-tool convert --data <dir> (--chinese | --japanese) [--user <dir>] [--scheme <name>] [--rime-ice] [--grammar] <reading>...
 """
 
 func option(_ name: String) -> String? {
@@ -30,8 +32,20 @@ do {
         )
     case "convert":
         guard let data = option("--data") else { fail(usage) }
-        let readings = arguments.dropFirst().filter { !$0.hasPrefix("--") && $0 != data }
-        try await Convert.run(data: URL(fileURLWithPath: data), japanese: arguments.contains("--japanese"), readings: Array(readings))
+        let user = option("--user")
+        let readings = arguments.dropFirst().filter { !$0.hasPrefix("--") && $0 != data && $0 != user && $0 != option("--scheme") }
+        let schema = RimeSchema(
+            scheme: option("--scheme").flatMap(PinyinScheme.init(rawValue:)) ?? .fullPinyin,
+            useGrammar: arguments.contains("--grammar"),
+            dictionary: arguments.contains("--rime-ice") ? .rimeIce : .wanxiang
+        )
+        try await Convert.run(
+            data: URL(fileURLWithPath: data),
+            user: user.map { URL(fileURLWithPath: $0) },
+            schema: schema,
+            japanese: arguments.contains("--japanese"),
+            readings: Array(readings)
+        )
     default:
         fail(usage)
     }

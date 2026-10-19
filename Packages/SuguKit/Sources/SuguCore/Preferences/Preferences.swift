@@ -20,6 +20,7 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var fuzzyPinyin: Set<FuzzyPinyin> = []
     public var punctuationWidth: PunctuationWidth = .automatic
     public var useGrammarModel = true
+    public var chineseDictionary: ChineseDictionary = .wanxiang
     public var latinAllowList: [String] = []
 
     // MARK: Japanese
@@ -62,6 +63,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.fuzzyPinyin, into: &fuzzyPinyin)
         load(.punctuationWidth, into: &punctuationWidth)
         load(.useGrammarModel, into: &useGrammarModel)
+        load(.chineseDictionary, into: &chineseDictionary)
         load(.latinAllowList, into: &latinAllowList)
         load(.kanaInput, into: &kanaInput)
         load(.japanesePunctuation, into: &japanesePunctuation)
@@ -133,6 +135,13 @@ public enum EnglishToggle: String, Codable, Sendable, CaseIterable {
 public enum CandidateLayout: String, Codable, Sendable, CaseIterable {
     case vertical
     case horizontal
+}
+
+/// The Chinese dictionary: the bundled one, or rime-ice when the user has
+/// downloaded it (GPL-3.0, so never bundled).
+public enum ChineseDictionary: String, Codable, Sendable, CaseIterable {
+    case wanxiang
+    case rimeIce
 }
 
 public enum ChineseScript: String, Codable, Sendable, CaseIterable {
