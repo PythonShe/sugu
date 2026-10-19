@@ -81,6 +81,10 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu \
 - Third-party engines enter the project as dependencies: librime as a prebuilt
   static `.xcframework` from a build script, AzooKeyKanaKanjiConverter through
   SwiftPM. GPL-licensed dictionaries (e.g. rime-ice) are user downloads only.
-- `Sugu.xcodeproj` stays generated from `project.yml`; when the scaffold
-  lands, record all generated-artifact ignore rules here and in `.gitignore`
-  in the same commit.
+- `Sugu.xcodeproj` stays generated from `project.yml`. Generated artifacts
+  are gitignored and recorded here: `.vendor/` (third-party sources and
+  build trees), `Frameworks/` (`librime.xcframework` from
+  `scripts/build-librime.sh`), `Data/` (compiled dictionaries from
+  `scripts/build-data.sh`), and `Sugu.xcodeproj/` except its SwiftPM
+  `Package.resolved`. `Packages/SuguKit/Package.resolved` is tracked.
+- Pinned third-party versions live in `scripts/versions.sh`.
