@@ -1,13 +1,13 @@
 # Sugu — work plan
 
 Jobs in build order. `[x]` done, `[~]` in progress, `[ ]` open. Scope is
-ADR 0002 + ADR 0003 + Zenzai as an experimental option (decision.md D-011).
+ADR 0002 + ADR 0003 + Zenzai as an experimental option (decision.md D-007).
 Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 1. Foundation
 - [x] Plan files: `todo.md`, `progress.md`, `decision.md`
 - [x] `scripts/build-librime.sh` → `Frameworks/librime.xcframework` (librime + octagram, static, universal)
-- [~] `scripts/fetch-data.sh` (done) + `scripts/build-data.sh` → prebuilt Rime tables, OpenCC, syllable/word lists
+- [x] `scripts/fetch-data.sh` + `scripts/build-data.sh` → prebuilt Rime tables, OpenCC, syllable/word lists
 - [ ] Repo layout: `project.yml`, `Sugu/` app target, `Packages/SuguKit/` local package
 - [x] `.gitignore` generated-artifact rules (+ Xcode `Package.resolved` exception), recorded in `CLAUDE.md`/`AGENTS.md`
 - [ ] Clean `xcodebuild` of the app and `swift test` of SuguKit
@@ -21,7 +21,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Preferences model (Codable, UserDefaults-backed)
 
 ## 3. Engines
-- [ ] `SuguRime`: runtime setup, schema generator (full pinyin + shuangpin variants, script, fuzzy), session wrapper
+- [~] `SuguRime`: runtime setup, schema generator (full pinyin + shuangpin variants, script, fuzzy), session wrapper
 - [ ] Grammar model (octagram) toggle per script; dictionary-only fallback
 - [ ] `SuguAzooKey`: converter wrapper, clause conversion, romaji/kana input, prediction
 - [ ] Zenzai (experimental): trait, model download, runtime toggle, left context

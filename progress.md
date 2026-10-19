@@ -3,6 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- `SuguRime`: schema generator, runtime (setup, off-main deploy, sessions),
+  `RimeEngine`. `sugu-tool build-data` compiles the dictionary in 2.5 s
+  (46 MB table); `sugu-tool convert` gives 你好 / 中国人 / 我爱北京天安门 /
+  输入法 first, 0.1–2.6 ms per reading in a debug build.
 - `SuguKit` package: `SuguCore` (modes, key model, candidates, composition
   state, engine protocol, punctuation, width/kana conversion, numerals,
   arithmetic, dates, Latin inference, preferences). 26 tests pass.

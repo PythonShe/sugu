@@ -25,6 +25,6 @@ rm -rf "$DEST" && mkdir -p "$DEST/dicts"
 for dict in $WANXIANG_DICTS; do
   cp "$SRC/dicts/$dict.dict.yaml" "$DEST/dicts/"
 done
-cp "$SRC/LICENSE" "$DEST/LICENSE"
+cp "$SRC/wanxiang_algebra.yaml" "$SRC/LICENSE" "$DEST/"
 echo "$WANXIANG_REF" > "$STAMP"
 echo "wanxiang $WANXIANG_REF -> $DEST"

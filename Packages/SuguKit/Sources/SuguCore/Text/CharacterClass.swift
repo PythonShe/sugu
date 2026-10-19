@@ -31,3 +31,11 @@ extension Character {
     }
     public var isASCIILetter: Bool { isASCII && isLetter }
 }
+
+extension Character {
+    /// a–z only.
+    public var isASCIILowercaseLetter: Bool {
+        guard unicodeScalars.count == 1, let value = unicodeScalars.first?.value else { return false }
+        return (0x61...0x7A).contains(value)
+    }
+}

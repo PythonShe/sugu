@@ -83,3 +83,18 @@ any call made without the owner present. Each entry: what, why, reversibility.
   word list) are extracted from it at data-build time and loaded at runtime.
   `LatinInference` takes them as inputs. They stay in step with the
   dictionary and are not retyped in source.
+
+## D-010 · Chinese data shipped precompiled; one grammar model (2026-10-20)
+- `scripts/build-data.sh` compiles the wanxiang tables with Sugu's own
+  runtime and ships `sugu.table.bin` (46 MB), `sugu.reverse.bin` and the
+  default `sugu.prism.bin` in `Rime/build/`, without the 54 MB of YAML
+  sources. librime reuses a prebuilt table whose source is absent; other
+  pinyin schemes only rebuild the small prism on first use.
+- Spelling rules: Sugu's `toneless` section, then fuzzy sections, then
+  wanxiang's `lite` scheme section (CC-BY-4.0), patched into the generated
+  schema in that order.
+- Only the `zh-hans` grammar model is offered: octagram scores sentences on
+  dictionary text (Simplified) before the OpenCC script filter runs, so it
+  serves Traditional output too. ADR 0002 d4's per-script download becomes a
+  single download. It lives in the user data directory, where octagram
+  resolves `.gram` files.

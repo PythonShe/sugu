@@ -150,7 +150,7 @@ public enum PinyinScheme: String, Codable, Sendable, CaseIterable {
 
 /// Pairs of sounds the user treats as the same.
 public enum FuzzyPinyin: String, Codable, Sendable, CaseIterable {
-    case zZh, cCh, sSh, nL, fH, rL, anAng, enEng, inIng, ianIang, uanUang
+    case zZh, cCh, sSh, nL, fH, rL, rY, kG, enEng, inIng
 }
 
 /// Per-app behavior.
