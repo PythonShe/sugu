@@ -1,0 +1,73 @@
+/// Caret motions inside a composition.
+public enum CaretMotion: Sendable {
+    case left, right, start, end
+}
+
+/// The result of choosing a candidate.
+public enum SelectionResult: Sendable, Equatable {
+    /// Part of the input was fixed; the composition continues.
+    case continued
+    /// The whole composition is done; `text` goes to the document.
+    case committed(Commit)
+}
+
+/// Text leaving a composition, with what was typed to produce it.
+public struct Commit: Sendable, Equatable {
+    public var text: String
+    public var reading: String
+    /// Clause-level pairs (reading → text) when the engine knows them; used
+    /// for learning. Empty when only the whole commit is known.
+    public var clauses: [Clause]
+
+    public struct Clause: Sendable, Equatable {
+        public var reading: String
+        public var text: String
+        public init(reading: String, text: String) {
+            self.reading = reading
+            self.text = text
+        }
+    }
+
+    public init(text: String, reading: String, clauses: [Clause] = []) {
+        self.text = text
+        self.reading = reading
+        self.clauses = clauses
+    }
+}
+
+/// One language engine driving one composition. Implementations own the raw
+/// input and conversion state; Sugu's input session owns key bindings,
+/// modes, punctuation, and candidates that do not come from the engine.
+@MainActor
+public protocol CompositionEngine: AnyObject {
+    var state: CompositionState { get }
+
+    /// Characters this engine accepts as input in the current state.
+    func accepts(_ character: Character) -> Bool
+    func insert(_ text: String)
+    func deleteBackward()
+    func deleteForward()
+    func moveCaret(_ motion: CaretMotion)
+
+    /// Enters the converting phase. Returns false if there is nothing to
+    /// convert.
+    @discardableResult func convert() -> Bool
+    /// Leaves the converting phase, back to plain input.
+    func cancelConversion()
+    func highlight(_ index: Int)
+    func select(_ index: Int) -> SelectionResult
+    /// Moves the focus to the neighboring clause (Japanese).
+    func moveFocus(forward: Bool)
+    /// Grows or shrinks the focused clause by one character (Japanese).
+    func resizeFocus(by delta: Int)
+
+    /// Commits what is shown: converted clauses, or the best conversion.
+    func commitConverted() -> Commit?
+    /// Commits the raw input: letters for Chinese, kana for Japanese.
+    func commitRaw() -> Commit?
+    func clear()
+    /// Starts a composition from a reading, as after undo-after-commit.
+    func restore(reading: String)
+    /// Committed text left of the caret, to inform ranking.
+    func setLeftContext(_ text: String)
+}

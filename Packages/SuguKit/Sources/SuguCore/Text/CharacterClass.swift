@@ -1,0 +1,33 @@
+extension Unicode.Scalar {
+    /// Han ideographs, kana, and CJK symbols — text after which full-width
+    /// punctuation reads naturally.
+    public var isCJK: Bool {
+        switch value {
+        case 0x3000...0x303F, // CJK symbols and punctuation
+             0x3040...0x30FF, // hiragana, katakana
+             0x3400...0x4DBF, // extension A
+             0x4E00...0x9FFF, // unified ideographs
+             0xF900...0xFAFF, // compatibility ideographs
+             0xFF00...0xFFEF, // half-width and full-width forms
+             0x20000...0x323AF: // extensions B–H
+            return true
+        default:
+            return false
+        }
+    }
+
+    public var isASCIILetterOrDigit: Bool {
+        switch value {
+        case 0x30...0x39, 0x41...0x5A, 0x61...0x7A: return true
+        default: return false
+        }
+    }
+}
+
+extension Character {
+    public var isCJK: Bool { unicodeScalars.first?.isCJK ?? false }
+    public var isASCIILetterOrDigit: Bool {
+        unicodeScalars.count == 1 && (unicodeScalars.first?.isASCIILetterOrDigit ?? false)
+    }
+    public var isASCIILetter: Bool { isASCII && isLetter }
+}
