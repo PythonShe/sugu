@@ -161,7 +161,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Kana input's 、。 follow the punctuation style (D-075)
 - [x] Repeated F9/F10 cycle case: abc → ABC → Abc (D-075)
 - [x] ⌃⇧R reconverts; ⌃I ⌃O resize the clause (D-075)
-- [ ] Punctuation typed while converting commits with the conversion
+- [x] Punctuation typed while converting commits with the conversion (D-075)
 - [ ] Symbols by their Japanese names (やじるし →)
 - [ ] 人名 and 地名 on the candidates
 - [ ] 英数 twice turns the last commit into Latin; かな twice back

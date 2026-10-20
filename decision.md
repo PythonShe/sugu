@@ -1304,3 +1304,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   the app's. ⌃I and ⌃O shrink and grow the focused clause while
   converting, as ⇧← ⇧→ do, and do nothing otherwise inside a
   composition. The key reads as I without Control, so Tab stays Tab.
+- 、。！？ typed while converting, or after choosing a prediction, commit
+  with the conversion, as in Google's and ATOK's Japanese input, rather
+  than standing as a composition of their own that needs Return (Apple's
+  way). Other keys still start the next composition. ATOK's conversion on
+  。 is not added.

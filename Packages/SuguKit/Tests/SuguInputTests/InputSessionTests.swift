@@ -333,6 +333,24 @@ struct InputSessionTests {
         #expect(!session.handle(control("r", [.control, .shift])))
     }
 
+    /// A period typed while converting commits with the conversion; a
+    /// letter starts the next composition.
+    @Test func periodWhileConvertingCommitsWithIt() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        japanese.acceptsSymbols = true
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        type(".", into: session)
+        #expect(client.document == "日本語。")
+        #expect(session.isEmpty)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        type("n", into: session)
+        #expect(client.document == "日本語。日本語")
+        #expect(client.markedText == "n")
+    }
+
     /// F10 again cycles capitals, a capital first and lower case; F9 too.
     @Test func repeatedFunctionKeysCycleCase() {
         let session = makeSession()

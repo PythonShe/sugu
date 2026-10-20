@@ -449,10 +449,18 @@ extension InputSession {
         }
         if engine.accepts(character) {
             if converting || transformed != nil || list.highlight != nil {
-                // Typing on after a choice commits it and starts afresh.
+                // Typing on after a choice commits it and starts afresh; a
+                // mark that ends a phrase goes with it, as in Google's and
+                // ATOK's Japanese input, rather than waiting on its own.
+                let typed = input(for: key, character: character)
                 commitComposition()
+                let punctuation = preferences.japanesePunctuation
+                if [punctuation.comma, punctuation.period, "！", "？"].contains(typed) {
+                    commitText(typed, reading: typed, learn: false)
+                    return true
+                }
                 guard let fresh = engines.engine(for: mode) else { return true }
-                begin(with: fresh, input: input(for: key, character: character))
+                begin(with: fresh, input: typed)
                 return true
             }
             engine.insert(input(for: key, character: character))
