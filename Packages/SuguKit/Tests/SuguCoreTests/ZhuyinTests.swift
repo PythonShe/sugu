@@ -69,3 +69,10 @@ struct ZhuyinTests {
         for (pinyin, code) in cases { #expect(Zhuyin.code(ofTonedPinyin: pinyin) == code, "\(pinyin)") }
     }
 }
+
+extension ZhuyinTests {
+    @Test func syllablesTypeOnTheirKeys() throws {
+        let syllables = try #require(Zhuyin.syllables(ofCodes: "ni3hao3ma1de5"))
+        #expect(syllables.map(Zhuyin.keys(typing:)).joined() == "su3cl3a8 2k7")
+    }
+}

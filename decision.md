@@ -1177,7 +1177,22 @@ any call made without the owner present. Each entry: what, why, reversibility.
   syllables toneless under pinyin and tone-marked as the dictionary writes
   them (`sū gǔ yuè`) under Zhuyin; pinyin's words, without tones, stay
   out of Zhuyin's. The Learning pane shows a Zhuyin reading in Bopomofo.
-  Reconverting text in Zhuyin has no tones to go on and is not offered.
+  Reconverting text in Zhuyin takes its tones from librime: a word of
+  two or three characters the tones under which librime offers it as a
+  word (preferring tones where it is surely a word, since librime's lone
+  sentence also spells any characters; then fewer neutral tones, 谢谢
+  xie4 xie5), any other character the tone it ranks highest under.
+- librime's sentence for each run is respelled with the pinyin
+  respeller's model and word list over its toneless syllables, kept only
+  where every character it changes is librime's under the typed tone.
+- Bench: `sugu-bench --zhuyin` types the Chinese set in Zhuyin with the
+  tones reconversion finds for the expected text, which flatters it
+  where the right tone is ambiguous: top-1 71% with per-character tones,
+  90% with words' tones, 92% when sure words win, 100% with respelling;
+  keystroke p99 0.4 ms.
+- Declined: letting a neutral syllable of the dictionary type with any
+  tone (`fuzz/5$/n/`), for Taiwanese readings that keep the tone; librime's
+  fuzzy penalty (½) leaves frequent particles ahead, so ㄇㄚ (ma1) gave 吗.
 - The session composes Zhuyin in a third way (`EngineTraits.composition`
   `.sentence`): Space ends a syllable with the first tone and between
   syllables opens the window, as ↓ does; there digits choose, Space and

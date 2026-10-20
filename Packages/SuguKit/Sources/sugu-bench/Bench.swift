@@ -67,13 +67,24 @@ enum Bench {
         session.attach(field)
 
         var report = Report()
-        report.chinese = measure(session, mode: .chinese, cases: try load(bench.appendingPathComponent("zh.tsv")))
+        let zhuyin = preferences.chineseKeyboard == .zhuyin
+        if zhuyin {
+            // The Chinese set typed in Zhuyin, each character with the tone
+            // librime ranks it highest under, as reconversion finds it.
+            let cases = try load(bench.appendingPathComponent("zh.tsv")).compactMap { test -> Case? in
+                guard let codes = engines.chineseReading(of: test.expected), let syllables = Zhuyin.syllables(ofCodes: codes) else { return nil }
+                return Case(typed: syllables.map(Zhuyin.keys(typing:)).joined(), expected: test.expected)
+            }
+            report.chinese = measure(session, mode: .chinese, cases: cases, zhuyin: true)
+        } else {
+            report.chinese = measure(session, mode: .chinese, cases: try load(bench.appendingPathComponent("zh.tsv")))
+        }
         report.japanese = measure(session, mode: .japanese, cases: try load(bench.appendingPathComponent("ja.tsv")))
         report.memory = Memory.current()
 
         // The same readings after different text: with the field read and
         // with it hidden.
-        for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] {
+        for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] where mode != .chinese || !zhuyin {
             let set = bench.appendingPathComponent("\(name)-context.tsv")
             guard FileManager.default.fileExists(atPath: set.path) else { continue }
             let cases = try load(set)
@@ -84,7 +95,7 @@ enum Bench {
 
         // Words the user taught, in sentences: before teaching them, after,
         // and the main set again after, per language.
-        for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] {
+        for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] where mode != .chinese || !zhuyin {
             let set = bench.appendingPathComponent("\(name)-learned.tsv")
             guard FileManager.default.fileExists(atPath: set.path) else { continue }
             let (words, cases) = try loadLearned(set)
@@ -132,29 +143,33 @@ enum Bench {
     }
 
     /// Keys a person types for a test reading: no spaces (Space converts),
-    /// ü as v.
-    static func keys(for typed: String) -> [Character] {
-        typed.replacingOccurrences(of: "ü", with: "v").filter { $0 != " " }.map { $0 }
+    /// ü as v; Zhuyin keys as they are, Space the first tone.
+    static func keys(for typed: String, zhuyin: Bool = false) -> [Character] {
+        guard !zhuyin else { return Array(typed) }
+        return typed.replacingOccurrences(of: "ü", with: "v").filter { $0 != " " }.map { $0 }
     }
 
-    /// With `field`, each case is typed after its context.
-    private static func measure(_ session: InputSession, mode: InputMode, cases: [Case], field: Field? = nil) -> LanguageResult {
+    /// With `field`, each case is typed after its context. Zhuyin's
+    /// sentence is what the field shows once the keys are typed.
+    private static func measure(_ session: InputSession, mode: InputMode, cases: [Case], field: Field? = nil, zhuyin: Bool = false) -> LanguageResult {
         session.setMode(mode)
         // Load the engine before timing.
-        _ = session.handle(key("a"))
+        _ = session.handle(key(zhuyin ? "1" : "a"))
         _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
 
         var result = LanguageResult()
         defer { field?.context = "" }
         for test in cases {
             field?.context = test.context
-            for character in keys(for: test.typed) {
+            for character in keys(for: test.typed, zhuyin: zhuyin) {
                 let started = DispatchTime.now().uptimeNanoseconds
                 _ = session.handle(key(character))
                 result.keystrokes.append(Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000)
             }
             let output: String
             switch mode {
+            case .chinese where zhuyin:
+                output = session.display.segments.map(\.text).joined()
             case .japanese:
                 let started = DispatchTime.now().uptimeNanoseconds
                 _ = session.handle(KeyInput(keyCode: VirtualKey.space, characters: " "))
@@ -165,7 +180,7 @@ enum Bench {
             }
             let inPage = session.display.candidates?.candidates.contains { $0.text == test.expected } ?? false
             result.record(expected: test.expected, output: output, inPage: inPage || output == test.expected,
-                          keys: keys(for: test.typed).count + 1)
+                          keys: keys(for: test.typed, zhuyin: zhuyin).count + 1)
             _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
             _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
         }
@@ -173,7 +188,7 @@ enum Bench {
     }
 
     private static func key(_ character: Character) -> KeyInput {
-        let keyCode: UInt16 = character == "," ? 0x2B : 0
+        let keyCode: UInt16 = character == "," ? 0x2B : character == " " ? VirtualKey.space : 0
         return KeyInput(keyCode: keyCode, characters: String(character))
     }
 }

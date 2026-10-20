@@ -42,6 +42,13 @@ public enum Zhuyin {
     /// Keys that end a syllable with its tone.
     public static let toneKeys: [Character: Tone] = [" ": .first, "6": .second, "3": .third, "4": .fourth, "7": .neutral]
 
+    /// The keys that type a toned syllable on the standard layout.
+    public static func keys(typing syllable: Syllable) -> String {
+        let symbols = String(syllable.symbols.compactMap { symbol in keyboard.first { $0.value == symbol }?.key })
+        guard let tone = syllable.tone, let key = toneKeys.first(where: { $0.value == tone })?.key else { return symbols }
+        return symbols + String(key)
+    }
+
     private static let initials: [Character: String] = [
         "ㄅ": "b", "ㄆ": "p", "ㄇ": "m", "ㄈ": "f", "ㄉ": "d", "ㄊ": "t", "ㄋ": "n", "ㄌ": "l",
         "ㄍ": "g", "ㄎ": "k", "ㄏ": "h", "ㄐ": "j", "ㄑ": "q", "ㄒ": "x",

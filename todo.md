@@ -142,5 +142,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Settings keyboard choice, mode indicator, strings (D-073)
 - [x] Zhuyin fuzzing in CI (D-073)
 - [x] Learned words across keyboards: toned user dictionary for librime, Learning pane showing Bopomofo (D-073)
-- [ ] Zhuyin reconversion from text (toned readings) and a Zhuyin bench set
+- [x] Zhuyin reconversion from text (toned readings), respelling, and a Zhuyin bench run (D-073)
 - [ ] Taiwanese readings and forms — check on device

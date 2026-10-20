@@ -216,3 +216,26 @@ extension RimeEngineTests {
         engine.clear()
     }
 }
+
+extension RimeEngineTests {
+    @Test func zhuyinFindsTheTonesOfText() async throws {
+        try await Shared.runtime.prepare(RimeSchema(keyboard: .zhuyin), version: "test")
+        let engine = ZhuyinEngine(runtime: Shared.runtime)
+        #expect(engine.codes(typing: "你好", readAs: ["ni", "hao"]) == "ni3hao3")
+        #expect(engine.codes(typing: "妈妈", readAs: ["ma", "ma"]) == "ma1ma1")
+        let codes = try #require(engine.codes(typing: "我们去看电影", readAs: ["wo", "men", "qu", "kan", "dian", "ying"]))
+        engine.restore(reading: codes)
+        #expect(engine.state.markedText == "我们去看电影")
+        engine.clear()
+    }
+}
+
+extension RimeEngineTests {
+    /// Words keep their neutral tones.
+    @Test func zhuyinFindsTheTonesOfWords() async throws {
+        try await Shared.runtime.prepare(RimeSchema(keyboard: .zhuyin), version: "test")
+        let engine = ZhuyinEngine(runtime: Shared.runtime)
+        #expect(engine.codes(typing: "谢谢你", readAs: ["xie", "xie", "ni"]) == "xie4xie5ni3")
+        #expect(engine.codes(typing: "衣服", readAs: ["yi", "fu"]) == "yi1fu5")
+    }
+}

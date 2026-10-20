@@ -129,7 +129,7 @@ public final class EngineHub: EngineSource {
             let engine: any ChineseEngine
             if runtime.schema?.keyboard == .zhuyin {
                 let zhuyin = ZhuyinEngine(runtime: runtime, script: chineseScript)
-                attachWordCheck(to: zhuyin)
+                attachRespelling(to: zhuyin)
                 engine = zhuyin
             } else {
                 let pinyin = RimeEngine(runtime: runtime, script: chineseScript)
@@ -180,15 +180,17 @@ public final class EngineHub: EngineSource {
         converter(for: chineseScript)?.convert(text)
     }
 
-    /// Keys that type Chinese `text` in the scheme in use, for reconverting
-    /// it; nil when a character is in no listed word. Reads the word list
-    /// for this alone.
+    /// Keys that type Chinese `text` in the scheme in use, or Zhuyin's
+    /// codes, for reconverting it; nil when a character is in no listed
+    /// word. Reads the word list for this alone.
     public func chineseReading(of text: String) -> String? {
-        // The word list has no tones for Zhuyin to type.
-        guard preferences.chineseKeyboard == .pinyin else { return nil }
         let simplified = converter(for: .simplified)?.convert(text) ?? text
         guard let wordList = try? Data(contentsOf: locations.lexicon.appendingPathComponent(Lexicon.pinyinWordsFile), options: .mappedIfSafe),
               let syllables = ChineseReadings.syllables(of: simplified, wordList: wordList) else { return nil }
+        // The word list has no tones; librime's characters give them.
+        if preferences.chineseKeyboard == .zhuyin {
+            return (chinese as? ZhuyinEngine)?.codes(typing: text, readAs: syllables)
+        }
         let schema = schema
         let decoder = decoders.flatMap { $0.schema == schema ? $0.scheme : nil } ?? Self.makeDecoders(for: schema, locations: locations)?.1
         return decoder?.keys(typing: syllables)
@@ -286,7 +288,7 @@ public final class EngineHub: EngineSource {
         chineseRespelling = (schema, respeller, decoder)
         // An engine made while this loaded, once librime was ready.
         if let chinese = chinese as? RimeEngine { attachRespelling(to: chinese) }
-        if let chinese = chinese as? ZhuyinEngine { attachWordCheck(to: chinese) }
+        if let chinese = chinese as? ZhuyinEngine { attachRespelling(to: chinese) }
     }
 
     private func attachRespelling(to engine: RimeEngine) {
@@ -294,9 +296,9 @@ public final class EngineHub: EngineSource {
         engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: chineseRespelling.decoder) { [weak self] in self?.converter(for: $0) }
     }
 
-    private func attachWordCheck(to engine: ZhuyinEngine) {
+    private func attachRespelling(to engine: ZhuyinEngine) {
         guard let respeller = chineseRespelling?.respeller else { return }
-        engine.wordCheck = .init(respeller: respeller) { [weak self] in self?.converter(for: .simplified) }
+        engine.respelling = .init(respeller: respeller) { [weak self] in self?.converter(for: $0) }
     }
 
     /// Learned words in Simplified, the respeller's script, whatever

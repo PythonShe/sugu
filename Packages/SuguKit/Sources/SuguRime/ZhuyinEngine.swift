@@ -33,20 +33,28 @@ public final class ZhuyinEngine: CompositionEngine {
     /// The last commit's choices, for a commit taken back.
     private var lastCommit: (reading: String, fixed: [Fixed])?
 
-    /// Tells words from librime's sentences, which librime makes of words
-    /// for any syllables no word covers: with Sugu's word list and the
-    /// user's words, in Simplified, the list's script.
-    public struct WordCheck {
+    /// Sugu's word list, the user's words and the language model, in
+    /// Simplified, their script: they tell words from librime's sentences,
+    /// which librime makes for any syllables no word covers, and respell
+    /// librime's sentence as for pinyin (ADR 0005), where the characters
+    /// that change are librime's under their tones.
+    public struct Respelling {
         public var respeller: SentenceRespeller
-        public var simplified: @MainActor () -> ScriptConverter?
+        /// Converts text into a script.
+        public var converter: @MainActor (ChineseScript) -> ScriptConverter?
 
-        public init(respeller: SentenceRespeller, simplified: @escaping @MainActor () -> ScriptConverter?) {
+        public init(respeller: SentenceRespeller, converter: @escaping @MainActor (ChineseScript) -> ScriptConverter?) {
             self.respeller = respeller
-            self.simplified = simplified
+            self.converter = converter
         }
     }
 
-    public var wordCheck: WordCheck?
+    public var respelling: Respelling? {
+        didSet { respelled = [:] }
+    }
+    /// Respelled sentences by input and the text before them.
+    private var respelled: [String: String] = [:]
+    private var leftContext = ""
 
     private struct Fixed: Equatable {
         var range: Range<Int>
@@ -259,7 +267,80 @@ public final class ZhuyinEngine: CompositionEngine {
         update()
     }
 
-    public func setLeftContext(_ text: String) {}
+    public func setLeftContext(_ text: String) {
+        leftContext = text
+    }
+
+    /// Codes that type `text`, read as toneless `syllables`, one per
+    /// character, with the tones librime has for its words: a word of two
+    /// or three characters takes the tones under which librime offers it
+    /// whole, its later characters perhaps in the neutral tone (谢谢 xie4
+    /// xie5); any other character the tone under which librime ranks it
+    /// highest. Nil when a character is under none, or while composing.
+    public func codes(typing text: String, readAs syllables: [String]) -> String? {
+        let characters = Array(text).map(String.init)
+        guard state.isEmpty, characters.count == syllables.count, session.open() else { return nil }
+        defer { session.clearComposition() }
+        /// Where librime offers `text` for `codes`, and whether it is
+        /// surely a word under those tones: librime's sentence comes
+        /// alone at its length, so two or more there are all words.
+        func rank(of text: String, typedAs codes: [String]) -> (rank: Int, sure: Bool)? {
+            session.clearComposition()
+            session.setInput(codes.joined(separator: "'"))
+            let candidates = session.candidates(limit: codes.count == 1 ? Self.singleCharacterLimit : Self.wordLimit)
+            guard let rank = candidates.firstIndex(where: { $0.text == text }) else { return nil }
+            let sure = codes.count == 1 || candidates.filter { $0.text.count == codes.count }.count > 1
+            if !sure, !isWord(text, readAs: toneless(codes)) { return nil }
+            return (rank, sure)
+        }
+        func toneless(_ codes: [String]) -> [String] {
+            codes.compactMap { Zhuyin.syllables(ofCodes: $0)?.first?.pinyin }
+        }
+        // Each character's tones, the likeliest first.
+        var tones: [[String]] = []
+        for (character, syllable) in zip(characters, syllables) {
+            let ranked = Zhuyin.Tone.allCases.compactMap { tone -> (code: String, rank: Int)? in
+                let code = syllable + String(tone.rawValue)
+                guard Zhuyin.syllables(ofCodes: code) != nil, let found = rank(of: character, typedAs: [code]) else { return nil }
+                return (code, found.rank)
+            }.sorted { ($0.rank, $0.code.hasSuffix("5") ? 1 : 0, $0.code) < ($1.rank, $1.code.hasSuffix("5") ? 1 : 0, $1.code) }
+            guard !ranked.isEmpty else { return nil }
+            tones.append(ranked.map(\.code))
+        }
+        var codes: [String] = []
+        var index = 0
+        while index < characters.count {
+            var best: (codes: [String], score: [Int])?
+            for length in [3, 2] where index + length <= characters.count {
+                let range = index..<(index + length)
+                // The two likeliest tones of each, and the neutral after the first.
+                var options: [[String]] = [[]]
+                for position in range {
+                    var choices = Array(tones[position].prefix(2))
+                    let neutral = syllables[position] + String(Zhuyin.Tone.neutral.rawValue)
+                    if position > index, !choices.contains(neutral), Zhuyin.syllables(ofCodes: neutral) != nil { choices.append(neutral) }
+                    options = options.flatMap { prefix in choices.map { prefix + [$0] } }
+                }
+                let word = characters[range].joined()
+                // A sure word first, then librime's rank, then fewer neutral tones.
+                for option in options {
+                    guard let found = rank(of: word, typedAs: option) else { continue }
+                    let score = [found.sure ? 0 : 1, found.rank, option.filter { $0.hasSuffix("5") }.count]
+                    if let best, best.score.lexicographicallyPrecedes(score) || best.score == score { continue }
+                    best = (option, score)
+                }
+                if best != nil { break }
+            }
+            if let best {
+                codes += best.codes
+                index += best.codes.count
+            } else {
+                codes.append(tones[index][0])
+                index += 1
+            }
+        }
+        return codes.joined()
+    }
 
     // MARK: Conversion
 
@@ -296,7 +377,7 @@ public final class ZhuyinEngine: CompositionEngine {
 
     private func convertRun(_ range: Range<Int>) {
         if let sentence = sentence(for: input(for: range)), sentence.count == range.count {
-            place(sentence, in: range)
+            place(respell(sentence, at: range) ?? sentence, in: range)
             return
         }
         // Text that does not split one character per syllable goes
@@ -304,6 +385,49 @@ public final class ZhuyinEngine: CompositionEngine {
         for index in range {
             place(syllables[index].code.flatMap { sentence(for: $0) } ?? syllables[index].text, in: index..<(index + 1))
         }
+    }
+
+    /// librime's sentence for `range` respelled where the model reads
+    /// another spelling of its toneless syllables as clearly better and
+    /// every character it changes is librime's under its tone. A sentence
+    /// in another script is respelled in Simplified, and only the
+    /// characters that changed are converted back.
+    private func respell(_ sentence: String, at range: Range<Int>) -> String? {
+        guard let respelling, range.count > 1 else { return nil }
+        let before = leftContext + text(of: 0..<range.lowerBound)
+        let context = String(before.suffix(respelling.respeller.contextLength))
+        let key = input(for: range) + "\t" + context
+        if let known = respelled[key] { return known.isEmpty ? nil : known }
+        let result = respelled(sentence, context: context, readings: syllables[range].compactMap(\.pinyin), respelling: respelling)
+            .flatMap { candidate -> String? in
+                let new = Array(candidate), old = Array(sentence)
+                guard new.count == old.count else { return nil }
+                return new.indices.allSatisfy { new[$0] == old[$0] || types(new[$0], as: syllables[range.lowerBound + $0]) } ? candidate : nil
+            }
+        if respelled.count >= 512 { respelled = [:] }
+        respelled[key] = result ?? ""
+        return result
+    }
+
+    private func respelled(_ sentence: String, context: String, readings: [String], respelling: Respelling) -> String? {
+        let script = session.script
+        guard script != .simplified else { return respelling.respeller.respelled(sentence, readings: [readings], after: context) }
+        guard let toSimplified = respelling.converter(.simplified), let toScript = respelling.converter(script) else { return nil }
+        let simplified = toSimplified.convert(sentence)
+        guard let respelled = respelling.respeller.respelled(simplified, readings: [readings], after: toSimplified.convert(context)) else { return nil }
+        let original = Array(sentence), before = Array(simplified), after = Array(respelled), converted = Array(toScript.convert(respelled))
+        guard Set([original.count, before.count, after.count, converted.count]).count == 1 else { return nil }
+        let result = String(original.indices.map { after[$0] == before[$0] ? original[$0] : converted[$0] })
+        return result == sentence ? nil : result
+    }
+
+    /// Whether librime offers `character` for `syllable` with its tone.
+    private func types(_ character: Character, as syllable: Zhuyin.Syllable) -> Bool {
+        guard let code = syllable.code else { return false }
+        session.clearComposition()
+        session.setInput(code)
+        defer { session.clearComposition() }
+        return session.candidates(limit: Self.singleCharacterLimit).contains { $0.text == String(character) }
     }
 
     private func place(_ text: String, in range: Range<Int>) {
@@ -340,9 +464,13 @@ public final class ZhuyinEngine: CompositionEngine {
     }
 
     private func isWord(_ text: String, at range: Range<Int>) -> Bool {
-        guard let wordCheck else { return true }
-        let simplified = wordCheck.simplified()?.convert(text) ?? text
-        return wordCheck.respeller.knows(simplified, readAs: syllables[range].compactMap(\.pinyin))
+        isWord(text, readAs: syllables[range].compactMap(\.pinyin))
+    }
+
+    private func isWord(_ text: String, readAs syllables: [String]) -> Bool {
+        guard let respelling else { return true }
+        let simplified = respelling.converter(.simplified)?.convert(text) ?? text
+        return respelling.respeller.knows(simplified, readAs: syllables)
     }
 
     // MARK: State
