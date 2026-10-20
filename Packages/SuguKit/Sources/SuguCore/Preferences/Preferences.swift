@@ -157,6 +157,8 @@ public enum ChineseScript: String, Codable, Sendable, CaseIterable {
     case traditional
     case traditionalTaiwan
     case traditionalHongKong
+    /// Japanese kanji forms (shinjitai), for Chinese words in Japanese text.
+    case japanese
 }
 
 /// Pinyin spelling schemes. Double-pinyin layouts map each syllable to two

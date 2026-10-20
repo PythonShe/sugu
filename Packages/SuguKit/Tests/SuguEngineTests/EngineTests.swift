@@ -49,6 +49,22 @@ struct RimeEngineTests {
     @Test func traditionalScript() async throws {
         #expect(try await first("zhongguo", script: .traditional) == "中國")
     }
+
+    @Test func japaneseKanjiForms() async throws {
+        #expect(try await first("dongjing", script: .japanese) == "東京")
+        #expect(try await first("hengbin", script: .japanese) == "横浜")
+    }
+
+    @Test func scriptConverterNormalizesThroughSimplified() throws {
+        let openCC = dataDirectory.appendingPathComponent("Rime/opencc")
+        let simplified = try #require(ScriptConverter.toScript(.simplified, openCC: openCC))
+        #expect(simplified.convert("東京") == "东京")
+        #expect(simplified.convert("横浜") == "横滨")
+        let japanese = try #require(ScriptConverter.toScript(.japanese, openCC: openCC))
+        #expect(japanese.convert("横滨") == "横浜")
+        let traditional = try #require(ScriptConverter.toScript(.traditional, openCC: openCC))
+        #expect(traditional.convert("中国") == "中國")
+    }
 }
 
 @MainActor

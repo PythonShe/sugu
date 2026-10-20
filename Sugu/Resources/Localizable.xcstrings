@@ -1287,6 +1287,28 @@
         }
       }
     },
+    "Japanese Kanji": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日本の漢字"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日本汉字"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日本漢字"
+          }
+        }
+      }
+    },
     "Kana": {
       "extractionState": "manual",
       "localizations": {

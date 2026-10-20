@@ -9,12 +9,8 @@ final class ChinesePane: SettingsPane {
         let model = model
         form.popUp(String(localized: "Pinyin:"), options: PinyinScheme.allCases.map { ($0.title, $0) },
                    get: { model.preferences.pinyinScheme }, set: { model.preferences.pinyinScheme = $0 })
-        form.popUp(String(localized: "Characters:"), options: [
-            (String(localized: "Simplified"), ChineseScript.simplified),
-            (String(localized: "Traditional"), ChineseScript.traditional),
-            (String(localized: "Traditional (Taiwan)"), ChineseScript.traditionalTaiwan),
-            (String(localized: "Traditional (Hong Kong)"), ChineseScript.traditionalHongKong),
-        ], get: { model.preferences.chineseScript }, set: { model.preferences.chineseScript = $0 })
+        form.popUp(String(localized: "Characters:"), options: ChineseScript.allCases.map { ($0.title, $0) },
+                   get: { model.preferences.chineseScript }, set: { model.preferences.chineseScript = $0 })
 
         form.gap()
         form.row(String(localized: "Fuzzy pinyin:"), fuzzyGrid())
@@ -65,6 +61,18 @@ final class ChinesePane: SettingsPane {
         grid.rowSpacing = 6
         grid.columnSpacing = 16
         return grid
+    }
+}
+
+extension ChineseScript {
+    var title: String {
+        switch self {
+        case .simplified: String(localized: "Simplified")
+        case .traditional: String(localized: "Traditional")
+        case .traditionalTaiwan: String(localized: "Traditional (Taiwan)")
+        case .traditionalHongKong: String(localized: "Traditional (Hong Kong)")
+        case .japanese: String(localized: "Japanese Kanji")
+        }
     }
 }
 

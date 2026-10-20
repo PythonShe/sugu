@@ -60,11 +60,12 @@ public struct RimeSchema: Sendable, Equatable {
         case .traditional: "s2t"
         case .traditionalTaiwan: "s2tw"
         case .traditionalHongKong: "s2hk"
+        case .japanese: "s2jp"
         }
     }
 
     static let scriptFilters: [(option: String, config: String)] = [
-        ("s2t", "s2t.json"), ("s2tw", "s2twp.json"), ("s2hk", "s2hk.json"),
+        ("s2t", "s2t.json"), ("s2tw", "s2twp.json"), ("s2hk", "s2hk.json"), ("s2jp", RimeSharedData.japaneseFormsConfig),
     ]
 
     /// Spelling-rule sections, applied in order: tone marks are stripped,
