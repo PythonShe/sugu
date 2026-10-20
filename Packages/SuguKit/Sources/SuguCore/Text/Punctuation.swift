@@ -20,6 +20,12 @@ public enum JapanesePunctuationStyle: String, Codable, Sendable, CaseIterable {
     /// Japanese input method: the long-vowel mark, corner brackets, the
     /// middle dot and wave dash, and full width for the rest. Letters and
     /// digits pass through for the romaji table and the converter.
+    /// Symbols typed as z and a symbol key in romaji, as in Google
+    /// Japanese Input; AzooKey's own table has the arrows (zh zj zk zl).
+    public static let zSymbols: [Character: String] = [
+        ".": "…", ",": "‥", "-": "〜", "/": "・", "[": "『", "]": "』",
+    ]
+
     public func romajiInput(for character: Character) -> String {
         switch character {
         case ",": comma

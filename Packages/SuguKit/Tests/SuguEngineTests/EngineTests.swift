@@ -211,6 +211,17 @@ struct RimeEngineTests {
         engine.state.segments.first { $0.role == .focused }?.text
     }
 
+    /// A z not yet kana shows as typed, which the session's z-symbols read;
+    /// the arrows are AzooKey's own.
+    @Test func pendingZShowsAsTyped() throws {
+        let engine = try makeEngine()
+        engine.insert("kaz")
+        #expect(engine.state.markedText == "かz")
+        #expect(engine.state.caret == 2)
+        engine.insert("h")
+        #expect(engine.state.markedText == "か←")
+    }
+
     @Test func firstDisplayIsBestSentence() throws {
         let engine = try makeEngine()
         engine.insert("kyouhaiitenkidesune")

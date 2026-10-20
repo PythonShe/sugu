@@ -220,6 +220,16 @@ struct InputSessionTests {
         #expect(store.lookup("nihao", mode: .chinese).map(\.text) == ["你号"])
     }
 
+    /// z and a symbol key type Google Japanese Input's symbols in romaji.
+    @Test func zSymbolsInRomaji() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("kaz.", into: session)
+        #expect(client.markedText == "ka…")
+        type("z]", into: session)
+        #expect(client.markedText == "ka…』")
+    }
+
     @Test func secureInputPassesEverythingThrough() {
         let session = makeSession()
         session.isSecureInput = true

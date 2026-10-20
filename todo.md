@@ -150,7 +150,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 17. Habits from other input methods (advisor pass 8, D-074)
 - [x] ⇧⌫ forgets a learned candidate (D-074)
-- [ ] Google's z-symbols in romaji (z. … z/ ・ zh ←)
+- [x] Google's z-symbols in romaji (z. … z/ ・ zh ←) (D-074)
 - [ ] `[` `]` commit the first or last character of the highlighted Chinese word
 - [ ] Add Word from the input menu, filled from the selection
 - [ ] ⌃. switches the punctuation width

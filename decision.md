@@ -1250,3 +1250,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   that had the word from the learned store keeps it until it reads its
   words again (librime between compositions), so the text stays out of
   the list for the rest of the composition.
+- Google Japanese Input's z-symbols in romaji: z and . , - / [ ] type
+  … ‥ 〜 ・ 『 』. AzooKey's romaji table already has the arrows (zh zj
+  zk zl) but never sees the others, which the session maps to Japanese
+  punctuation first; so the session, finding the z still unconverted
+  before the caret, replaces it with the symbol.

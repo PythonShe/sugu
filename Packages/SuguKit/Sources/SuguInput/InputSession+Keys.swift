@@ -412,6 +412,12 @@ extension InputSession {
             selectOnPage(digit)
             return true
         }
+        if !converting, transformed == nil, list.highlight == nil, let symbol = zSymbol(after: engine.state, for: character) {
+            engine.deleteBackward()
+            engine.insert(symbol)
+            refresh()
+            return true
+        }
         if engine.accepts(character) {
             if converting || transformed != nil || list.highlight != nil {
                 // Typing on after a choice commits it and starts afresh.
@@ -426,6 +432,13 @@ extension InputSession {
         }
         commitComposition()
         return false
+    }
+
+    /// The symbol a key types after a z not yet kana, in romaji.
+    private func zSymbol(after state: CompositionState, for character: Character) -> String? {
+        guard mode == .japanese, !preferences.kanaInput, let symbol = JapanesePunctuationStyle.zSymbols[character],
+              state.markedText.prefix(state.caret).last == "z" else { return nil }
+        return symbol
     }
 
     // MARK: Function keys (F6–F10)
