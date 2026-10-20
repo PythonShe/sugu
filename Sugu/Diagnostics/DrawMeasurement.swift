@@ -48,7 +48,8 @@ enum DrawMeasurement {
     }
 
     /// Full pages as each language produces them: short words with
-    /// readings, long sentence candidates, and Latin text.
+    /// readings, long sentence candidates, Latin text, and a candidate too
+    /// long to show whole.
     private static var pages: [CandidatePresentation] {
         let chinese = ["我", "爱", "北京", "天安门", "我爱北京天安门", "卧", "握", "沃", "窝", "喔"]
         let readings = ["wǒ", "ài", "běijīng", "tiān'ānmén", nil, "wò", "wò", "wò", "wō", "ō"]
@@ -64,6 +65,9 @@ enum DrawMeasurement {
             CandidatePresentation(
                 candidates: ["github", "GitHub", "ギットハブ"].map { Candidate(text: $0, source: .latin) },
                 highlightedIndex: nil, isPrediction: true),
+            CandidatePresentation(
+                candidates: [String(repeating: "今日はいい天気ですね", count: 6), "今日は"].map { Candidate(text: $0, source: .engine(index: 0)) },
+                highlightedIndex: 0),
         ]
     }
 }

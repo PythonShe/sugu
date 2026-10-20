@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Candidate window: long candidates shortened in the middle, hover
+  highlight (D-037); draw p99 1.0 ms.
 - Input menu: Chinese Characters, Learn from Typing, Check for Updates…
   (D-036).
 - Traditional Chinese quotes with 「」『』 (D-035).

@@ -483,3 +483,14 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - IMK passes the chosen item to `performMenuAction`, submenu items
   included; items are told apart by tag. Not yet seen in a live menu bar
   (no foreground testing here).
+
+## D-037 · Long candidates and hover (2026-10-20)
+- A candidate is drawn at most 20 font-sizes wide and shortened in the
+  middle beyond that (`CTLineCreateTruncatedLine`), so a long sentence or
+  learned phrase no longer stretches the window across the screen; the
+  start and end stay visible. VoiceOver still reads the whole candidate.
+- The row under the pointer takes the unemphasized selection colour, so a
+  click's target is visible before it is made. The tracking area is
+  active always, since the panel never becomes key; the hover clears when
+  the page changes.
+- `--measure-draw` adds a page with an over-long candidate: p99 1.0 ms.

@@ -31,6 +31,9 @@ final class CandidateView: NSView {
         static let labelGap: CGFloat = 5
         static let annotationGap: CGFloat = 6
         static let highlightRadius: CGFloat = 6
+        /// Longest a candidate is drawn, in multiples of the font size;
+        /// longer ones are shortened in the middle.
+        static let maxTextEms: CGFloat = 20
     }
 
     private var presentation: CandidatePresentation?
@@ -41,6 +44,7 @@ final class CandidateView: NSView {
     private var increasedContrast = false
     private var scrollDistance: CGFloat = 0
     private var scrollTurned = false
+    private var hoveredIndex: Int?
 
     override var isFlipped: Bool { true }
 
@@ -64,8 +68,9 @@ final class CandidateView: NSView {
 
         var lines: [(label: CTLine, text: CTLine, annotation: CTLine?)] = []
         var ascent = textFont.ascender, descent = -textFont.descender
+        let maxTextWidth = (style.fontSize * Metrics.maxTextEms).rounded()
         for (index, candidate) in presentation.candidates.enumerated() {
-            let text = Self.line(candidate.text, font: textFont)
+            let text = Self.truncated(Self.line(candidate.text, font: textFont), to: maxTextWidth, font: textFont)
             let label = Self.line(presentation.labels[index], font: labelFont)
             let annotation = candidate.annotation.map { Self.line($0, font: annotationFont) }
             var a: CGFloat = 0, d: CGFloat = 0, l: CGFloat = 0
@@ -123,6 +128,7 @@ final class CandidateView: NSView {
                 size.width += column * 2
             }
         }
+        hoveredIndex = nil
         needsDisplay = true
         return size
     }
@@ -133,6 +139,13 @@ final class CandidateView: NSView {
             NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String): true,
         ]
         return CTLineCreateWithAttributedString(NSAttributedString(string: string, attributes: attributes))
+    }
+
+    /// `line` shortened in the middle to fit `width`. VoiceOver reads the
+    /// candidate's full text, not this.
+    private static func truncated(_ line: CTLine, to width: CGFloat, font: NSFont) -> CTLine {
+        guard Self.width(line) > width else { return line }
+        return CTLineCreateTruncatedLine(line, Double(width), .middle, Self.line("…", font: font)) ?? line
     }
 
     private static func width(_ line: CTLine) -> CGFloat {
@@ -146,8 +159,8 @@ final class CandidateView: NSView {
         context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
         for (index, row) in rows.enumerated() {
             let highlighted = index == presentation.highlightedIndex
-            if highlighted {
-                NSColor.selectedContentBackgroundColor.setFill()
+            if highlighted || index == hoveredIndex {
+                (highlighted ? NSColor.selectedContentBackgroundColor : NSColor.unemphasizedSelectedContentBackgroundColor).setFill()
                 NSBezierPath(roundedRect: row.frame, xRadius: Metrics.highlightRadius, yRadius: Metrics.highlightRadius).fill()
             }
             let primary = highlighted ? NSColor.alternateSelectedControlTextColor : NSColor.labelColor
@@ -190,6 +203,26 @@ final class CandidateView: NSView {
     // MARK: Mouse
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    // The panel never becomes key, so the hover is tracked always.
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self))
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        setHovered(rows.firstIndex { $0.frame.contains(point) })
+    }
+
+    override func mouseExited(with event: NSEvent) { setHovered(nil) }
+
+    private func setHovered(_ index: Int?) {
+        guard index != hoveredIndex else { return }
+        hoveredIndex = index
+        needsDisplay = true
+    }
 
     override func mouseUp(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
