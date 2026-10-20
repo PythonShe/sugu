@@ -17,11 +17,11 @@ reasons behind each choice are in `docs/adr/` (product) and `decision.md`
 
 | Module | Role | Depends on |
 |---|---|---|
-| `SuguCore` | Modes, the key model, candidates, composition state, the `CompositionEngine` protocol and `EngineTraits`, punctuation, width and kana conversion, computed candidates, Latin inference, the pinyin syllabary, preferences, `Log` (unified-log channels) | — |
+| `SuguCore` | Modes, the key model, candidates, composition state, the `CompositionEngine` protocol and `EngineTraits`, punctuation, width and kana conversion, the kana keyboard layout, computed candidates, Latin inference, the pinyin syllabary, preferences, `Log` (unified-log channels) | — |
 | `SuguLearning` | `LearnedStore`: learned and user words in SQLite with an in-memory index, deletions, expiry, pins | Core |
 | `SuguInput` | `InputSession`, the input state machine, with `CandidateAssembler`, `CandidateList`, the `v` expression engine, the `LoadingEngine` that holds letters until librime is ready, `InputClient` and `EngineSource` protocols, `ShiftTapDetector` | Core, Learning |
 | `SuguRime` | librime through the `CRimeShim` C target: schema generation, runtime, `RimeEngine`, OpenCC `ScriptConverter`, the learned-word user dictionary and the pinyin decoder it needs | Core |
-| `SuguAzooKey` | `AzooKeyEngine`: predictions and clause conversion over AzooKeyKanaKanjiConverter; Zenzai loaded on a background converter and adopted between compositions | Core |
+| `SuguAzooKey` | `AzooKeyEngine`: predictions, clause and live conversion over AzooKeyKanaKanjiConverter; Zenzai loaded on a background converter and adopted between compositions | Core |
 | `SuguEngines` | `EngineHub` (the real `EngineSource`: engines prepared at mode change and focus, deployment retries, preferences, script) and `ModelLibrary` (optional downloads) | Input, Rime, AzooKey, Downloads |
 | `SuguDictionaries` | Importers and exporters, Sugu's own dictionary format, folder sync (`SyncFolder`, `DictionarySync`) | Core, Learning |
 | `SuguDownloads` | Pinned, checksum-verified downloads and zip extraction | — |
