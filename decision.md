@@ -1084,3 +1084,7 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Japanese keystroke p50 0.77 → 0.64 ms, p99 2.4 → 2.0 ms, conversion p99
   4.8 → 4.5 ms; footprint 100 → 81 MB, since 21 MB read once costs less
   than the mappings made and dropped at every lookup. Accuracy unchanged.
+- Measured and declined: converting from a fresh lattice at Space instead
+  of the one built key by key. It fixes よろしく but loses 風邪 (風を引いて)
+  and a learned word (100% → 90%), and doubles conversion time (p99
+  4.5 → 9 ms).
