@@ -102,7 +102,8 @@ final class InputCoordinator {
             syncCapsLock()
             return
         }
-        if shiftTap.flagsChanged(event), preferences.preferences.englishToggle == .shiftTap {
+        let tapped = shiftTap.flagsChanged(keyCode: event.keyCode, modifiers: KeyTranslator.modifiers(from: event.modifierFlags), timestamp: event.timestamp)
+        if tapped, preferences.preferences.englishToggle == .shiftTap {
             session.toggleEnglish()
         }
     }

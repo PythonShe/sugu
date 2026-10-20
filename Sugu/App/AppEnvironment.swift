@@ -1,5 +1,6 @@
 import AppKit
 import SuguCore
+import SuguDictionaries
 import SuguEngines
 import SuguInput
 import SuguLearning

@@ -1,6 +1,5 @@
 import Foundation
 import SuguCore
-import SuguDictionaries
 import SuguLearning
 
 /// Runs dictionary sync through the folder in preferences: pulls other
@@ -8,10 +7,9 @@ import SuguLearning
 /// Mac's words shortly after they change. One sync runs at a time; after
 /// a failure the next automatic attempt waits longer, up to an hour.
 @MainActor
-final class DictionarySync {
-    static let pullInterval: TimeInterval = 300
-    static let maximumBackoff: TimeInterval = 3_600
-    static let exportDelay: Duration = .seconds(20)
+public final class DictionarySync {
+    public static let pullInterval: TimeInterval = 300
+    public static let maximumBackoff: TimeInterval = 3_600
 
     private enum Keys {
         static let deviceID = "SyncDeviceID"
@@ -31,20 +29,30 @@ final class DictionarySync {
     /// leaves no state behind.
     private var generation = 0
     private var pendingExport: Task<Void, Never>?
-    private(set) var lastError: (any Error)?
-    var onChange: (() -> Void)?
+    private let now: @Sendable () -> Date
+    private let exportDelay: Duration
+    public private(set) var lastError: (any Error)?
+    public var onChange: (() -> Void)?
 
-    init(store: LearnedStore, preferences: PreferencesStore, defaults: UserDefaults = .standard) {
+    public init(
+        store: LearnedStore,
+        preferences: PreferencesStore,
+        defaults: UserDefaults = .standard,
+        exportDelay: Duration = .seconds(20),
+        now: @escaping @Sendable () -> Date = Date.init
+    ) {
         self.store = store
         self.preferences = preferences
         self.defaults = defaults
+        self.exportDelay = exportDelay
+        self.now = now
     }
 
-    var folder: URL? {
+    public var folder: URL? {
         preferences.preferences.syncFolderPath.map { URL(fileURLWithPath: $0, isDirectory: true) }
     }
 
-    var lastSync: Date? { defaults.object(forKey: Keys.lastSync) as? Date }
+    public var lastSync: Date? { defaults.object(forKey: Keys.lastSync) as? Date }
 
     private var deviceID: String {
         if let id = defaults.string(forKey: Keys.deviceID) { return id }
@@ -66,9 +74,11 @@ final class DictionarySync {
         return SyncFolder(folder: folder, deviceID: deviceID, store: store, watermarks: stored)
     }
 
-    /// Pulls and pushes now, unless a sync is already running.
-    func syncNow() {
-        guard running == nil, let sync = makeFolder() else { return }
+    /// Pulls and pushes now, unless a sync is already running. Returns the
+    /// sync's task.
+    @discardableResult
+    public func syncNow() -> Task<Void, Never>? {
+        guard running == nil, let sync = makeFolder() else { return nil }
         let includeLearned = preferences.preferences.syncLearnedWords
         let generation = generation
         running = Task {
@@ -96,21 +106,25 @@ final class DictionarySync {
             }
             running = nil
         }
+        return running
     }
 
     /// Called when a field gains focus; pulls when the last pull is old.
-    func pullIfDue() {
-        guard folder != nil else { return }
-        if let nextPull, Date() < nextPull { return }
-        syncNow()
+    @discardableResult
+    public func pullIfDue() -> Task<Void, Never>? {
+        guard folder != nil else { return nil }
+        if let nextPull, now() < nextPull { return nil }
+        return syncNow()
     }
 
     /// Called when the store changed; writes this Mac's file after a pause.
-    func storeDidChange() {
-        guard folder != nil else { return }
+    @discardableResult
+    public func storeDidChange() -> Task<Void, Never>? {
+        guard folder != nil else { return nil }
         pendingExport?.cancel()
+        let delay = exportDelay
         pendingExport = Task { [weak self] in
-            try? await Task.sleep(for: Self.exportDelay)
+            try? await Task.sleep(for: delay)
             guard !Task.isCancelled, let self, let sync = makeFolder() else { return }
             do {
                 try await sync.export(includeLearned: preferences.preferences.syncLearnedWords)
@@ -119,10 +133,11 @@ final class DictionarySync {
                 failed(error)
             }
         }
+        return pendingExport
     }
 
     /// Forgets which files were already merged, as when the folder changes.
-    func reset() {
+    public func reset() {
         generation += 1
         running = nil
         pendingExport?.cancel()
@@ -134,9 +149,9 @@ final class DictionarySync {
     }
 
     private func succeeded() {
-        defaults.set(Date(), forKey: Keys.lastSync)
+        defaults.set(now(), forKey: Keys.lastSync)
         failures = 0
-        nextPull = Date().addingTimeInterval(Self.pullInterval)
+        nextPull = now().addingTimeInterval(Self.pullInterval)
         lastError = nil
         onChange?()
     }
@@ -145,7 +160,7 @@ final class DictionarySync {
     private func failed(_ error: any Error) {
         failures += 1
         let delay = min(Self.pullInterval * pow(2, Double(failures - 1)), Self.maximumBackoff)
-        nextPull = Date().addingTimeInterval(delay)
+        nextPull = now().addingTimeInterval(delay)
         lastError = error
         onChange?()
     }
