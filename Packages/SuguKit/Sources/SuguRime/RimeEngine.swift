@@ -10,7 +10,11 @@ public final class RimeEngine: CompositionEngine {
     private var script: ChineseScript { session.script }
     /// How many candidates are read from librime per update; the rest are
     /// fetched only when the user pages past them.
+    /// How many candidates are read from librime per change: the first
+    /// pages, more as the highlight reaches the end, then the first pages
+    /// again for the next input.
     private var candidateLimit: Int
+    private let initialCandidateLimit: Int
     /// Respells librime's sentence where the language model reads it better.
     public var respelling: Respelling?
     /// librime's sentence respelled, shown ahead of librime's candidates;
@@ -42,6 +46,7 @@ public final class RimeEngine: CompositionEngine {
     public init(runtime: RimeRuntime, script: ChineseScript = .simplified, candidateLimit: Int = 30) {
         session = RimeSession(runtime: runtime, script: script)
         self.candidateLimit = candidateLimit
+        initialCandidateLimit = candidateLimit
     }
 
     /// Opens the librime session ahead of the first key.
@@ -74,6 +79,7 @@ public final class RimeEngine: CompositionEngine {
     public func insert(_ text: String) {
         guard session.open() else { return }
         respelledHighlighted = true
+        candidateLimit = initialCandidateLimit
         for scalar in text.unicodeScalars where scalar.isASCII {
             session.processKey(Int32(scalar.value))
         }
@@ -157,6 +163,7 @@ public final class RimeEngine: CompositionEngine {
         session.clearComposition()
         respelled = nil
         respelledHighlighted = true
+        candidateLimit = initialCandidateLimit
         state = .empty
     }
 
@@ -191,6 +198,7 @@ public final class RimeEngine: CompositionEngine {
     private func send(_ keycode: Int32) {
         guard session.isOpen else { return }
         respelledHighlighted = true
+        candidateLimit = initialCandidateLimit
         session.processKey(keycode)
         refresh()
     }

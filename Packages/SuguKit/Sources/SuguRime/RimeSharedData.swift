@@ -64,7 +64,7 @@ public enum RimeSharedData {
     schema_list:
       - schema: \(RimeSchema.schemaID)
     menu:
-      page_size: 100
+      page_size: 10
 
     """
 

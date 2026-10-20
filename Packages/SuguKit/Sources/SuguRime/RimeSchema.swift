@@ -159,7 +159,7 @@ public struct RimeSchema: Sendable, Equatable {
             lines += ["\(filter.option):", "  opencc_config: \(filter.config)", "  option_name: \(filter.option)"]
         }
         lines += ["\(Self.emojiOption):", "  opencc_config: \(EmojiNames.config)", "  option_name: \(Self.emojiOption)", "  tips: none"]
-        lines += ["menu:", "  page_size: 100", ""]
+        lines += ["menu:", "  page_size: 10", ""]
         return lines.joined(separator: "\n")
     }
 

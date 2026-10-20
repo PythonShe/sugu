@@ -1391,3 +1391,21 @@ any call made without the owner present. Each entry: what, why, reversibility.
   alert. A hidden Window menu gives ⌘M. The source link is a borderless
   link button, so Full Keyboard Access can press it. Save panels get the
   bare name and add the extension from the content type.
+
+## D-078 · librime reads fewer candidates per key (2026-10-20)
+- librime's menu page was 100 candidates, so every context read on a key
+  ran 100 candidates through the filters (OpenCC script conversion,
+  emoji, uniquifying) only to report the preedit and the highlight. Sugu
+  pages, selects and highlights by absolute index and sends librime only
+  editing keys, so the page is now 10; candidates still come from the
+  candidate iterator, 30 per change. Chinese keystroke p50 0.48 → 0.37
+  ms, p99 4.18 → 3.76 ms on `Bench/zh.tsv`; accuracy unchanged. The
+  schema change redeploys on its own.
+- The 30 grew when the highlight reached the end of the list and never
+  shrank, so one long look down the list made every later key read 100
+  or more. It now returns to 30 with the next input, caret move or
+  clear. 20 instead of 30 measured the same, so the deeper list stays
+  for context reranking.
+- What remains of the tail (5–6 ms on sentences of a dozen syllables
+  ending in an unfinished one) is librime rebuilding the sentence over
+  the whole input on each key, inside its translator.
