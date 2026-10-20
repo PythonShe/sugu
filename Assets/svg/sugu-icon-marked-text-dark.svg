@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs><linearGradient id="plate-sugu-icon-marked-text-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A3A3C"/><stop offset="1" stop-color="#1C1C1E"/></linearGradient></defs>
+  <path d="M284.33 100.00L739.67 100.00C837.05 100.00 924.00 186.95 924.00 284.33L924.00 739.67C924.00 837.05 837.05 924.00 739.67 924.00L284.33 924.00C186.95 924.00 100.00 837.05 100.00 739.67L100.00 284.33C100.00 186.95 186.95 100.00 284.33 100.00Z" fill="url(#plate-sugu-icon-marked-text-dark)"/>
+  <g id="converted" fill="#0A84FF">
+    <rect x="273.04" y="660.32" width="197.76" height="37.08" rx="18.54"/>
+  </g>
+  <g id="raw" fill="#8E8E93">
+    <rect x="501.70" y="660.32" width="37.08" height="37.08" rx="18.54"/>
+    <rect x="542.90" y="660.32" width="37.08" height="37.08" rx="18.54"/>
+    <rect x="584.10" y="660.32" width="37.08" height="37.08" rx="18.54"/>
+    <rect x="625.30" y="660.32" width="37.08" height="37.08" rx="18.54"/>
+  </g>
+  <g id="caret" fill="#FFFFFF">
+    <rect x="693.28" y="367.80" width="57.68" height="329.60" rx="28.84"/>
+  </g>
+</svg>

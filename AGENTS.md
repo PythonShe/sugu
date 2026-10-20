@@ -99,3 +99,7 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
   and `Sugu.xcodeproj/` except its SwiftPM `Package.resolved`.
   `Packages/SuguKit/Package.resolved` is tracked.
 - Pinned third-party versions live in `scripts/versions.sh`.
+- The app icon's sources are `Assets/` (Icon Composer packages, flat SVG and
+  PNG); `swift scripts/render-icon.swift` regenerates them and the legacy
+  `AppIcon.appiconset` sizes from one set of geometry. Edit the script, not
+  the outputs.

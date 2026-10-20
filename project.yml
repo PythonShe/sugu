@@ -28,6 +28,8 @@ targets:
       Release: Config/Signing.xcconfig
     sources:
       - path: Sugu
+      - path: Assets/AppIcon.icon
+        buildPhase: resources
       - path: Data/Rime
         type: folder
         buildPhase: resources
