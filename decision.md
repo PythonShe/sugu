@@ -1594,3 +1594,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
   After logging out and back in, Sugu is listed in Input Sources and adds
   normally, so the install steps (README, home page) say to add it there
   when it is missing.
+
+## D-090 · Localization review: Apple's wording, Apple's names (2026-10-20)
+- Native-speaker reviews of all app strings and the home page in ja,
+  zh-Hans and zh-Hant, against Apple's own terms in each language. Applied:
+  ja 単語を登録…, タイプミスを修正, 字体, あいまいピンイン, 選択範囲, no
+  space between Japanese and Latin text; zh-Hans 词语, 重写, 过去一小时,
+  双拼 on every scheme; zh-Hant 字詞, 文法, 釘選, 匯入/匯出 (輸入 means
+  typing in an input method), 這台 Mac, ⋯.
+- Owner rule: a term naming an Apple technology carries "Apple" in every
+  language: Apple Private Cloud Compute, Apple 私有云计算, Apple 私密雲端運算.
+- One key per meaning: "Never" (forget unused words) and "Never synced"
+  (shown as Never) translate differently in every language.
+- Decimal separators follow the Mac's region, not its language, as
+  `ByteCountFormatter` does; not a translation issue.

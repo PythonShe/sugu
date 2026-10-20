@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Localization reviewed by native-speaker passes (D-090): 80 app strings
+  and the home page revised in ja, zh-Hans and zh-Hant; Private Cloud
+  Compute is named as Apple's in every language; the two "Never"s split.
 - First installed-package test (D-089): the package installs, registers
   and Sugu types after adding it in Input Sources (the postinstall's enable
   had no effect until a new login). Settings… crashed on the numeric tab
