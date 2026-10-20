@@ -1,0 +1,168 @@
+name: Release Notes
+
+# Writes a release's notes with Claude from its commit subjects, in English,
+# Japanese, Simplified and Traditional Chinese. Called by release.yml before
+# the build, which signs them into the appcast; dispatched by hand, it
+# previews the notes for a ref without publishing anything. Every failure
+# falls back to fixed notes: a release never fails because of its notes.
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Commit or tag the release is built from"
+        required: true
+        type: string
+      tag:
+        description: "The release's tag (vX.Y.Z), or empty for a dry run"
+        required: false
+        type: string
+        default: ""
+    # Only the Anthropic key reaches this workflow.
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit, branch or tag to write notes for"
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    # Above the worst case of the retries (3 × 240 s), so the fallback ships.
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Write release notes
+        shell: bash
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODEL: ${{ vars.LLM_MODEL || 'claude-opus-5-5' }}
+          EFFORT: ${{ vars.LLM_EFFORT || 'medium' }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          # The previous release: the newest stable tag that is not this one.
+          PREVIOUS=$(git tag --merged HEAD --list 'v*' --sort=-v:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vx "${TAG:-none}" | head -1 || true)
+          FIRST=""
+          if [ -z "$PREVIOUS" ]; then
+            PREVIOUS=$(git rev-list --max-parents=0 HEAD | tail -1)
+            FIRST="NOTE: this is Sugu's FIRST public release. Write the overview as a one-sentence introduction of what Sugu is, list its main capabilities (at most 6) under New Features, and write no Improvements or Bug Fixes sections."
+          fi
+          echo "Range: $PREVIOUS..HEAD"
+
+          # Only what ships in the app changes what users get.
+          PATHS=(Sugu Packages Assets project.yml scripts/versions.sh scripts/build-data.sh scripts/fetch-data.sh)
+          CAP=1000
+          COMMITS=$(git log "$PREVIOUS"..HEAD --pretty=format:%s --no-merges -- "${PATHS[@]}" | head -"$CAP" || true)
+          TOTAL=$(git rev-list --count --no-merges "$PREVIOUS"..HEAD -- "${PATHS[@]}")
+          TRUNCATED=""
+          if [ "$TOTAL" -gt "$CAP" ]; then
+            echo "::warning::$TOTAL commits in range; the newest $CAP go to the model."
+            TRUNCATED="NOTE: this list is truncated to the newest $CAP of $TOTAL commits."
+          fi
+
+          SYSTEM=$(cat <<'SYSTEM_EOF'
+          You write release notes for Sugu, an open-source, privacy-first input method for macOS for typing Chinese (pinyin, double pinyin, zhuyin) and Japanese (romaji and kana) in one input source. Conversion and learning happen on the Mac; optional language-model features use Apple's on-device model or Private Cloud Compute.
+
+          Input: git commit subject lines in the form `type(scope): description`, sometimes with decision ids such as D-081.
+
+          Output: the same notes in four languages, each under its own marker line, in exactly this order and with nothing before the first marker:
+
+          <!-- en -->
+          ### Overview
+          One sentence (at most 25 words) naming the most noticeable change.
+
+          ### New Features
+          - Something users could not do before
+
+          ### Improvements
+          - Something that existed and is now better, faster or easier
+
+          ### Bug Fixes
+          - One user-visible fix per bullet
+          <!-- ja -->
+          (the same notes in natural Japanese, headings ### 概要, ### 新機能, ### 改善, ### 不具合の修正)
+          <!-- zh-Hans -->
+          (the same notes in Simplified Chinese, headings ### 概述, ### 新功能, ### 改进, ### 问题修复)
+          <!-- zh-Hant -->
+          (the same notes in Traditional Chinese as used in Taiwan, headings ### 概述, ### 新功能, ### 改進, ### 問題修正)
+
+          Rules:
+          1. The overview heading is always present and first; leave out any other section that has no bullets, in every language alike.
+          2. No preamble, title, version number or emojis. Sentence case, no trailing period, at most 15 words per English bullet.
+          3. Write from the user's side: what they can now type, choose or notice. Name the concrete feature ("Learned phrases rank the next characters you type"), never "various improvements".
+          4. Consolidate: commits refining one feature become one bullet. At most 6 bullets per section, most noticeable first.
+          5. Never include file paths, type or package names, decision ids, commit hashes, scopes or hedging words.
+          6. Leave out internal work: refactor, chore, test, docs, style, build, benchmark and CI work, and anything a user would not notice without reading code or logs. Include a refactor only when its subject states a visible outcome.
+          7. Never describe how signing, keys, credentials, updates or privacy protections work; state only a visible effect, if any.
+          8. A fix counts only if it repairs behavior from an earlier release; fixes to features new in this same input are left out.
+          9. Neutral tone, no hype words ("seamless", "blazing", "powerful"). Use the input-method terms users know: candidates, conversion, readings, learned words.
+          10. If nothing user-visible remains, write in each language only the overview "This release contains minor improvements and stability fixes." and a Bug Fixes section with the single bullet "Minor improvements and stability fixes", translated.
+          SYSTEM_EOF
+          )
+
+          # The key travels in a mode-600 header file, never on argv.
+          HEADER=$(mktemp)
+          chmod 600 "$HEADER"
+          printf 'x-api-key: %s\n' "${ANTHROPIC_API_KEY:-}" > "$HEADER"
+          RAW=$(mktemp)
+          trap 'rm -f "$HEADER" "$RAW"' EXIT
+          USER_TEXT=$(printf '%s\n\n%s\n\n%s' "$FIRST" "$TRUNCATED" "$COMMITS")
+          request() {
+            curl -s --max-time 240 https://api.anthropic.com/v1/messages \
+              -H "content-type: application/json" \
+              -H "anthropic-version: 2023-06-01" \
+              -H @"$HEADER" \
+              -d "$(jq -n --arg model "$MODEL" --arg system "$SYSTEM" --arg text "$USER_TEXT" --arg effort "$1" '{
+                    model: $model,
+                    max_tokens: 64000,
+                    output_config: {effort: $effort},
+                    system: $system,
+                    messages: [{role: "user", content: $text}]
+                  }')" || true
+          }
+
+          # Only a complete answer in the four-language shape ships.
+          DONE=""
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::warning::secrets.ANTHROPIC_API_KEY is unset; using the fallback notes."
+          else
+            for LEVEL in "$EFFORT" "$EFFORT" low; do
+              RESPONSE=$(request "$LEVEL")
+              echo "$RESPONSE" | jq -r '[.content[]? | select(.type == "text") | .text] | join("")' > "$RAW" 2>/dev/null || true
+              STOP=$(echo "$RESPONSE" | jq -r '.stop_reason // empty' 2>/dev/null || true)
+              if [ "$STOP" = "end_turn" ] && python3 -I scripts/release-notes.py split "$RAW" notes; then
+                DONE=1
+                break
+              fi
+              ERROR=$(echo "$RESPONSE" | jq -r '.error.message // empty' 2>/dev/null || true)
+              echo "::warning::Notes at effort $LEVEL failed: ${ERROR:-stop_reason=${STOP:-none}, or not in the four-language shape}"
+            done
+          fi
+          if [ -z "$DONE" ]; then
+            echo "::warning::Using the fallback notes."
+            python3 -I scripts/release-notes.py fallback notes
+          fi
+          { echo "## Release notes for ${TAG:-$(git rev-parse --short HEAD)}"; echo; cat notes/body.md; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep notes
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-notes
+          path: notes/
+          if-no-files-found: error

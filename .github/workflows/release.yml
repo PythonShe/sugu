@@ -1,0 +1,288 @@
+name: Release
+
+# Builds, signs, notarizes and publishes a Sugu release.
+#
+#   prepare ── notes (release-notes.yml) ── build (macos-26) ── publish (GitHub release) ── feed (R2)
+#
+# A pushed vX.Y.Z tag releases it; project.yml's MARKETING_VERSION must
+# match. Dispatched by hand without a tag and with publishing off, it is a
+# dry run of the current branch: everything up to notarization, nothing
+# published. The notes come before the build because the build signs them
+# into the appcast; the feed goes up only after the archive it points at.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (vX.Y.Z); empty for a dry run of this branch"
+        required: false
+        type: string
+        default: ""
+      publish:
+        description: "Publish the GitHub release and the update feed"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Never cancel a release half way through publishing.
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.meta.outputs.sha }}
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      publish: ${{ steps.meta.outputs.publish }}
+    steps:
+      - name: Resolve the tag
+        id: tag
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "push" ]; then
+            TAG="$GITHUB_REF_NAME"
+            PUBLISH=true
+          else
+            TAG="$INPUT_TAG"
+            PUBLISH="$INPUT_PUBLISH"
+          fi
+          if [ -n "$TAG" ] && ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tags are vX.Y.Z, one stable channel. Got: $TAG"
+            exit 1
+          fi
+          if [ -z "$TAG" ] && [ "$PUBLISH" = "true" ]; then
+            echo "::error::Publishing needs a tag."
+            exit 1
+          fi
+          { echo "tag=$TAG"; echo "publish=$PUBLISH"; echo "ref=${TAG:-$GITHUB_SHA}"; } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.tag.outputs.ref }}
+
+      - name: Check the version
+        id: meta
+        shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          PUBLISH: ${{ steps.tag.outputs.publish }}
+        run: |
+          set -euo pipefail
+          VERSION=$(awk '$1 == "MARKETING_VERSION:" { print $2; exit }' project.yml)
+          if [ -n "$TAG" ] && [ "${TAG#v}" != "$VERSION" ]; then
+            echo "::error::project.yml has MARKETING_VERSION $VERSION but the tag is $TAG."
+            exit 1
+          fi
+          {
+            echo "sha=$(git rev-parse HEAD)"
+            echo "tag=$TAG"
+            echo "version=$VERSION"
+            echo "publish=$PUBLISH"
+          } >> "$GITHUB_OUTPUT"
+
+  notes:
+    needs: prepare
+    uses: ./.github/workflows/release-notes.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      tag: ${{ needs.prepare.outputs.tag }}
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  build:
+    needs: [prepare, notes]
+    runs-on: macos-26
+    timeout-minutes: 150
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          # The build number is the commit count.
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(printf "%s\n" /Applications/Xcode*.app | grep -vi beta | sort -V | tail -1)"
+
+      - name: Install build tools
+        run: brew install xcodegen cmake ninja
+
+      - name: Restore native dependencies and data
+        uses: actions/cache@v6
+        with:
+          path: |
+            .vendor
+            Frameworks
+            Data
+          key: deps-${{ runner.os }}-${{ hashFiles('scripts/versions.sh', 'scripts/build-librime.sh', 'scripts/build-data.sh', 'Packages/SuguKit/Sources/sugu-tool/**', 'Packages/SuguKit/Sources/SuguRime/**', 'Packages/SuguKit/Sources/SuguCore/Lexicon/**', 'Packages/SuguKit/Sources/SuguLM/**', 'scripts/fetch-data.sh') }}
+
+      - name: Download notes
+        uses: actions/download-artifact@v8
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/notes
+
+      - name: Import signing certificates
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_INSTALLER_CERTIFICATE: ${{ secrets.APPLE_INSTALLER_CERTIFICATE }}
+          APPLE_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
+          PASSWORD="$(openssl rand -base64 32)"
+          security create-keychain -p "$PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$PASSWORD" "$KEYCHAIN"
+          import() {
+            local file="$RUNNER_TEMP/certificate.p12"
+            echo "$1" | base64 --decode > "$file"
+            security import "$file" -P "$2" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+            rm -f "$file"
+          }
+          import "$APPLE_CERTIFICATE" "$APPLE_CERTIFICATE_PASSWORD"
+          import "$APPLE_INSTALLER_CERTIFICATE" "$APPLE_INSTALLER_CERTIFICATE_PASSWORD"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -k "$PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          security find-identity -v "$KEYCHAIN"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      - name: Write keys
+        shell: bash
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          for name in APPLE_API_KEY SPARKLE_PRIVATE_KEY; do
+            [ -n "${!name:-}" ] || { echo "::error::secrets.$name is unset."; exit 1; }
+          done
+          echo "$APPLE_API_KEY" | base64 --decode > "$RUNNER_TEMP/api-key.p8"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
+          {
+            echo "APPLE_API_KEY_FILE=$RUNNER_TEMP/api-key.p8"
+            echo "SPARKLE_PRIVATE_KEY_FILE=$RUNNER_TEMP/sparkle.key"
+          } >> "$GITHUB_ENV"
+          # Private Cloud Compute ships only with a profile that grants it.
+          if [ -n "${APPLE_PROVISIONING_PROFILE:-}" ]; then
+            PROFILE="$RUNNER_TEMP/release.provisionprofile"
+            echo "$APPLE_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE"
+            PLIST="$(security cms -D -i "$PROFILE")"
+            NAME="$(plutil -extract Name raw -o - - <<<"$PLIST")"
+            UUID="$(plutil -extract UUID raw -o - - <<<"$PLIST")"
+            for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+              mkdir -p "$dir"
+              cp "$PROFILE" "$dir/$UUID.provisionprofile"
+            done
+            echo "DEVELOPER_ID_PROFILE=$NAME" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No provisioning profile: this build uses the on-device model only."
+          fi
+
+      - name: Build, sign and notarize
+        shell: bash
+        env:
+          TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          DEVELOPER_ID_APPLICATION: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          DEVELOPER_ID_INSTALLER: ${{ secrets.APPLE_INSTALLER_SIGNING_IDENTITY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          SPARKLE_PUBLIC_ED_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.tag && needs.prepare.outputs.version || '' }}
+        run: |
+          set -euo pipefail
+          APPLE_API_KEY="$APPLE_API_KEY_FILE" RELEASE_NOTES_DIR="$RUNNER_TEMP/notes" scripts/release.sh
+          mkdir -p dist/notes
+          cp "$RUNNER_TEMP"/notes/*.md dist/notes/
+
+      - name: Keep the release
+        uses: actions/upload-artifact@v7
+        with:
+          name: release
+          if-no-files-found: error
+          path: |
+            dist/*.pkg
+            dist/*.zip
+            dist/appcast.xml
+            dist/release.json
+            dist/notes/
+
+      - name: Clean up keys
+        if: always()
+        shell: bash
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
+          if [ -f "$KEYCHAIN" ]; then security delete-keychain "$KEYCHAIN" || true; fi
+          rm -f "$RUNNER_TEMP/api-key.p8" "$RUNNER_TEMP/sparkle.key" "$RUNNER_TEMP/release.provisionprofile"
+
+  publish:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download the release
+        uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: dist
+
+      - name: Publish the GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          FILES=("dist/Sugu-$VERSION.pkg" "dist/Sugu-$VERSION.zip")
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${FILES[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" --notes-file dist/notes/body.md --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" "${FILES[@]}" --verify-tag --title "Sugu $VERSION" \
+              --notes-file dist/notes/body.md --repo "$GITHUB_REPOSITORY"
+          fi
+
+  feed:
+    needs: [prepare, publish]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Download the release
+        uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: dist
+
+      - name: Publish the update feed
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: scripts/publish-appcast.sh
