@@ -64,7 +64,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 8. Maintainability (advisor review, D-024)
 - [x] Drift fixes: one `subscript(safe:)`, one kana test, bundle version once, sugu-tool deps, CI cache key, build-data opencc check, CLAUDE.md names and plan files
-- [ ] Vocabulary per CONTEXT.md: `EngineProvider` → `EngineSource`, `isSuggestion` → `isPrediction`, `switchLanguage` → `switchCJKMode`, "Language" column → "Mode"
+- [x] Vocabulary per CONTEXT.md: `EngineProvider` → `EngineSource`, `isSuggestion` → `isPrediction`, `switchLanguage` → `switchCJKMode`, "Language" column → "Mode"
 - [ ] `SuguEngines` target: `EngineHub` + `ModelLibrary` out of `SuguInput`
 - [ ] Engine traits on `CompositionEngine`; `InputSession` asks the engine, not the mode or its type
 - [ ] Split `InputSession` along its seams; `CandidateList` and `PendingUndo` types

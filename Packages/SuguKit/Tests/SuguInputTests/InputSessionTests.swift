@@ -6,7 +6,7 @@ import SuguLearning
 
 @MainActor
 struct InputSessionTests {
-    let provider = FakeProvider()
+    let source = FakeEngineSource()
     let client = FakeClient()
     let chinese = FakeEngine(table: ["nihao": ["你好", "拟好"], "shijie": ["世界"], "github": ["给他不"], "riqi": ["日期"], "nihaoshijie": ["你好世界"]])
     let japanese = FakeEngine(table: ["nihongo": ["日本語", "二本語"], "toukyou": ["東京", "東共"]], converts: true)
@@ -15,14 +15,14 @@ struct InputSessionTests {
     init() throws {
         store = try LearnedStore(url: FileManager.default.temporaryDirectory
             .appendingPathComponent("sugu-session-\(UUID().uuidString)/learned.sqlite"))
-        provider.engines = [.chinese: chinese, .japanese: japanese]
+        source.engines = [.chinese: chinese, .japanese: japanese]
     }
 
     func makeSession(_ configure: (inout Preferences) -> Void = { _ in }) -> InputSession {
         var preferences = Preferences()
         configure(&preferences)
         let latin = LatinInference(syllables: ["ni", "hao", "shi", "jie"], englishWords: ["github"])
-        let session = InputSession(preferences: preferences, provider: provider, store: store, modeMemory: MemoryModes(), latin: latin)
+        let session = InputSession(preferences: preferences, engines: source, store: store, modeMemory: MemoryModes(), latin: latin)
         session.attach(client)
         return session
     }
@@ -121,7 +121,7 @@ struct InputSessionTests {
         #expect(!session.handle(Key.char("n")))
         session.toggleEnglish()
         #expect(session.mode == .chinese)
-        session.switchLanguage()
+        session.switchCJKMode()
         #expect(session.mode == .japanese)
     }
 
@@ -256,14 +256,14 @@ struct InputSessionTests {
 
     @Test func appsCanChooseTheirChineseScript() {
         let session = makeSession { $0.appRules["com.example.editor"] = AppRule(chineseScript: .traditional) }
-        #expect(provider.script == .traditional)
+        #expect(source.script == .traditional)
         session.attach(FakeClient(bundleIdentifier: "com.example.other"))
-        #expect(provider.script == .simplified)
+        #expect(source.script == .simplified)
     }
 
     @Test func learnedWordsFollowTheScriptInUse() {
         store.learn(Commit(text: "東京", reading: "shijie"), mode: .chinese)
-        provider.conversions["東京"] = "东京"
+        source.conversions["東京"] = "东京"
         let session = makeSession()
         type("shijie", into: session)
         #expect(session.display.candidates?.candidates.first?.text == "东京")
@@ -275,7 +275,7 @@ struct InputSessionTests {
 
     @Test func japaneseNamesOfferTheirChineseForm() {
         japanese.properNouns = ["東京"]
-        provider.conversions["東京"] = "东京"
+        source.conversions["東京"] = "东京"
         let session = makeSession()
         session.setMode(.japanese)
         type("toukyou", into: session)
@@ -308,7 +308,7 @@ struct InputSessionTests {
         let on = makeSession { $0.documentVocabulary = true }
         type("nihao", into: on)
         #expect(on.display.candidates?.candidates.first?.text == "拟好")
-        #expect((provider.engines[.chinese] as? FakeEngine)?.leftContext.isEmpty == true)
+        #expect((source.engines[.chinese] as? FakeEngine)?.leftContext.isEmpty == true)
     }
 
     @Test func documentVocabularyIsNotReadInSecureInput() {

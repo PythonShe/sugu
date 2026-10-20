@@ -129,7 +129,7 @@ final class FakeEngine: CompositionEngine {
 }
 
 @MainActor
-final class FakeProvider: EngineProvider {
+final class FakeEngineSource: EngineSource {
     var engines: [InputMode: any CompositionEngine] = [:]
     var learnedChanges = 0
     func engine(for mode: InputMode) -> (any CompositionEngine)? { engines[mode] }

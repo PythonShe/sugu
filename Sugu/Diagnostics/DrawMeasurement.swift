@@ -63,7 +63,7 @@ enum DrawMeasurement {
                 highlightedIndex: 3, page: 1, hasPreviousPage: true, hasNextPage: true),
             CandidatePresentation(
                 candidates: ["github", "GitHub", "ギットハブ"].map { Candidate(text: $0, source: .latin) },
-                highlightedIndex: nil, isSuggestion: true),
+                highlightedIndex: nil, isPrediction: true),
         ]
     }
 }

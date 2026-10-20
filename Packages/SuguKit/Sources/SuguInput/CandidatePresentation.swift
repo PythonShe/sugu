@@ -8,16 +8,16 @@ public struct CandidatePresentation: Sendable, Equatable {
     public var page: Int
     public var hasPreviousPage: Bool
     public var hasNextPage: Bool
-    /// Suggestions shown while typing, before any conversion.
-    public var isSuggestion: Bool
+    /// Predictions shown while typing, before any conversion.
+    public var isPrediction: Bool
 
-    public init(candidates: [Candidate], highlightedIndex: Int?, page: Int = 0, hasPreviousPage: Bool = false, hasNextPage: Bool = false, isSuggestion: Bool = false) {
+    public init(candidates: [Candidate], highlightedIndex: Int?, page: Int = 0, hasPreviousPage: Bool = false, hasNextPage: Bool = false, isPrediction: Bool = false) {
         self.candidates = candidates
         self.highlightedIndex = highlightedIndex
         self.page = page
         self.hasPreviousPage = hasPreviousPage
         self.hasNextPage = hasNextPage
-        self.isSuggestion = isSuggestion
+        self.isPrediction = isPrediction
     }
 
     /// Selection labels for the rows of this page: 1–9, then 0.

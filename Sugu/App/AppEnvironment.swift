@@ -35,7 +35,7 @@ final class AppEnvironment {
             syllables: Lexicon.load(Lexicon.syllablesFile, in: locations.bundledLexicon),
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: locations.bundledLexicon)
         )
-        session = InputSession(preferences: preferences, provider: engines, store: store, modeMemory: DefaultsModeMemory(), latin: latin)
+        session = InputSession(preferences: preferences, engines: engines, store: store, modeMemory: DefaultsModeMemory(), latin: latin)
         coordinator = InputCoordinator(
             session: session,
             preferences: self.preferences,

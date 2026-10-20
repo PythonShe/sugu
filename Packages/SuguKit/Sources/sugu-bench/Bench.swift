@@ -44,7 +44,7 @@ enum Bench {
             syllables: Lexicon.load(Lexicon.syllablesFile, in: lexicon),
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: lexicon)
         )
-        let session = InputSession(preferences: preferences, provider: engines, store: nil, latin: latin)
+        let session = InputSession(preferences: preferences, engines: engines, store: nil, latin: latin)
         let field = Field()
         session.attach(field)
 

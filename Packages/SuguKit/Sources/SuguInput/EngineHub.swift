@@ -7,7 +7,7 @@ import SuguRime
 /// Owns the language engines for the process and keeps them in step with
 /// preferences. Each engine is created on first use of its mode.
 @MainActor
-public final class EngineHub: EngineProvider {
+public final class EngineHub: EngineSource {
     public struct Locations: Sendable {
         /// Bundled librime data (read-only).
         public var rimeShared: URL
@@ -75,7 +75,7 @@ public final class EngineHub: EngineProvider {
         self.runtime = RimeRuntime(directories: .init(shared: locations.rimeShared, user: locations.rimeUser))
     }
 
-    // MARK: EngineProvider
+    // MARK: EngineSource
 
     public func engine(for mode: InputMode) -> (any CompositionEngine)? {
         switch mode {

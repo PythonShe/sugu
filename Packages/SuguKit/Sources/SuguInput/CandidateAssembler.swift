@@ -19,7 +19,7 @@ struct CandidateAssembler {
         var vocabulary = ""
         /// Rows per page, so the Latin candidate stays on the first page.
         var pageSize: Int
-        /// Chinese text in the script in use (see `EngineProvider`).
+        /// Chinese text in the script in use (see `EngineSource`).
         var chineseText: (String) -> String? = { _ in nil }
         /// Whether Japanese names also offer their Chinese form.
         var offersChineseForms = false

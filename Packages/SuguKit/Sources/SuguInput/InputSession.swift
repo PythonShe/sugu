@@ -5,7 +5,7 @@ import SuguLearning
 /// Supplies engines to the session. Engines load lazily on first use of
 /// their mode; `nil` means the engine is not ready yet.
 @MainActor
-public protocol EngineProvider: AnyObject {
+public protocol EngineSource: AnyObject {
     func engine(for mode: InputMode) -> (any CompositionEngine)?
     /// Called after the learned store changed through a commit, so engines
     /// that take user words (AzooKey) can refresh them.
@@ -46,7 +46,7 @@ public final class InputSession {
     /// Called when the mode changes, with whether the user switched it.
     public var onModeChange: ((InputMode) -> Void)?
 
-    private let provider: any EngineProvider
+    private let engines: any EngineSource
     private let store: LearnedStore?
     private let modeMemory: (any ModeMemory)?
     private var assembler: CandidateAssembler
@@ -75,14 +75,14 @@ public final class InputSession {
 
     public init(
         preferences: Preferences,
-        provider: any EngineProvider,
+        engines: any EngineSource,
         store: LearnedStore?,
         modeMemory: (any ModeMemory)? = nil,
         latin: LatinInference? = nil,
         computed: ComputedCandidates = ComputedCandidates()
     ) {
         self.preferences = preferences
-        self.provider = provider
+        self.engines = engines
         self.store = store
         self.modeMemory = modeMemory
         self.assembler = CandidateAssembler(computed: computed, latin: latin, store: store)
@@ -105,7 +105,7 @@ public final class InputSession {
         if !preferences.enabledModes.contains(mode) {
             setMode(preferences.enabledModes.first ?? .english)
         }
-        provider.setChineseScript(chineseScript)
+        engines.setChineseScript(chineseScript)
         // Candidates on screen follow a script change at once.
         if active != nil { refresh() }
     }
@@ -126,7 +126,7 @@ public final class InputSession {
         vocabulary = readVocabulary()
         let bundleID = client.bundleIdentifier
         let rule = preferences.rule(for: bundleID)
-        provider.setChineseScript(chineseScript)
+        engines.setChineseScript(chineseScript)
         if let mode = rule.defaultMode {
             setMode(mode, remember: false)
         } else if preferences.rememberModePerApp, let bundleID, let remembered = modeMemory?.mode(for: bundleID) {
@@ -164,7 +164,7 @@ public final class InputSession {
     }
 
     /// Chinese ↔ Japanese, when both are enabled.
-    public func switchLanguage() {
+    public func switchCJKMode() {
         let cjk = preferences.enabledModes.filter { $0 != .english }
         guard cjk.count > 1 else { setMode(cjk.first ?? .english); return }
         let current = mode == .english ? lastCJKMode : mode
@@ -195,7 +195,7 @@ public final class InputSession {
             break
         }
         if key.modifiers.contains(.control), key.modifiers.contains(.shift), key.keyCode == VirtualKey.space {
-            switchLanguage()
+            switchCJKMode()
             return true
         }
         if key.isShortcut {
@@ -231,7 +231,7 @@ public final class InputSession {
                 begin(with: expression, input: String(character))
                 return true
             }
-            if character.isASCIILowercaseLetter, let engine = provider.engine(for: .chinese) {
+            if character.isASCIILowercaseLetter, let engine = engines.engine(for: .chinese) {
                 begin(with: engine, input: String(character))
                 return true
             }
@@ -311,7 +311,7 @@ public final class InputSession {
                 commitText("　", reading: " ", learn: false)
                 return true
             }
-            guard let character, !key.modifiers.contains(.numericPad), let engine = provider.engine(for: .japanese),
+            guard let character, !key.modifiers.contains(.numericPad), let engine = engines.engine(for: .japanese),
                   engine.accepts(character) else { return false }
             begin(with: engine, input: japaneseInput(for: character))
             return true
@@ -364,7 +364,7 @@ public final class InputSession {
                 showsConversionWindow = true
                 moveHighlight(by: backward ? -1 : 1)
             } else if !candidates.isEmpty {
-                // Step into the suggestions.
+                // Step into the predictions.
                 if highlight == nil { highlight = backward ? candidates.count - 1 : 0; publish() } else { moveHighlight(by: backward ? -1 : 1) }
             }
             return true
@@ -389,7 +389,7 @@ public final class InputSession {
         if engine.accepts(character) {
             if converting || transformed != nil || highlight != nil {
                 commitComposition()
-                guard let fresh = provider.engine(for: .japanese) else { return true }
+                guard let fresh = engines.engine(for: .japanese) else { return true }
                 begin(with: fresh, input: japaneseInput(for: character))
                 return true
             }
@@ -460,7 +460,7 @@ public final class InputSession {
                 commit(rest.commitConverted() ?? rest.commitRaw())
             }
         } else if highlight != nil, engine.state.phase != .converting || highlightsOwnCandidate {
-            // A highlighted suggestion is what the field shows.
+            // A highlighted prediction is what the field shows.
             commitHighlighted()
         } else {
             commit(engine.commitConverted())
@@ -558,7 +558,7 @@ public final class InputSession {
     private func learnedText(shown: String, reading: String) -> String {
         guard mode == .chinese, let words = store?.lookup(reading, mode: mode) else { return shown }
         return words.first { $0.text == shown }?.text
-            ?? words.first { provider.chineseText($0.text) == shown }?.text
+            ?? words.first { engines.chineseText($0.text) == shown }?.text
             ?? shown
     }
 
@@ -586,7 +586,7 @@ public final class InputSession {
         var learned = false
         if learn, mode != .english, !isSecureInput, let client, preferences.learns(in: client.bundleIdentifier), let store {
             store.learn(record, mode: mode)
-            provider.learnedWordsDidChange()
+            engines.learnedWordsDidChange()
             learned = true
         }
         self.undoable = undoable ? engine.map { (text, record, $0, mode, learned) } : nil
@@ -605,7 +605,7 @@ public final class InputSession {
         // The commit was a mistake; so was what it taught.
         if undoable.learned, let store {
             store.unlearn(undoable.commit, mode: undoable.mode)
-            provider.learnedWordsDidChange()
+            engines.learnedWordsDidChange()
         }
         let engine = undoable.engine
         active = engine
@@ -620,7 +620,7 @@ public final class InputSession {
     /// becomes a composition of its reading when Sugu knows one.
     public func reconvertSelection() {
         guard mode != .english, isEmpty, canReadField, let client, let selected = client.selectedText(), !selected.isEmpty,
-              let engine = provider.engine(for: mode) else { return }
+              let engine = engines.engine(for: mode) else { return }
         let reading: String
         if mode == .japanese {
             reading = WidthConversion.hiragana(selected).isHiraganaReading ? WidthConversion.hiragana(selected) : (store?.reading(for: selected, mode: mode) ?? selected)
@@ -702,7 +702,7 @@ public final class InputSession {
             context: preferences.leftContextRanking ? context : "",
             vocabulary: preferences.leftContextRanking && preferences.documentVocabulary ? vocabulary : "",
             pageSize: pageSize,
-            chineseText: { [provider] in provider.chineseText($0) },
+            chineseText: { [engines] in engines.chineseText($0) },
             offersChineseForms: preferences.enabledModes.contains(.chinese)
         ))
     }
@@ -719,7 +719,7 @@ public final class InputSession {
             } else {
                 segments = state.segments
                 caret = state.caret
-                // Show a highlighted suggestion inline while it is chosen, and
+                // Show a highlighted prediction inline while it is chosen, and
                 // Sugu's own candidates, which replace the whole reading.
                 if mode == .japanese, let highlight, candidates.indices.contains(highlight),
                    state.phase == .composing || candidates[highlight].engineIndex == nil {
@@ -744,7 +744,7 @@ public final class InputSession {
                     page: page,
                     hasPreviousPage: page > 0,
                     hasNextPage: start + pageSize < candidates.count,
-                    isSuggestion: state.phase == .composing && mode == .japanese
+                    isPrediction: state.phase == .composing && mode == .japanese
                 )
             }
         }

@@ -31,7 +31,7 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         let table = wordsEditor.table
         wordsEditor.addColumn("text", title: String(localized: "Word"), width: 100, sortKey: "text")
         wordsEditor.addColumn("reading", title: String(localized: "Reading"), width: 90, sortKey: "reading")
-        wordsEditor.addColumn("mode", title: String(localized: "Language"), width: 64, sortKey: "mode")
+        wordsEditor.addColumn("mode", title: String(localized: "Mode"), width: 64, sortKey: "mode")
         wordsEditor.addColumn("count", title: String(localized: "Uses"), width: 36, sortKey: "count")
         wordsEditor.addColumn("lastUsed", title: String(localized: "Last Used"), width: 76, sortKey: "lastUsed")
         wordsEditor.addColumn("pinned", title: String(localized: "Pinned"), width: 40, sortKey: "pinned")

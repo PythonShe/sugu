@@ -21,7 +21,7 @@ public struct CompositionSegment: Sendable, Equatable {
 /// What an engine shows for the composition in progress.
 public struct CompositionState: Sendable, Equatable {
     public enum Phase: Sendable, Equatable {
-        /// Typing; candidates, if any, are suggestions for the whole input.
+        /// Typing; candidates, if any, are predictions for the whole input.
         case composing
         /// A conversion is active; the candidate list belongs to the focused
         /// clause and one candidate is highlighted.
