@@ -8,7 +8,8 @@ import Foundation
 /// from settings, and librime moves a user schema to its trash when the
 /// shared directory holds a copy with a higher version.
 public enum RimeSharedData {
-    /// Tables imported into Sugu's Chinese dictionary, in wanxiang's order.
+    /// Tables imported into Sugu's Chinese dictionary, in wanxiang's order;
+    /// `scripts/fetch-data.sh` downloads them (`WANXIANG_DICTS`).
     public static let importedTables = ["zi", "jichu", "cuoyin", "duoyin", "diming", "mingren", "yiren"]
 
     public static func write(to directory: URL, wanxiang: URL, openCC: URL, version: String) throws {

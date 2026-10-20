@@ -11,6 +11,7 @@ BOOST_SHA256=c4a3b310ddd2472416e091067166b0713be97c63f38c212c484ada022fd296ce
 WANXIANG_REF=v18.1.6
 WANXIANG_SHA256=d02793a93b9f92cea6f4dc2fcc1d6f92316c2fc96a23753877cf767b114c11c1
 # Tables imported by Sugu's Chinese dictionary, in wanxiang's own order.
+# RimeSharedData.importedTables, plus en for the English word list.
 WANXIANG_DICTS="zi jichu cuoyin duoyin diming mingren yiren en"
 
 # License texts for bundled code that ships without one in its sources
