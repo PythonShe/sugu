@@ -1096,8 +1096,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
   inserted. The old client is now detached (and committed to) first.
 - Chinese F9/F10 forms behave as in Japanese: Esc returns to the
   candidates, Return and Space commit the form, and editing or moving
-  drops it. Before, the form stayed on screen over further edits and Esc
-  dropped the whole composition.
+  drops it. A digit or punctuation commits the form, then acts as after
+  any commit. Before, the form stayed on screen over further edits, Esc
+  dropped the whole composition, and a digit chose a candidate instead.
+  F6–F8 stay inert in Chinese, where they have no form.
 - Keys Sugu does not bind (F1–F5, Help) finish the composition and go to
   the app instead of being swallowed. Tab converts in Japanese when there
   are no predictions to step into, as in Kotoeri. かな in Japanese with
