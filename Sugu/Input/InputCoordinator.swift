@@ -97,6 +97,8 @@ final class InputCoordinator {
     private func isSecureInputHere() -> Bool {
         if let bundleID = client?.bundleIdentifier, Self.passwordOnlyApps.contains(bundleID) { return true }
         guard IsSecureEventInputEnabled() else { return false }
+        // Asked on every key (about 0.1 ms): the holder can change within
+        // a field, as when a page focuses its password box.
         guard let session = CGSessionCopyCurrentDictionary() as? [String: Any],
               let holder = (session["kCGSSessionSecureInputPID"] as? NSNumber)?.int32Value,
               let app = NSRunningApplication(processIdentifier: holder) else { return true }
@@ -159,8 +161,7 @@ final class InputCoordinator {
         if capsLockSelectsEnglish, session.mode == .english, key.modifiers.contains(.capsLock),
            key.modifiers.isDisjoint(with: [.command, .control, .option]), let character = key.printable, character.isLetter {
             // Caps Lock is the English switch here, not a case lock.
-            let text = key.modifiers.contains(.shift) ? character.uppercased() : character.lowercased()
-            client?.commit(text)
+            session.typeLiteral(key.modifiers.contains(.shift) ? character.uppercased() : character.lowercased())
             return true
         }
         if session.mode == .chinese, !session.isSecureInput, key.modifiers.contains(.control), key.modifiers.isDisjoint(with: [.command, .option, .shift]),

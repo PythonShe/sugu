@@ -41,11 +41,13 @@ extension InputSession {
         }
     }
 
-    /// Esc, and the app rule that turns Esc into English: a revised
-    /// selection goes back as it was; a composition is dropped.
+    /// Esc, and the app rule that turns Esc into English: a revised or
+    /// reconverted selection goes back as it was; a composition is dropped.
     func abandonComposition() {
         if let engine = active, engine.traits.revisesText {
             commit(engine.commitRaw())
+        } else if let reconverted {
+            commitText(reconverted, reading: reconverted, learn: false)
         } else {
             cancelComposition()
         }

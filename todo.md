@@ -199,8 +199,8 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Sync: device ID made again on a migrated Mac; a folder change from anywhere resets sync
 - [x] Import: restoring a Sugu export brings back deleted words; GBK not read as Shift_JIS; prefix cuts; strict sync lines; large imports off the main actor and capped
 - [x] Learning pane: confirm before a shorter expiry deletes words
-- [ ] Input: Esc after reconversion puts the selection back; `v` expressions keep their `v`; empty syllabary does not trap
-- [ ] Input: per-key cross-process calls cached; Caps Lock letters recorded; stale marked text not cleared; store opened off the first key
+- [x] Input: Esc after reconversion puts the selection back; `v` expressions keep their `v`; empty syllabary does not trap
+- [x] Input: per-key cross-process calls cached; Caps Lock letters recorded; stale marked text not cleared; store opened off the first key
 - [ ] Release: re-sign Sparkle's nested code and check every signature; check the Sparkle public key against the signing key
 - [ ] Release: site deploy checks out main; publish runs one at a time; guards before uploads; status check counts untracked files; notary log kept
 - [ ] Updates: gentle reminders for a background app

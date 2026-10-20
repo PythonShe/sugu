@@ -144,6 +144,18 @@ struct InputSessionTests {
         #expect(session.isEmpty)
     }
 
+    /// Esc after reconverting puts the selection back: the composition
+    /// already replaced it in the field.
+    @Test func escapeAfterReconvertingKeepsTheSelection() {
+        let session = makeSession()
+        source.readings = ["你好": "nihao"]
+        client.selection = "你好"
+        session.reconvertSelection()
+        #expect(session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}")))
+        #expect(client.document == "你好")
+        #expect(session.isEmpty)
+    }
+
     /// ⇧⌫ forgets a learned candidate; on any other it is ⌫.
     @Test func shiftDeleteForgetsALearnedCandidate() {
         let session = makeSession()
@@ -301,6 +313,27 @@ struct InputSessionTests {
         _ = session.handle(Key.space)
         #expect(!session.handle(Key.keypad("1")))
         #expect(client.document == "你好東共")
+    }
+
+    /// Letters Sugu types for the Caps Lock English switch are what the
+    /// caret follows, as letters the app typed would be.
+    @Test func typedLiteralsAreWhatTheCaretFollows() {
+        let session = makeSession()
+        session.setMode(.english)
+        session.typeLiteral("A")
+        #expect(client.document == "A")
+        #expect(session.lastTyped == "A")
+    }
+
+    /// The `v` stays first, whatever the caret does.
+    @Test func expressionsKeepTheirPrefix() {
+        let session = makeSession()
+        type("v123", into: session)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.home, characters: ""))
+        _ = session.handle(KeyInput(keyCode: VirtualKey.forwardDelete, characters: ""))
+        _ = session.handle(KeyInput(keyCode: VirtualKey.delete, characters: "\u{7f}"))
+        type("4", into: session)
+        #expect(client.markedText == "v423")
     }
 
     @Test func numpadKeysContinueAnExpression() {

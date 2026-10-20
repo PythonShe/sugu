@@ -27,8 +27,12 @@ final class ExpressionEngine: CompositionEngine {
         refresh()
     }
 
+    /// The `v` stays first: the caret never goes before it, and it is
+    /// deleted only when nothing follows it.
+    private var firstCaret: Int { text.isEmpty ? 0 : 1 }
+
     func deleteBackward() {
-        guard caret > 0 else { return }
+        guard caret > firstCaret || text.count == 1 else { return }
         text.remove(at: text.index(text.startIndex, offsetBy: caret - 1))
         caret -= 1
         refresh()
@@ -42,9 +46,9 @@ final class ExpressionEngine: CompositionEngine {
 
     func moveCaret(_ motion: CaretMotion) {
         switch motion {
-        case .left: caret = max(0, caret - 1)
+        case .left: caret = max(firstCaret, caret - 1)
         case .right: caret = min(text.count, caret + 1)
-        case .start: caret = 0
+        case .start: caret = firstCaret
         case .end: caret = text.count
         }
         refresh()

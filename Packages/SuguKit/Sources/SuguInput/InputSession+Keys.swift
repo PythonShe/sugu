@@ -375,7 +375,7 @@ extension InputSession {
 
         switch key.keyCode {
         case VirtualKey.escape:
-            if transformed != nil { transformed = nil; publish() } else if converting { engine.cancelConversion(); refresh() } else { cancelComposition() }
+            if transformed != nil { transformed = nil; publish() } else if converting { engine.cancelConversion(); refresh() } else { abandonComposition() }
             return true
         case VirtualKey.returnKey, VirtualKey.keypadEnter:
             if transformed != nil || (list.highlight != nil && (!converting || highlightsOwnCandidate)) {

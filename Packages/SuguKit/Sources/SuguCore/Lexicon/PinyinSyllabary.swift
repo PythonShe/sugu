@@ -34,7 +34,7 @@ public struct PinyinSyllabary: Sendable {
                 if end < letters.count { starts.removeLast() }
             }
         }
-        if count > 0, !letters.isEmpty { search(0) }
+        if count > 0, !letters.isEmpty, longest > 0 { search(0) }
         return results
     }
 }

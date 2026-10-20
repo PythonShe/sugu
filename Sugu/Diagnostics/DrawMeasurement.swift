@@ -3,7 +3,8 @@ import SuguCore
 import SuguInput
 
 /// Times what the candidate window does on each keystroke — laying out a
-/// page and drawing it — offscreen, against the draw budget in CLAUDE.md.
+/// page, fitting the panel and its material to it, and drawing it —
+/// offscreen, against the draw budget in CLAUDE.md.
 /// Shows nothing and touches no settings or stores:
 ///   Sugu.app/Contents/MacOS/Sugu --measure-draw
 @MainActor
@@ -15,6 +16,8 @@ enum DrawMeasurement {
     static func run() -> Bool {
         _ = NSApplication.shared
         let view = CandidateView(frame: .zero)
+        // Never ordered in: the panel is sized as on screen, and shown nowhere.
+        let panel = FloatingPanel(content: view)
         let styles = [
             CandidateView.Style(layout: .vertical, fontSize: 16),
             CandidateView.Style(layout: .horizontal, fontSize: 16),
@@ -28,7 +31,8 @@ enum DrawMeasurement {
                     for page in pages {
                         let start = ContinuousClock.now
                         let size = view.update(page, style: style)
-                        view.frame = NSRect(origin: .zero, size: size)
+                        panel.setFrame(NSRect(origin: .zero, size: size), display: false)
+                        panel.contentView?.layoutSubtreeIfNeeded()
                         if let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
                             view.cacheDisplay(in: view.bounds, to: rep)
                         }

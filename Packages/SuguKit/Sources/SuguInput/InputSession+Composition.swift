@@ -308,6 +308,7 @@ extension InputSession {
             reading = known
         }
         active = engine
+        reconverted = selected
         engine.clear()
         engine.restore(reading: reading)
         showsConversionWindow = true

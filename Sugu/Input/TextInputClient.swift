@@ -25,6 +25,7 @@ final class TextInputClient: InputClient {
     init(client: any IMKTextInput & NSObjectProtocol, controller: IMKInputController) {
         self.client = client
         self.controller = controller
+        bundleIdentifier = client.bundleIdentifier()
     }
 
     func represents(_ other: Any?) -> Bool {
@@ -37,7 +38,9 @@ final class TextInputClient: InputClient {
         self.controller == nil || self.controller === controller
     }
 
-    var bundleIdentifier: String? { client.bundleIdentifier() }
+    /// Read once: asking the client goes to its process, and a key asks
+    /// several times.
+    let bundleIdentifier: String?
 
     func commit(_ text: String) {
         // Alacritty drops text inserted without marked text first.
@@ -52,6 +55,14 @@ final class TextInputClient: InputClient {
     func setMarkedText(_ segments: [CompositionSegment], caret: Int) {
         if let marked, marked.segments == segments, marked.caret == caret { return }
         guard marked != nil || !segments.isEmpty else { return }
+        // Some hosts drop marked text without telling Sugu (Chromium on a
+        // click); clearing it then would replace their selection.
+        if segments.isEmpty, case let range = client.markedRange(), range.location == NSNotFound || range.length == 0,
+           client.selectedRange().length > 0 {
+            marked = nil
+            markedRect = nil
+            return
+        }
         let marked = NSMutableAttributedString()
         for segment in segments {
             let range = NSRange(location: marked.length, length: (segment.text as NSString).length)

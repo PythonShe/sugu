@@ -80,6 +80,7 @@ public final class InputSession {
             if active == nil {
                 forgotten = []
                 composedTyped = ""
+                reconverted = nil
             }
         }
     }
@@ -94,6 +95,9 @@ public final class InputSession {
     var showsConversionWindow = false
     /// Text a function key (F6–F10) turned the composition into.
     var transformed: String?
+    /// The selected text a reconversion turned into this composition; Esc
+    /// puts it back.
+    var reconverted: String?
     var punctuator = ChinesePunctuator()
     var context = ""
     /// The field's text around the caret when its first composition began,
@@ -237,6 +241,15 @@ public final class InputSession {
     /// Notes text put before the caret; nil when the caret may have moved.
     func noteTyped(_ text: String?) {
         typedBefore = text.map { String((typedBefore + $0).suffix(Self.typedBeforeLimit)) } ?? ""
+    }
+
+    /// Types text in place of a key the app would have typed, as Caps Lock
+    /// letters in English, and notes it as what the caret follows.
+    public func typeLiteral(_ text: String) {
+        undoable = nil
+        retypable = nil
+        client?.commit(text)
+        noteTyped(isSecureInput ? nil : text)
     }
 
     /// Notes that `count` characters before the caret were deleted.
