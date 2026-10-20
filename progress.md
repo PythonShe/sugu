@@ -6,6 +6,12 @@ Running log of what was built, verified, and what is next. Newest first.
 - Cross-language proper nouns and per-app script (D-021): Japanese kanji
   forms as a Chinese script, Chinese forms after Japanese names, Sugu's own
   candidates in the script in use, a script column in the Apps pane.
+- Third review pass fixed: Chinese forms no longer enter the Japanese
+  store; a learned word shown in another script is learned in its stored
+  form; numpad keys continue `v` expressions; script converters open at
+  focus and are kept per script; a script change refreshes candidates on
+  screen. CI (`scripts/ci.sh`) passes: Chinese top-1 90%, Japanese 76%,
+  keystroke p99 3.5 ms, footprint 58 MB. 89 package tests.
 - Document vocabulary wired (D-022); numpad digits no longer select in
   Japanese conversion; Option and numpad session tests. 88 package tests.
 - Second review pass fixed: pins sync on existing words, one unreadable

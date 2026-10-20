@@ -59,4 +59,4 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] CI workflow: build, tests, budgets (`scripts/ci.sh`; manual trigger, D-019)
 - [x] Packaging: signed/notarized `.pkg` scripts, Sparkle (profile off), dev install script (D-020)
 - [x] README, third-party notices/attribution, ADR updates
-- [~] Code review passes (reviewer agents) and fixes — first pass (11 + 3 minor) and second pass (9) fixed; third pass over d9/d11
+- [x] Code review passes (reviewer agents) and fixes — three passes, all findings fixed
