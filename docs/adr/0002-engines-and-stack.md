@@ -90,4 +90,23 @@ library) and withdraws the AI layer of ADR 0001 from current scope.
 - Licenses above were read from each repository on 2026-10-20; re-verify from
   `COPYING`/`LICENSE` in a clone before shipping, per `AGENTS.md`.
 - Open before the build lands: grammar-model resident memory (decision 4),
-  Zenzai model license and size (decision 7).
+  Zenzai model license and size (decision 7). Both settled in the
+  amendments below.
+
+## Amendments
+
+### 2026-10-20 · Decision 4: one grammar model
+The `zh-hans` model (~400 MB download) serves both scripts: octagram scores
+sentences on the dictionary's Simplified text before the OpenCC filter
+converts the output, so a `zh-hant` model is not needed. Memory-mapped, it
+adds about 90 MB of resident clean pages and leaves the footprint unchanged;
+it stays an optional download, off by default, until the benchmark shows it
+improves accuracy.
+
+### 2026-10-20 · Decision 7: Zenzai built in, experimental
+AzooKey is built with its `Zenzai` trait (llama.cpp, Metal), so the neural
+mode needs no second build. It stays off until the user enables it and
+downloads the model: zenz-v3.1 small, Q5_K_M (CC-BY-SA-4.0, 74 MB, pinned
+by revision and SHA-256). On the seed benchmark it raises Japanese top-1
+from 76% to 80% at about 60 MB more footprint and twice the keystroke time,
+so it is labelled experimental.
