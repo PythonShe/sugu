@@ -22,6 +22,12 @@ public final class RimeEngine: CompositionEngine {
         self.candidateLimit = candidateLimit
     }
 
+    isolated deinit {
+        // A session left open would also keep the user dictionary it read
+        // open for sessions created later.
+        if session != 0 { _ = api.destroy_session?(session) }
+    }
+
     private var api: RimeApi { runtime.api }
 
     /// Creates the session lazily; librime drops sessions on redeploy.
@@ -31,6 +37,19 @@ public final class RimeEngine: CompositionEngine {
         session = id
         applyScript()
         return true
+    }
+
+    /// Reopens the session so librime reads the user dictionary again,
+    /// unless a composition is in progress; returns whether it reopened.
+    /// librime shares one open dictionary among sessions and closes it
+    /// with the last, so the old session goes before the new one opens.
+    public func reloadUserDictionary() -> Bool {
+        guard state.isEmpty else { return false }
+        if session != 0 {
+            _ = api.destroy_session?(session)
+            session = 0
+        }
+        return ensureSession()
     }
 
     public func setScript(_ script: ChineseScript) {

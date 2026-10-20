@@ -14,7 +14,8 @@ private final class StubHost: ModelHost {
             rimeShared: root.appendingPathComponent("shared"),
             rimeUser: root.appendingPathComponent("user"),
             azooKey: root.appendingPathComponent("azookey"),
-            models: root.appendingPathComponent("models")
+            models: root.appendingPathComponent("models"),
+            lexicon: root.appendingPathComponent("lexicon")
         )
     }
 

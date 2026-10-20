@@ -18,25 +18,42 @@ public enum Lexicon {
             let columns = line.split(separator: "\t", omittingEmptySubsequences: false)
             guard columns.count >= 2 else { continue }
             for syllable in columns[1].split(separator: " ") {
-                // ü decomposes to u + U+0308 and is written v; other marks are
-                // tones. Work on scalars: a toned ü (ǚ) is one grapheme, so a
-                // string search for "ü" would not match it.
-                var scalars = String.UnicodeScalarView()
-                for scalar in syllable.decomposedStringWithCanonicalMapping.unicodeScalars {
-                    if scalar.value == 0x0308, scalars.last == "u" {
-                        scalars.removeLast()
-                        scalars.append("v")
-                    } else if !(0x0300...0x036F).contains(scalar.value) {
-                        scalars.append(scalar)
-                    }
-                }
-                let plain = String(scalars)
-                if !plain.isEmpty, plain.allSatisfy(\.isASCIILowercaseLetter) {
-                    result.insert(plain)
-                }
+                if let plain = plainSyllable(syllable) { result.insert(plain) }
             }
         }
         return result
+    }
+
+    /// The most frequent character for each toneless syllable, from a Rime
+    /// character dictionary (character, reading, weight).
+    public static func syllableCharacters(fromRimeDictionary text: String) -> [String: String] {
+        var best: [String: (character: String, weight: Int)] = [:]
+        for line in text.split(whereSeparator: \.isNewline) {
+            let columns = line.split(separator: "\t")
+            guard columns.count >= 3, columns[0].count == 1, let weight = Int(columns[2]),
+                  let plain = plainSyllable(columns[1]) else { continue }
+            if weight > best[plain]?.weight ?? -1 { best[plain] = (String(columns[0]), weight) }
+        }
+        return best.mapValues(\.character)
+    }
+
+    /// A syllable without tone marks, with ü written v; nil when it is not
+    /// lowercase letters.
+    public static func plainSyllable<S: StringProtocol>(_ syllable: S) -> String? {
+        // ü decomposes to u + U+0308 and is written v; other marks are
+        // tones. Work on scalars: a toned ü (ǚ) is one grapheme, so a
+        // string search for "ü" would not match it.
+        var scalars = String.UnicodeScalarView()
+        for scalar in String(syllable).decomposedStringWithCanonicalMapping.unicodeScalars {
+            if scalar.value == 0x0308, scalars.last == "u" {
+                scalars.removeLast()
+                scalars.append("v")
+            } else if !(0x0300...0x036F).contains(scalar.value) {
+                scalars.append(scalar)
+            }
+        }
+        let plain = String(scalars)
+        return !plain.isEmpty && plain.allSatisfy(\.isASCIILowercaseLetter) ? plain : nil
     }
 
     /// The most frequent lowercase English words from a Rime English

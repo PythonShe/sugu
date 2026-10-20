@@ -64,6 +64,7 @@ public final class RimeRuntime {
             // taken as unchanged. Dropping the compiled copy forces a rebuild.
             try? FileManager.default.removeItem(at: directories.user.appendingPathComponent("build/\(RimeSchema.schemaID).schema.yaml"))
         }
+        try RimeUserDictionary.ensureExists(in: directories.user)
         if !isInitialized {
             var traits = makeTraits(version: version)
             api.setup?(&traits)

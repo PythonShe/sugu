@@ -20,7 +20,7 @@ reasons behind each choice are in `docs/adr/` (product) and `decision.md`
 | `SuguCore` | Modes, the key model, candidates, composition state, the `CompositionEngine` protocol and `EngineTraits`, punctuation, width and kana conversion, computed candidates, Latin inference, preferences | — |
 | `SuguLearning` | `LearnedStore`: learned and user words in SQLite with an in-memory index, deletions, expiry, pins | Core |
 | `SuguInput` | `InputSession`, the input state machine, with `CandidateAssembler`, `CandidateList`, the `v` expression engine, `InputClient` and `EngineSource` protocols, `ShiftTapDetector` | Core, Learning |
-| `SuguRime` | librime through the `CRimeShim` C target: schema generation, runtime, `RimeEngine`, OpenCC `ScriptConverter` | Core |
+| `SuguRime` | librime through the `CRimeShim` C target: schema generation, runtime, `RimeEngine`, OpenCC `ScriptConverter`, the learned-word user dictionary and the pinyin decoder it needs | Core |
 | `SuguAzooKey` | `AzooKeyEngine`: predictions and clause conversion over AzooKeyKanaKanjiConverter, Zenzai options | Core |
 | `SuguEngines` | `EngineHub` (the real `EngineSource`: lazy engines, preferences, script) and `ModelLibrary` (optional downloads) | Input, Rime, AzooKey, Downloads |
 | `SuguDictionaries` | Importers and exporters, Sugu's own dictionary format, folder sync (`SyncFolder`, `DictionarySync`) | Core, Learning |
@@ -65,7 +65,10 @@ checks accuracy and latency budgets.
 - Field text (left context, document vocabulary, reconversion) is read
   through one gate, `canReadField`: never in secure input or excluded apps,
   held in memory only.
-- Learned words stay in the store's directory, excluded from backups. Sync
+- Learned words stay in the store's directory, excluded from backups. The
+  Chinese ones are also written, read-only for librime, into its user
+  directory (`sugu_learned.txt`, likewise excluded) so they take part in
+  sentences; it is regenerated from the store on every change. Sync
   writes one file per Mac to a folder the user picks, carrying deletions so a
   word deleted on one Mac stays deleted everywhere.
 - The bundled Chinese data is compiled by `scripts/build-data.sh` into
@@ -78,6 +81,7 @@ checks accuracy and latency budgets.
 - `SuguTests` (the scheme's test action): shell code that needs
   InputMethodKit, such as `TextInputClient`'s UTF-16 offsets, against a fake
   field; a logic-test bundle with no host app.
-- `sugu-bench`: accuracy and keystroke latency over `Bench/`, memory.
+- `sugu-bench`: accuracy and keystroke latency over `Bench/`, memory, and
+  learned words in sentences (`--grammar`, `--zenzai` for the models).
 - `Sugu --measure-draw`: candidate-window layout and drawing time, offscreen.
 - `scripts/ci.sh` runs all of these after a Release build.

@@ -55,6 +55,33 @@ struct RimeEngineTests {
         #expect(try await first("hengbin", script: .japanese) == "横浜")
     }
 
+    /// Learned words reach librime's sentences through the generated user
+    /// dictionary, in full pinyin and double pinyin, and leave them when
+    /// deleted from the store.
+    @Test func learnedWordsJoinSentences() async throws {
+        let syllables = Lexicon.load(Lexicon.syllablesFile, in: dataDirectory.appendingPathComponent("Lexicon"))
+        let rime = dataDirectory.appendingPathComponent("Rime")
+        func sentence(_ reading: String, words: [RimeUserDictionary.Word], schema: RimeSchema = RimeSchema()) async throws -> String? {
+            try await Shared.runtime.prepare(schema, version: "test")
+            let decoder = try #require(PinyinDecoder(schema: schema, syllables: syllables, sharedData: rime))
+            let fullPinyin = PinyinDecoder(schema: RimeSchema(), syllables: syllables, sharedData: rime)
+            try RimeUserDictionary.write(RimeUserDictionary.table(for: words, decoder: decoder, fullPinyin: fullPinyin), in: Shared.user)
+            let engine = RimeEngine(runtime: Shared.runtime)
+            #expect(engine.reloadUserDictionary())
+            engine.insert(reading)
+            defer { engine.clear() }
+            return engine.state.candidates.first?.text
+        }
+        let typed = RimeUserDictionary.Word(reading: "suguyue", text: "苏古月", count: 1)
+        #expect(try await sentence("wogensuguyueshuo", words: [typed]) == "我跟苏古月说")
+        #expect(try await sentence("wogensuguyueshuo", words: []) != "我跟苏古月说")
+        let doublePinyin = RimeUserDictionary.Word(reading: "suguyt", text: "苏古月", count: 1)
+        #expect(try await sentence("wogfsuguytuo", words: [doublePinyin], schema: RimeSchema(scheme: .xiaohe)) == "我跟苏古月说")
+        // An imported word carries full pinyin, and still types in double pinyin.
+        #expect(try await sentence("wogfsuguytuo", words: [typed], schema: RimeSchema(scheme: .xiaohe)) == "我跟苏古月说")
+        try RimeUserDictionary.write("", in: Shared.user)
+    }
+
     @Test func scriptConverterNormalizesThroughSimplified() throws {
         let openCC = dataDirectory.appendingPathComponent("Rime/opencc")
         let simplified = try #require(ScriptConverter.toScript(.simplified, openCC: openCC))

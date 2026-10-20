@@ -53,6 +53,11 @@ struct Report: Codable {
     var chinese = LanguageResult()
     var japanese = LanguageResult()
     var memory = Memory(footprintMB: 0, residentMB: 0)
+    /// Sentences using words the user taught, before and after teaching
+    /// them, and the main Chinese set again afterwards.
+    var learnedBefore: LanguageResult?
+    var learnedAfter: LanguageResult?
+    var chineseAfterLearning: LanguageResult?
 
     var keystrokeP99: Double { percentile(chinese.keystrokes + japanese.keystrokes, 0.99) }
 
@@ -75,13 +80,20 @@ struct Report: Codable {
             }
             return text
         }
-        return [
-            line("Chinese", chinese),
-            line("Japanese", japanese),
+        var sections = [line("Chinese", chinese), line("Japanese", japanese)]
+        if let learnedBefore, let learnedAfter, let chineseAfterLearning {
+            sections.append(String(format: "Learned words: top-1 %.0f%% before learning, %.0f%% after; Chinese set after learning %.0f%%",
+                                   learnedBefore.topOneRate * 100, learnedAfter.topOneRate * 100, chineseAfterLearning.topOneRate * 100))
+            if !learnedAfter.failures.isEmpty {
+                sections.append("  misses after learning:\n" + learnedAfter.failures.map { "    \($0)" }.joined(separator: "\n"))
+            }
+        }
+        return (sections + [
+
             String(format: "Memory: footprint %.0f MB, resident %.0f MB", memory.footprintMB, memory.residentMB),
             String(format: "Budgets: keystroke p99 %.2f ms (< %.0f), footprint %.0f MB (< %.0f) — %@",
                    keystrokeP99, Self.keystrokeBudget, memory.footprintMB, Self.memoryBudget, withinBudgets ? "pass" : "FAIL"),
-        ].joined(separator: "\n")
+        ]).joined(separator: "\n")
     }
 
     func json() throws -> Data {

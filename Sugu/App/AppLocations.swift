@@ -33,7 +33,8 @@ struct AppLocations {
             rimeShared: bundledRime,
             rimeUser: support.appendingPathComponent("Rime", isDirectory: true),
             azooKey: support.appendingPathComponent("AzooKey", isDirectory: true),
-            models: support.appendingPathComponent("Models", isDirectory: true)
+            models: support.appendingPathComponent("Models", isDirectory: true),
+            lexicon: bundledLexicon
         )
     }
 }

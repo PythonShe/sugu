@@ -41,7 +41,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   dictionary so they take part in lattice search.
 - Why: one inspector can list, pin, delete, and expire everything; deleting a
   word really removes it. Cost: librime's own phrase-combination learning is
-  given up; Sugu learns the committed phrase as a whole instead.
+  given up; Sugu learns the committed phrase as a whole instead. D-025
+  brings learned words into librime's sentences without librime learning.
 
 ## D-004 · Composition ownership (2026-10-20)
 - Chinese: librime owns raw input, caret, and partial selection (keys go
@@ -262,3 +263,30 @@ any call made without the owner present. Each entry: what, why, reversibility.
   top candidate is uncertain" needs a confidence the engines do not expose
   (librime and AzooKey return ranked lists without comparable scores), so
   that trigger is not built.
+
+## D-025 · Chinese learned words in librime's sentences (2026-10-20)
+- Before, a Chinese learned word surfaced only when its reading was typed
+  alone or as a prefix (D-003): a name taught once never appeared inside a
+  longer sentence. Now the store's Chinese words (2–5 Han characters) are
+  written into librime's user dictionary, which takes part in sentence
+  making, and librime opens it read-only (`db_class: stabledb`), so it
+  never learns on its own and the store stays the one place words live.
+- Codes are the toneless syllables the user typed. `sugu-tool build-data`
+  adds one weight-0 entry per toneless syllable (`sugu_syllables`, imported
+  last so a repeat of a wanxiang entry is the copy dropped) so the
+  syllabary holds them; typed keys are read back as syllables by running
+  the schema's own spelling rules in Swift (`SpellingAlgebra`,
+  `PinyinDecoder`), so words learned in double pinyin, with typo spellings,
+  or imported as full pinyin all decode. Readings with abbreviations do
+  not, and those words keep the exact-reading path only.
+- librime scores a read-only phrase from its commit count alone; 2×10⁸ per
+  use places a word used once among common words. One-character words are
+  left out so one choice does not reorder a syllable in every sentence.
+- The file is rewritten 2 s after changes settle, off the main thread, and
+  the Chinese session is reopened between compositions (about 1 ms):
+  librime shares one open dictionary among sessions and frees it with the
+  last, so `RimeEngine` now closes its session when it goes away.
+- `sugu-bench` measures it (`Bench/zh-learned.tsv`): sentences using ten
+  taught names and terms go from 0% to 83% top-1, and the main Chinese set
+  stays at 90% after learning.
+

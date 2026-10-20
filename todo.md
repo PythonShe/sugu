@@ -30,6 +30,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 ## 4. Learning & data
 - [x] `SuguLearning`: SQLite store (learn, pin, delete, forget last hour, expiry); pause + no-learn list are enforced by the input session
 - [x] Reranking + injection of learned words (exact reading); user words share the store
+- [x] Chinese learned words in librime sentences: read-only user dictionary from the store, scheme-aware decoding (D-025)
 - [x] File protection + backup exclusion
 - [x] `SuguDictionaries`: import macOS text replacements, Google IME, ATOK, Sogou, RIME; export
 - [x] Sync through a user-picked folder

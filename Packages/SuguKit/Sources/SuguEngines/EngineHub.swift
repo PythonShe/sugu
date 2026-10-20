@@ -18,12 +18,15 @@ public final class EngineHub: EngineSource {
         public var azooKey: URL
         /// Downloaded models (grammar, Zenzai).
         public var models: URL
+        /// Bundled word lists (`Lexicon`), for the pinyin syllables.
+        public var lexicon: URL
 
-        public init(rimeShared: URL, rimeUser: URL, azooKey: URL, models: URL) {
+        public init(rimeShared: URL, rimeUser: URL, azooKey: URL, models: URL, lexicon: URL) {
             self.rimeShared = rimeShared
             self.rimeUser = rimeUser
             self.azooKey = azooKey
             self.models = models
+            self.lexicon = lexicon
         }
 
         /// The grammar model, when downloaded. octagram reads it from the
@@ -60,6 +63,11 @@ public final class EngineHub: EngineSource {
     private var japanese: AzooKeyEngine?
     private var preparing: Task<Void, Never>?
     private var userWordsRefresh: Task<Void, Never>?
+    private var chineseWordsUpdate: Task<Void, Never>?
+    /// How long learned-word changes settle before librime's copy is
+    /// rewritten, so a burst of commits rewrites it once.
+    private let chineseWordsDelay: Duration
+    private var decoders: (schema: RimeSchema, scheme: PinyinDecoder, fullPinyin: PinyinDecoder?)?
     /// Set when the last Chinese deployment failed, for the settings window.
     public private(set) var chineseError: (any Error)?
     /// The schema whose deployment failed; not retried until settings or
@@ -71,11 +79,12 @@ public final class EngineHub: EngineSource {
     /// between apps with different scripts does not reopen them.
     private var scriptConverters: [ChineseScript: ScriptConverter] = [:]
 
-    public init(locations: Locations, preferences: Preferences, store: LearnedStore?, version: String) {
+    public init(locations: Locations, preferences: Preferences, store: LearnedStore?, version: String, chineseWordsDelay: Duration = .seconds(2)) {
         self.locations = locations
         self.preferences = preferences
         self.store = store
         self.version = version
+        self.chineseWordsDelay = chineseWordsDelay
         self.chineseScript = preferences.chineseScript
         self.runtime = RimeRuntime(directories: .init(shared: locations.rimeShared, user: locations.rimeUser))
     }
@@ -104,6 +113,7 @@ public final class EngineHub: EngineSource {
     /// Refreshes AzooKey's user words once per run-loop turn, however many
     /// changes arrive (a commit both notifies the store and calls this).
     public func learnedWordsDidChange() {
+        updateChineseWords()
         guard japanese != nil, userWordsRefresh == nil else { return }
         userWordsRefresh = Task { [weak self] in
             guard let self else { return }
@@ -146,6 +156,7 @@ public final class EngineHub: EngineSource {
                 try await runtime.prepare(schema, version: version)
                 chineseError = nil
                 failedSchema = nil
+                updateChineseWords(after: .zero)
             } catch {
                 chineseError = error
                 failedSchema = schema
@@ -160,6 +171,60 @@ public final class EngineHub: EngineSource {
     public func waitUntilReady() async {
         warmUp(.chinese)
         while let task = preparing { await task.value }
+    }
+
+    // MARK: Learned words in librime
+
+    /// Rewrites librime's user dictionary from the store once changes have
+    /// settled, off the main thread, and reopens the Chinese session to
+    /// read it (decision D-025). Nothing to do before Chinese is deployed:
+    /// deployment calls this when it finishes.
+    private func updateChineseWords(after delay: Duration? = nil) {
+        guard let store, runtime.isReady, let schema = runtime.schema else { return }
+        chineseWordsUpdate?.cancel()
+        let delay = delay ?? chineseWordsDelay
+        let locations = locations
+        let cached = decoders?.schema == schema ? decoders : nil
+        chineseWordsUpdate = Task { [weak self] in
+            if delay > .zero { try? await Task.sleep(for: delay) }
+            guard !Task.isCancelled, let self else { return }
+            let words = store.allWords(mode: .chinese).map { RimeUserDictionary.Word(reading: $0.reading, text: $0.text, count: $0.count) }
+            let result = await Task.detached(priority: .utility) { () -> (decoders: (RimeSchema, PinyinDecoder, PinyinDecoder?)?, written: Bool) in
+                guard let decoders = cached.map({ ($0.schema, $0.scheme, $0.fullPinyin) }) ?? Self.makeDecoders(for: schema, locations: locations) else {
+                    return (nil, false)
+                }
+                let table = RimeUserDictionary.table(for: words, decoder: decoders.1, fullPinyin: decoders.2)
+                return (decoders, (try? RimeUserDictionary.write(table, in: locations.rimeUser)) ?? false)
+            }.value
+            if let made = result.decoders { decoders = (made.0, made.1, made.2) }
+            guard !Task.isCancelled, result.written, runtime.schema == schema else { return }
+            await reloadChineseWords()
+        }
+    }
+
+    private nonisolated static func makeDecoders(for schema: RimeSchema, locations: Locations) -> (RimeSchema, PinyinDecoder, PinyinDecoder?)? {
+        let syllables = Lexicon.load(Lexicon.syllablesFile, in: locations.lexicon)
+        guard !syllables.isEmpty, let decoder = PinyinDecoder(schema: schema, syllables: syllables, sharedData: locations.rimeShared) else { return nil }
+        // Imported words carry full pinyin whatever the scheme.
+        let fullPinyin = schema.scheme == .fullPinyin ? nil : PinyinDecoder(schema: RimeSchema(), syllables: syllables, sharedData: locations.rimeShared)
+        return (schema, decoder, fullPinyin)
+    }
+
+    /// Reopens the Chinese session between compositions.
+    private func reloadChineseWords() async {
+        while let chinese, !chinese.reloadUserDictionary() {
+            try? await Task.sleep(for: .seconds(1))
+            if Task.isCancelled { return }
+        }
+    }
+
+    /// Waits for a pending rewrite of librime's user dictionary (for tools
+    /// and tests).
+    public func waitForChineseWords() async {
+        while let task = chineseWordsUpdate {
+            await task.value
+            if chineseWordsUpdate == task { break }
+        }
     }
 
     public func apply(_ preferences: Preferences) {

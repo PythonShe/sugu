@@ -26,7 +26,8 @@ enum Bench {
             rimeShared: data.appendingPathComponent("Rime"),
             rimeUser: work.appendingPathComponent("Rime"),
             azooKey: work.appendingPathComponent("AzooKey"),
-            models: work.appendingPathComponent("Models")
+            models: work.appendingPathComponent("Models"),
+            lexicon: data.appendingPathComponent("Lexicon")
         )
         if let zenzaiModel {
             try FileManager.default.createDirectory(at: locations.models, withIntermediateDirectories: true)
@@ -38,11 +39,15 @@ enum Bench {
             try FileManager.default.createSymbolicLink(at: locations.grammarModel, withDestinationURL: grammarModel)
             preferences.useGrammarModel = true
         }
+        // Learning off for the accuracy sets; the learned-words set teaches
+        // words through the store directly.
+        let store = try LearnedStore(url: work.appendingPathComponent("learned.sqlite"))
         let engines = EngineHub(
             locations: locations,
             preferences: preferences,
-            store: nil,
-            version: "bench"
+            store: store,
+            version: "bench",
+            chineseWordsDelay: .zero
         )
         await engines.waitUntilReady()
         let lexicon = data.appendingPathComponent("Lexicon")
@@ -50,7 +55,7 @@ enum Bench {
             syllables: Lexicon.load(Lexicon.syllablesFile, in: lexicon),
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: lexicon)
         )
-        let session = InputSession(preferences: preferences, engines: engines, store: nil, latin: latin)
+        let session = InputSession(preferences: preferences, engines: engines, store: store, latin: latin)
         let field = Field()
         session.attach(field)
 
@@ -58,7 +63,36 @@ enum Bench {
         report.chinese = measure(session, mode: .chinese, cases: try load(bench.appendingPathComponent("zh.tsv")))
         report.japanese = measure(session, mode: .japanese, cases: try load(bench.appendingPathComponent("ja.tsv")))
         report.memory = Memory.current()
+
+        let learnedSet = bench.appendingPathComponent("zh-learned.tsv")
+        if FileManager.default.fileExists(atPath: learnedSet.path) {
+            let (words, cases) = try loadLearned(learnedSet)
+            report.learnedBefore = measure(session, mode: .chinese, cases: cases)
+            for (reading, text) in words {
+                store.learn(Commit(text: text, reading: reading), mode: .chinese)
+            }
+            engines.learnedWordsDidChange()
+            await engines.waitForChineseWords()
+            report.learnedAfter = measure(session, mode: .chinese, cases: cases)
+            report.chineseAfterLearning = measure(session, mode: .chinese, cases: try load(bench.appendingPathComponent("zh.tsv")))
+        }
         return report
+    }
+
+    /// Words to teach (rows starting with +) and the sentences using them.
+    static func loadLearned(_ url: URL) throws -> (words: [(String, String)], cases: [Case]) {
+        var words: [(String, String)] = []
+        var cases: [Case] = []
+        for line in try String(contentsOf: url, encoding: .utf8).split(whereSeparator: \.isNewline) where !line.hasPrefix("#") {
+            let fields = line.split(separator: "\t")
+            guard fields.count == 2 else { continue }
+            if fields[0].hasPrefix("+") {
+                words.append((String(fields[0].dropFirst()), String(fields[1])))
+            } else {
+                cases.append(Case(typed: String(fields[0]), expected: String(fields[1])))
+            }
+        }
+        return (words, cases)
     }
 
     static func load(_ url: URL) throws -> [Case] {

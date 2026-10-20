@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Chinese learned words take part in librime's sentences (D-025): a
+  read-only user dictionary generated from the store, codes decoded from
+  the typed keys by the schema's own spelling rules, toneless syllables
+  added to the bundled syllabary. Taught-word sentences 0% → 83% top-1,
+  main set unchanged at 90%; reload ~1 ms. 119 package tests.
 - Grammar model measured (`sugu-bench --grammar`): Chinese top-1 90% → 94%,
   keystroke p99 3.7 ms, footprint unchanged; D-015 updated with the data.
 - Cross-language proper nouns and per-app script (D-021): Japanese kanji

@@ -16,6 +16,9 @@ extension Unicode.Scalar {
         }
     }
 
+    /// Han ideographs: unified, extensions, and compatibility.
+    public var isHan: Bool { properties.isIdeographic }
+
     /// Hiragana, including ゝゞ.
     public var isHiragana: Bool { (0x3041...0x309F).contains(value) }
 
@@ -39,6 +42,7 @@ extension StringProtocol {
 
 extension Character {
     public var isCJK: Bool { unicodeScalars.first?.isCJK ?? false }
+    public var isHan: Bool { unicodeScalars.count == 1 && (unicodeScalars.first?.isHan ?? false) }
     public var isASCIILetterOrDigit: Bool {
         unicodeScalars.count == 1 && (unicodeScalars.first?.isASCIILetterOrDigit ?? false)
     }

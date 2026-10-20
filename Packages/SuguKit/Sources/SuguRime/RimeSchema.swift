@@ -119,7 +119,11 @@ public struct RimeSchema: Sendable, Equatable {
             "translator:",
             "  dictionary: \(translatorDictionary)",
             "  prism: \(translatorDictionary)",
-            "  enable_user_dict: false",
+            // Sugu's learned words, generated read-only: librime does not
+            // learn on its own (decision D-003, D-025).
+            "  enable_user_dict: true",
+            "  user_dict: \(RimeUserDictionary.name)",
+            "  db_class: stabledb",
             "  enable_completion: true",
             "  enable_sentence: true",
             "  initial_quality: 3",
