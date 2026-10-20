@@ -6,6 +6,18 @@ Running log of what was built, verified, and what is next. Newest first.
 - Cross-language proper nouns and per-app script (D-021): Japanese kanji
   forms as a Chinese script, Chinese forms after Japanese names, Sugu's own
   candidates in the script in use, a script column in the Apps pane.
+- Maintainability track (D-024, todo §8): `InputSession` now asks the
+  engine's traits (conversion phase, learning, Sugu candidates) instead of
+  branching on mode or engine type, and is split into keys, composition,
+  candidate-list and field files with `CandidateList` and `PendingUndo`
+  types; `EngineHub`/`ModelLibrary` moved to a `SuguEngines` target so
+  `SuguInput` links no engine and builds without C++ interop;
+  `ShiftTapDetector` and `DictionarySync` moved into the package;
+  CONTEXT.md vocabulary applied. New tests cover AzooKey clause navigation,
+  session paging and navigation, the candidate list, Shift taps, sync and
+  backoff, and model installs. They found AzooKey dropping keys typed after
+  a fixed clause from the reading (F6–F10 and raw commit), now fixed.
+  112 package tests.
 - Draw budget now measured in CI (`Sugu --measure-draw`, p99 1.2 ms).
   Japanese bench row 49 typed いけんい (romaji `nn` is ん); fixed, top-1
   76 → 78%. The remaining Japanese misses are AzooKey's own first choice

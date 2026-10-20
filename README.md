@@ -45,6 +45,7 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' bu
 | `Packages/SuguKit/` | Input state machine, engines, learning, dictionaries — testable without installing anything |
 | `Bench/` | Accuracy test sets |
 | `docs/adr/` | Architecture decisions |
+| `todo.md`, `progress.md`, `decision.md` | Work plan, build log and implementation decisions |
 | `scripts/` | Dependency, data, release and install scripts |
 
 ## License
