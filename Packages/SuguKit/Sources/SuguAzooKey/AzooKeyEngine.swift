@@ -50,6 +50,9 @@ public final class AzooKeyEngine: CompositionEngine {
     private var bestFollowing: (length: Int, text: String)?
 
     public private(set) var state = CompositionState.empty
+    /// Built once: constructing it reads the emoji dictionary from disk,
+    /// which cost more than the conversion itself on every keystroke.
+    private let textReplacer = TextReplacer.withDefaultEmojiDictionary()
 
     public init(configuration: Configuration) {
         self.configuration = configuration
@@ -100,7 +103,7 @@ public final class AzooKeyEngine: CompositionEngine {
             maxMemoryCount: 0,
             memoryDirectoryURL: configuration.workingDirectory,
             sharedContainerURL: configuration.workingDirectory,
-            textReplacer: .withDefaultEmojiDictionary(),
+            textReplacer: textReplacer,
             specialCandidateProviders: KanaKanjiConverter.defaultSpecialCandidateProviders,
             zenzaiMode: zenzai,
             metadata: .init(versionString: "Sugu")
