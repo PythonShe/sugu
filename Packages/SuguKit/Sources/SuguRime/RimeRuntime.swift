@@ -88,7 +88,10 @@ public final class RimeRuntime {
             api.join_maintenance_thread?()
             return true
         }.value
-        guard succeeded else { throw Error.deploymentFailed }
+        // librime reports a failed build step (disk full, an unwritable
+        // folder) only in its log; the compiled schema is the evidence.
+        let compiled = directories.user.appendingPathComponent("build/\(RimeSchema.schemaID).schema.yaml")
+        guard succeeded, FileManager.default.fileExists(atPath: compiled.path) else { throw Error.deploymentFailed }
         self.schema = schema
     }
 
@@ -118,7 +121,10 @@ public final class RimeRuntime {
         guard isReady else { throw Error.sessionUnavailable }
         let id = api.create_session?() ?? 0
         guard id != 0 else { throw Error.sessionUnavailable }
-        _ = api.select_schema?(id, RimeSchema.schemaID)
+        guard api.select_schema?(id, RimeSchema.schemaID) ?? 0 != 0 else {
+            _ = api.destroy_session?(id)
+            throw Error.sessionUnavailable
+        }
         return id
     }
 }
