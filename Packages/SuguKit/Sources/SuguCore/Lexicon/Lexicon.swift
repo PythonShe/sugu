@@ -18,12 +18,19 @@ public enum Lexicon {
             let columns = line.split(separator: "\t", omittingEmptySubsequences: false)
             guard columns.count >= 2 else { continue }
             for syllable in columns[1].split(separator: " ") {
-                // ü decomposes to u + U+0308 and is written v; other marks are tones.
-                let decomposed = syllable.decomposedStringWithCanonicalMapping
-                    .replacingOccurrences(of: "u\u{308}", with: "v")
-                let plain = String(String.UnicodeScalarView(decomposed.unicodeScalars.filter {
-                    !(0x0300...0x036F).contains($0.value)
-                }))
+                // ü decomposes to u + U+0308 and is written v; other marks are
+                // tones. Work on scalars: a toned ü (ǚ) is one grapheme, so a
+                // string search for "ü" would not match it.
+                var scalars = String.UnicodeScalarView()
+                for scalar in syllable.decomposedStringWithCanonicalMapping.unicodeScalars {
+                    if scalar.value == 0x0308, scalars.last == "u" {
+                        scalars.removeLast()
+                        scalars.append("v")
+                    } else if !(0x0300...0x036F).contains(scalar.value) {
+                        scalars.append(scalar)
+                    }
+                }
+                let plain = String(scalars)
                 if !plain.isEmpty, plain.allSatisfy(\.isASCIILowercaseLetter) {
                     result.insert(plain)
                 }

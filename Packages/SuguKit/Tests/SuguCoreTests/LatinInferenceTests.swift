@@ -27,4 +27,9 @@ struct LatinInferenceTests {
         // Valid pinyin that is also an English word stays pinyin.
         #expect(inference.placement(for: "xian") == .last)
     }
+
+    @Test func syllablesFromToneMarkedDictionary() {
+        let dictionary = "绿\tlǜ\t1\n略\tlüè\t1\n女\tnǚ\t1\n好\thǎo\t1\n"
+        #expect(Lexicon.syllables(fromRimeDictionary: dictionary) == ["lv", "lve", "nv", "hao"])
+    }
 }
