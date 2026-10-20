@@ -3,6 +3,7 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Chinese words offer the emoji they name, from CLDR (D-065).
 - The mode indicator no longer appears at the pointer when switching
   apps changes the mode (D-064).
 - The learned store carries a schema version and logs failed writes

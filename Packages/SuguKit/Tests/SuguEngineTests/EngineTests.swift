@@ -42,6 +42,20 @@ struct RimeEngineTests {
         return engine.state.candidates.first?.text
     }
 
+    /// A word that names an emoji offers it right after the word, in
+    /// either script.
+    @Test func wordsOfferTheirEmoji() async throws {
+        try await Shared.runtime.prepare(RimeSchema(), version: "test")
+        for (reading, script, word, emoji) in [("tongyi", ChineseScript.simplified, "同意", "👍"), ("aixin", .traditional, "愛心", "❤️")] {
+            let engine = RimeEngine(runtime: Shared.runtime, script: script)
+            engine.insert(reading)
+            let texts = engine.state.candidates.map(\.text)
+            engine.clear()
+            let index = try #require(texts.firstIndex(of: word))
+            #expect(texts[safe: index + 1] == emoji)
+        }
+    }
+
     @Test func fullPinyin() async throws {
         #expect(try await first("nihao") == "你好")
         #expect(try await first("woaibeijingtiananmen") == "我爱北京天安门")

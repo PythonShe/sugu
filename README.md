@@ -13,7 +13,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Features
 
-- **Chinese** through [librime](https://github.com/rime/librime) with the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin and the common shuangpin schemes, fuzzy pinyin, Simplified, Traditional (with Taiwan or Hong Kong punctuation) or Japanese kanji forms (per app if you like), sentences corrected by a character language model built from [Tatoeba](https://tatoeba.org), an optional grammar model, and rime-ice as an optional download.
+- **Chinese** through [librime](https://github.com/rime/librime) with the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin and the common shuangpin schemes, fuzzy pinyin, Simplified, Traditional (with Taiwan or Hong Kong punctuation) or Japanese kanji forms (per app if you like), sentences corrected by a character language model built from [Tatoeba](https://tatoeba.org), emoji after the words that name them (from [CLDR](https://cldr.unicode.org)), an optional grammar model, and rime-ice as an optional download.
 - **Japanese** through [AzooKeyKanaKanjiConverter](https://github.com/azooKey/AzooKeyKanaKanjiConverter): romaji or kana input (JIS or US keyboards), clause-by-clause or live conversion ranked by a character language model built from [Tatoeba](https://tatoeba.org), predictions, typo tolerance, Chinese forms of Japanese names, and the experimental Zenzai neural converter as an optional download.
 - **Modes** switched with Shift or Caps Lock, ⌃⇧Space, or the かな/英数 keys; per-app defaults, English in terminals and password fields.
 - **Learning you control** — an inspector to search, pin and delete learned words, "forget the last hour", per-app opt-out, expiry, and undo of the last commit with ⌃⌫.
@@ -31,7 +31,7 @@ Requires Xcode 26 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen), C
 
 ```bash
 scripts/build-librime.sh   # librime + octagram → Frameworks/librime.xcframework
-scripts/fetch-data.sh      # rime-wanxiang dictionary sources, Tatoeba sentences
+scripts/fetch-data.sh      # rime-wanxiang dictionary sources, Tatoeba sentences, CLDR emoji names
 scripts/build-data.sh      # compiled dictionaries and language model → Data/
 xcodegen generate
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' build

@@ -1,7 +1,8 @@
 #!/bin/bash
 # Downloads the bundled data sources: rime-wanxiang dictionaries
-# (CC-BY-4.0) into .vendor/wanxiang, and Tatoeba sentences (CC BY 2.0 FR)
-# into .vendor/tatoeba. scripts/build-data.sh compiles them into Data/.
+# (CC-BY-4.0) into .vendor/wanxiang, Tatoeba sentences (CC BY 2.0 FR)
+# into .vendor/tatoeba, and CLDR's Chinese emoji annotations
+# (Unicode-DFS-2016) into .vendor/cldr. scripts/build-data.sh compiles them into Data/.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -47,5 +48,25 @@ fetch_tatoeba() {
   echo "Tatoeba $TATOEBA_OPUS_VERSION -> $dest"
 }
 
+fetch_cldr() {
+  local dest="$ROOT/.vendor/cldr"
+  if [[ -f "$dest/.ref" && "$(cat "$dest/.ref")" == "$CLDR_ANNOTATIONS_REF" ]]; then
+    echo "CLDR annotations $CLDR_ANNOTATIONS_REF already present"
+    return
+  fi
+  local base="https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_ANNOTATIONS_REF"
+  curl -fsSL -o "$TMP/zh.xml" "$base/common/annotations/zh.xml"
+  echo "$CLDR_ANNOTATIONS_ZH_SHA256  $TMP/zh.xml" | shasum -a 256 -c -
+  curl -fsSL -o "$TMP/zh_Hant.xml" "$base/common/annotations/zh_Hant.xml"
+  echo "$CLDR_ANNOTATIONS_ZH_HANT_SHA256  $TMP/zh_Hant.xml" | shasum -a 256 -c -
+  curl -fsSL -o "$TMP/LICENSE" "$base/unicode-license.txt"
+  echo "$CLDR_ANNOTATIONS_LICENSE_SHA256  $TMP/LICENSE" | shasum -a 256 -c -
+  rm -rf "$dest" && mkdir -p "$dest"
+  mv "$TMP/zh.xml" "$TMP/zh_Hant.xml" "$TMP/LICENSE" "$dest/"
+  echo "$CLDR_ANNOTATIONS_REF" > "$dest/.ref"
+  echo "CLDR annotations $CLDR_ANNOTATIONS_REF -> $dest"
+}
+
 fetch_wanxiang
 fetch_tatoeba
+fetch_cldr

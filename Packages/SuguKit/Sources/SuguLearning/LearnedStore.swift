@@ -252,12 +252,18 @@ public final class LearnedStore {
 
     /// The (reading, text) pairs a commit teaches: each converted clause and,
     /// when it is short enough to be a word, the whole commit.
+    /// Emoji are not learned: the word that names one offers it, and a
+    /// learned emoji would take that word's place.
     private static func pairs(learnedFrom commit: Commit) -> [(String, String)] {
         var pairs = commit.clauses.filter { $0.text != $0.reading }.map { ($0.reading, $0.text) }
         if commit.text.count <= maximumWordLength, commit.text != commit.reading, !pairs.contains(where: { $0.1 == commit.text }) {
             pairs.append((commit.reading, commit.text))
         }
-        return pairs
+        return pairs.filter { !containsEmoji($0.1) }
+    }
+
+    private static func containsEmoji(_ text: String) -> Bool {
+        text.unicodeScalars.contains { $0.properties.isEmojiPresentation || $0 == "\u{FE0F}" }
     }
 
     /// Adds a word the user typed in, or imported.

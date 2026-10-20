@@ -6,7 +6,7 @@ import SuguRime
 // installed input method or the user's input sources.
 let arguments = Array(CommandLine.arguments.dropFirst())
 let usage = """
-usage: sugu-tool build-data --wanxiang <dir> --opencc <dir> --out <dir> [--version <v>]
+usage: sugu-tool build-data --wanxiang <dir> --opencc <dir> --cldr <dir> --out <dir> [--version <v>]
        sugu-tool build-lm --corpus <file> --out <file> [--opencc <dir>] [--exclude <bench.tsv>]...
        sugu-tool convert --data <dir> (--chinese | --japanese) [--user <dir>] [--scheme <name>] [--rime-ice] [--grammar] <reading>...
 """
@@ -24,10 +24,11 @@ func fail(_ message: String) -> Never {
 do {
     switch arguments.first {
     case "build-data":
-        guard let wanxiang = option("--wanxiang"), let openCC = option("--opencc"), let out = option("--out") else { fail(usage) }
+        guard let wanxiang = option("--wanxiang"), let openCC = option("--opencc"), let cldr = option("--cldr"), let out = option("--out") else { fail(usage) }
         try await BuildData.run(
             wanxiang: URL(fileURLWithPath: wanxiang),
             openCC: URL(fileURLWithPath: openCC),
+            cldr: URL(fileURLWithPath: cldr),
             output: URL(fileURLWithPath: out),
             version: option("--version") ?? "dev"
         )

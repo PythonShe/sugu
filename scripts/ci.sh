@@ -10,7 +10,7 @@ cd "$ROOT"
 
 [[ -d Frameworks/librime.xcframework ]] || scripts/build-librime.sh
 scripts/fetch-data.sh
-[[ -f Data/Rime/build/sugu.table.bin ]] || scripts/build-data.sh
+[[ -f Data/Rime/build/sugu.table.bin && -f Data/Rime/opencc/emoji.txt ]] || scripts/build-data.sh
 
 xcodegen generate --quiet
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' \

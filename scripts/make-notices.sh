@@ -16,7 +16,7 @@ OUT="$ROOT/Sugu/Resources/ThirdPartyNotices.txt"
 
 swift package --package-path "$KIT" resolve >/dev/null
 [[ -d "$RIME/librime" ]] || { echo "run scripts/build-librime.sh first" >&2; exit 1; }
-[[ -f "$ROOT/.vendor/wanxiang/LICENSE" ]] || { echo "run scripts/fetch-data.sh first" >&2; exit 1; }
+[[ -f "$ROOT/.vendor/wanxiang/LICENSE" && -f "$ROOT/.vendor/cldr/LICENSE" ]] || { echo "run scripts/fetch-data.sh first" >&2; exit 1; }
 
 # fetch <name> <url> <sha256>: a pinned license text, cached in .vendor as
 # $CACHE/<name>. Called as a plain statement (not in $(...)), so a failed
@@ -94,6 +94,7 @@ entry "AzooKeyKanaKanjiConverter $(version azookeykanakanjiconverter)" "https://
 entry "azooKey dictionary data" "https://github.com/ensan-hcl/azooKey_dictionary_storage" "Apache-2.0" "$AZOOKEY_DATA/azooKey_dictionary_storage/LICENSE"
 entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/mozc" "BSD-3-Clause" "$CACHE/mozc-LICENSE"
 entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" "$CACHE/cldr-LICENSE"
+entry "CLDR $CLDR_ANNOTATIONS_REF Chinese emoji annotations (as emoji after Chinese words)" "https://cldr.unicode.org" "Unicode-DFS-2016" "$ROOT/.vendor/cldr/LICENSE"
 entry "Tatoeba sentences $TATOEBA_OPUS_VERSION (as the Japanese and Chinese language models)" "https://tatoeba.org" "CC-BY-2.0-FR" "$TATOEBA_NOTICE"
 entry "azooKey tokenizer data: ku-nlp/gpt2-small-japanese-char tokenizer (with AzooKeyKanaKanjiConverter)" \
   "https://huggingface.co/ku-nlp/gpt2-small-japanese-char" "CC-BY-SA-4.0" "$CACHE/cc-by-sa-4.0.txt"

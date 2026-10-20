@@ -968,3 +968,26 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Japanese composition as it shows (D-041 chose that); capitals in a
   romaji composition stay Latin, as on Apple's Japanese input.
 
+## D-065 · Emoji after Chinese words (2026-10-20)
+- Japanese offered emoji (AzooKey's emoji dictionary) and Chinese did
+  not; Apple's Pinyin does. rime-emoji, the usual table, is LGPL, so the
+  words come from CLDR's Chinese annotations (Unicode-DFS-2016) instead:
+  `zh.xml` and `zh_Hant.xml` from CLDR 43, which stops at Emoji 15.0, all
+  of which macOS 14 draws. `scripts/fetch-data.sh` pins them;
+  `sugu-tool build-data` writes an OpenCC text table and configuration
+  into `Data/Rime/opencc`; the schema runs `simplifier@emoji` after the
+  script filters, so Traditional words find theirs too.
+- A word offers an emoji when it is the emoji's name or a keyword of two
+  or more characters (single characters such as 脸 and 好 name too many),
+  names first: 同意 → 👍, 红心 → ❤️, 愛心 → ❤️; 6,316 words. One emoji per
+  word: three pushed common homophones (统一 after 同意) to fifth place.
+  CLDR omits presentation selectors; they are added, so 🙆‍♂️ and #️⃣
+  draw as one emoji.
+- Emoji are not learned: a learned 👍 would come before 同意 from then
+  on. No setting, as for Japanese.
+- Measured: no change in accuracy; the Chinese keystroke time is the same
+  with the filter on and off (p99 4.2 ms on a busier machine than the
+  earlier 3.8 ms runs; HEAD measured 4.2–4.4 ms at the same time). A
+  compiled ocd2 table was no faster than the text table, so the build
+  needs no OpenCC tool. Suggested by the advisor survey (pass 4).
+

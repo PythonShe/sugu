@@ -13,7 +13,8 @@ public enum RimeSharedData {
     /// `scripts/fetch-data.sh` downloads them (`WANXIANG_DICTS`).
     public static let importedTables = ["zi", "jichu", "cuoyin", "duoyin", "diming", "mingren", "yiren"]
 
-    public static func write(to directory: URL, wanxiang: URL, openCC: URL, version: String) throws {
+    /// `emojiAnnotations` are CLDR's Chinese annotation files (EmojiNames).
+    public static func write(to directory: URL, wanxiang: URL, openCC: URL, emojiAnnotations: [Data], version: String) throws {
         let fm = FileManager.default
         try fm.createDirectory(at: directory.appendingPathComponent("dicts"), withIntermediateDirectories: true)
         for table in importedTables {
@@ -30,6 +31,9 @@ public enum RimeSharedData {
         try? fm.removeItem(at: openCCTarget)
         try fm.copyItem(at: openCC, to: openCCTarget)
         try japaneseForms.write(to: openCCTarget.appendingPathComponent(japaneseFormsConfig), atomically: true, encoding: .utf8)
+        try EmojiNames.table(fromAnnotations: emojiAnnotations)
+            .write(to: openCCTarget.appendingPathComponent(EmojiNames.table), atomically: true, encoding: .utf8)
+        try EmojiNames.configuration.write(to: openCCTarget.appendingPathComponent(EmojiNames.config), atomically: true, encoding: .utf8)
 
         try defaultConfig.write(to: directory.appendingPathComponent("default.yaml"), atomically: true, encoding: .utf8)
         let zi = try String(contentsOf: wanxiang.appendingPathComponent("dicts/zi.dict.yaml"), encoding: .utf8)

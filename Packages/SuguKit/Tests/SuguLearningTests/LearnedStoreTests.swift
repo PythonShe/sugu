@@ -49,6 +49,13 @@ struct LearnedStoreTests {
         #expect(store.lookup("きょう", mode: .japanese).map(\.text) == ["今日"])
     }
 
+    @Test func emojiAreNotLearned() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "👍", reading: "tongyi"), mode: .chinese)
+        store.learn(Commit(text: "❤️", reading: "hongxin"), mode: .chinese)
+        #expect(store.count == 0)
+    }
+
     @Test func ignoresUnconvertedText() throws {
         let store = try makeStore()
         store.learn(Commit(text: "nihao", reading: "nihao"), mode: .chinese)

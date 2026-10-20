@@ -20,6 +20,14 @@ TATOEBA_OPUS_VERSION=v2026-07-08
 TATOEBA_JA_SHA256=d5b2eb0eb1084b20c8b86aff29aedb51dfac96eb53c8ba65fe6aa4dfaf00de60
 TATOEBA_CMN_SHA256=1d582fbbf05e5af2ca718e3a6565597337eef2dfb562c9c73c4d2c4b86e56b76
 
+# CLDR's Chinese emoji annotations (Unicode-DFS-2016), for emoji after
+# Chinese words. CLDR 43 covers Emoji 15.0, which every supported macOS
+# draws.
+CLDR_ANNOTATIONS_REF=release-43
+CLDR_ANNOTATIONS_ZH_SHA256=df647e5e09048f1d8f3605e5f6a04c6f616e5398c047039fc5e51b4da0151ac1
+CLDR_ANNOTATIONS_ZH_HANT_SHA256=ca3b5553a153308ab455b6566fc5dc52e002b2fe9eb50114c8c3c100105ddc67
+CLDR_ANNOTATIONS_LICENSE_SHA256=830ec6dd25a943b70a31d74caa56b08b34c35f5c9679fba664c1658712849271
+
 # License texts for bundled code that ships without one in its sources
 # (scripts/make-notices.sh).
 LLAMA_CPP_REF=b4846

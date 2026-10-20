@@ -6,11 +6,12 @@ import SuguRime
 /// word lists extracted from the dictionary data.
 @MainActor
 enum BuildData {
-    static func run(wanxiang: URL, openCC: URL, output: URL, version: String) async throws {
+    static func run(wanxiang: URL, openCC: URL, cldr: URL, output: URL, version: String) async throws {
         let fm = FileManager.default
         let rime = output.appendingPathComponent("Rime")
         try? fm.removeItem(at: rime)
-        try RimeSharedData.write(to: rime, wanxiang: wanxiang, openCC: openCC, version: version)
+        let annotations = try ["zh.xml", "zh_Hant.xml"].map { try Data(contentsOf: cldr.appendingPathComponent($0)) }
+        try RimeSharedData.write(to: rime, wanxiang: wanxiang, openCC: openCC, emojiAnnotations: annotations, version: version)
 
         // Precompile with the same runtime code the app uses.
         let staging = fm.temporaryDirectory.appendingPathComponent("sugu-build-\(UUID().uuidString)")

@@ -64,6 +64,9 @@ public struct RimeSchema: Sendable, Equatable {
         }
     }
 
+    /// The filter that offers emoji after the words that name them.
+    static let emojiOption = "emoji"
+
     static let scriptFilters: [(option: String, config: String)] = [
         ("s2t", "s2t.json"), ("s2tw", "s2twp.json"), ("s2hk", "s2hk.json"), ("s2jp", RimeSharedData.japaneseFormsConfig),
     ]
@@ -90,8 +93,9 @@ public struct RimeSchema: Sendable, Equatable {
             "    reset: 0",
         ]
         for filter in Self.scriptFilters {
-            lines += ["  - name: \(filter.option)", "    reset: 0"]
+            lines += ["  - name: \(filter.option)", "    reset: 1"]
         }
+        lines += ["  - name: \(Self.emojiOption)", "    reset: 1"]
         lines += [
             "engine:",
             "  processors:",
@@ -106,6 +110,9 @@ public struct RimeSchema: Sendable, Equatable {
             "  filters:",
         ]
         lines += Self.scriptFilters.map { "    - simplifier@\($0.option)" }
+        // After the script filters, so it reads the words as shown; the
+        // table holds Simplified and Traditional words.
+        lines += ["    - simplifier@\(Self.emojiOption)"]
         lines += [
             "    - uniquifier",
             "speller:",
@@ -145,6 +152,7 @@ public struct RimeSchema: Sendable, Equatable {
         for filter in Self.scriptFilters {
             lines += ["\(filter.option):", "  opencc_config: \(filter.config)", "  option_name: \(filter.option)"]
         }
+        lines += ["\(Self.emojiOption):", "  opencc_config: \(EmojiNames.config)", "  option_name: \(Self.emojiOption)", "  tips: none"]
         lines += ["menu:", "  page_size: 100", ""]
         return lines.joined(separator: "\n")
     }
