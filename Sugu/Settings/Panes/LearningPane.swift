@@ -96,7 +96,7 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
     private func reloadWords() {
         let query = search.stringValue.trimmingCharacters(in: .whitespaces)
         var visible = query.isEmpty ? model.words : model.words.filter {
-            $0.text.localizedCaseInsensitiveContains(query) || $0.reading.localizedCaseInsensitiveContains(query)
+            $0.text.localizedCaseInsensitiveContains(query) || $0.reading.localizedCaseInsensitiveContains(query) || $0.shownReading.contains(query)
         }
         if let sort = wordsEditor.table.sortDescriptors.first, let key = sort.key {
             func less(_ lhs: LearnedWord, _ rhs: LearnedWord) -> Bool {
@@ -167,7 +167,7 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         let word = words[row]
         switch tableColumn?.identifier.rawValue {
         case "text": return textCell(word.text, in: tableView)
-        case "reading": return textCell(word.reading, in: tableView, secondary: true)
+        case "reading": return textCell(word.shownReading, in: tableView, secondary: true)
         case "mode": return textCell(word.mode.localizedName, in: tableView, secondary: true)
         case "count": return textCell(word.count.formatted(), in: tableView, secondary: true)
         case "lastUsed": return textCell(dates.localizedString(for: word.lastUsed, relativeTo: Date()), in: tableView, secondary: true)
@@ -262,5 +262,13 @@ extension AddWordSheet: NSTextFieldDelegate {
         guard let field = notification.object as? NSTextField else { return }
         // Text fields send their action only on Return; track every edit.
         field.sendAction(field.action, to: field.target)
+    }
+}
+
+extension LearnedWord {
+    /// The reading as typed; a Zhuyin word's in Bopomofo, not its codes.
+    var shownReading: String {
+        guard mode == .chinese, let syllables = Zhuyin.syllables(ofCodes: reading) else { return reading }
+        return syllables.map(\.text).joined(separator: " ")
     }
 }

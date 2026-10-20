@@ -45,8 +45,11 @@ public enum RimeUserDictionary {
     /// character are left out, so a single choice does not reorder a
     /// common syllable in every sentence; so are words whose keys do not
     /// read as one syllable per character under the scheme in use, or,
-    /// for imported pinyin, under full pinyin.
-    public static func table(for words: [Word], decoder: PinyinDecoder, fullPinyin: PinyinDecoder?) -> String {
+    /// for imported pinyin, under full pinyin. Words typed in Zhuyin carry
+    /// their syllables as codes (`ni3hao3`): toneless for pinyin, and
+    /// marked as the dictionary writes them for Zhuyin, which has only
+    /// those, since pinyin readings have no tones.
+    public static func table(for words: [Word], decoder: PinyinDecoder, fullPinyin: PinyinDecoder?, keyboard: ChineseKeyboard = .pinyin) -> String {
         var lines = Set<String>()
         var written = 0
         // A reading that kept an apostrophe (xi'an) splits the keys where
@@ -54,8 +57,17 @@ public enum RimeUserDictionary {
         // alone (xian), so it is left to Sugu's exact-reading match.
         for word in words where (2...maximumLength).contains(word.text.count) && word.text.allSatisfy(\.isHan) && !word.reading.contains("'") {
             guard written < maximumWords else { break }
-            var readings = decoder.syllables(typedAs: word.reading, count: word.text.count, limit: maximumReadings)
-            if readings.isEmpty, let fullPinyin {
+            var readings: [[String]]
+            if let syllables = Zhuyin.syllables(ofCodes: word.reading) {
+                guard syllables.count == word.text.count else { continue }
+                let written = keyboard == .zhuyin ? syllables.compactMap { $0.code.flatMap(Zhuyin.tonedPinyin(ofCode:)) } : syllables.compactMap(\.pinyin)
+                readings = written.count == syllables.count ? [written] : []
+            } else if keyboard == .zhuyin {
+                continue
+            } else {
+                readings = decoder.syllables(typedAs: word.reading, count: word.text.count, limit: maximumReadings)
+            }
+            if readings.isEmpty, keyboard == .pinyin, let fullPinyin {
                 readings = fullPinyin.syllables(typedAs: word.reading, count: word.text.count, limit: maximumReadings)
             }
             if !readings.isEmpty { written += 1 }

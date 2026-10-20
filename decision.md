@@ -1173,8 +1173,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Commits carry their reading as codes (`ni3hao3`): the learned store
   folds case and spaces out of Chinese readings, and Bopomofo without the
   first tone's mark does not split back into syllables (ㄧㄚ is ya or yi a).
-  Words learned in Zhuyin therefore do not yet reach pinyin, nor pinyin's
-  reach Zhuyin; nor does reconversion, which has no tones to go on.
+  librime's user dictionary takes a word learned in Zhuyin with its
+  syllables toneless under pinyin and tone-marked as the dictionary writes
+  them (`sū gǔ yuè`) under Zhuyin; pinyin's words, without tones, stay
+  out of Zhuyin's. The Learning pane shows a Zhuyin reading in Bopomofo.
+  Reconverting text in Zhuyin has no tones to go on and is not offered.
 - The session composes Zhuyin in a third way (`EngineTraits.composition`
   `.sentence`): Space ends a syllable with the first tone and between
   syllables opens the window, as ↓ does; there digits choose, Space and

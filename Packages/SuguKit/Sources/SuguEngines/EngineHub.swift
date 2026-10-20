@@ -350,7 +350,7 @@ public final class EngineHub: EngineSource {
                 let now = Date()
                 let words = learned.map { ($0.score(at: now), $0) }.sorted { $0.0 > $1.0 }
                     .map { RimeUserDictionary.Word(reading: $0.1.reading, text: $0.1.text, count: $0.1.count) }
-                let table = RimeUserDictionary.table(for: words, decoder: decoders.1, fullPinyin: decoders.2)
+                let table = RimeUserDictionary.table(for: words, decoder: decoders.1, fullPinyin: decoders.2, keyboard: schema.keyboard)
                 return ChineseWordsWrite(decoders: decoders, written: (try? RimeUserDictionary.write(table, in: locations.rimeUser)) ?? false)
             }
             chineseWordsWrite = write

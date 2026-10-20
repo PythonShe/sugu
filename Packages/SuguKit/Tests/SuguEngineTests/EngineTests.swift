@@ -116,6 +116,9 @@ struct RimeEngineTests {
         #expect(try await sentence("wogfsuguytuo", words: [doublePinyin], schema: RimeSchema(scheme: .xiaohe)) == "我跟苏古月说")
         // An imported word carries full pinyin, and still types in double pinyin.
         #expect(try await sentence("wogfsuguytuo", words: [typed], schema: RimeSchema(scheme: .xiaohe)) == "我跟苏古月说")
+        // A word learned in Zhuyin types in pinyin too.
+        let zhuyin = RimeUserDictionary.Word(reading: "su1gu3yue4", text: "苏古月", count: 1)
+        #expect(try await sentence("wogensuguyueshuo", words: [zhuyin]) == "我跟苏古月说")
         try RimeUserDictionary.write("", in: Shared.user)
     }
 

@@ -141,6 +141,6 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Session keys: tones, Space, selection at the caret, editing (D-073)
 - [x] Settings keyboard choice, mode indicator, strings (D-073)
 - [x] Zhuyin fuzzing in CI (D-073)
-- [ ] Learned words across keyboards: toned user dictionary for librime, Learning pane showing Bopomofo
+- [x] Learned words across keyboards: toned user dictionary for librime, Learning pane showing Bopomofo (D-073)
 - [ ] Zhuyin reconversion from text (toned readings) and a Zhuyin bench set
 - [ ] Taiwanese readings and forms — check on device

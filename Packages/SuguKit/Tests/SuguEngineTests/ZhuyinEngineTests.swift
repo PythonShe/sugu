@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import SuguCore
 import SuguInput
-import SuguRime
+@testable import SuguRime
 
 /// Zhuyin shares the suite's librime runtime, so its tests run in turn
 /// with the other librime tests.
@@ -188,5 +188,31 @@ extension RimeEngineTests {
         let commit = try #require(engine.commitConverted())
         #expect(commit.text == "你ㄏ")
         #expect(commit.reading == commit.text)
+    }
+}
+
+extension RimeEngineTests {
+    /// Words learned in Zhuyin take part in its sentences; pinyin's, which
+    /// have no tones, are left out.
+    @Test func zhuyinLearnedWordsJoinSentences() async throws {
+        try await Shared.runtime.prepare(RimeSchema(keyboard: .zhuyin), version: "test")
+        let decoder = PinyinDecoder(syllables: [], rules: [])
+        let words = [RimeUserDictionary.Word(reading: "su1gu3yue4", text: "苏古悦", count: 1), RimeUserDictionary.Word(reading: "nihao", text: "拟好", count: 9)]
+        let table = RimeUserDictionary.table(for: words, decoder: decoder, fullPinyin: nil, keyboard: .zhuyin)
+        #expect(table.contains("苏古悦\tsū gǔ yuè"))
+        #expect(!table.contains("拟好"))
+        let engine = ZhuyinEngine(runtime: Shared.runtime)
+        try RimeUserDictionary.write("", in: Shared.user)
+        #expect(engine.reloadUserDictionary())
+        engine.insert("nj ej3m,4")
+        #expect(engine.state.markedText != "苏古悦")
+        engine.clear()
+        try RimeUserDictionary.write(table, in: Shared.user)
+        defer { try? RimeUserDictionary.write("", in: Shared.user) }
+        #expect(engine.reloadUserDictionary())
+        // ㄙㄨ ㄍㄨˇ ㄩㄝˋ
+        engine.insert("nj ej3m,4")
+        #expect(engine.state.markedText == "苏古悦")
+        engine.clear()
     }
 }

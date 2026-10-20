@@ -238,6 +238,28 @@ public enum Zhuyin {
         return letters.isEmpty && !result.isEmpty ? result : nil
     }
 
+    /// A code written as the dictionary writes the syllable, with its
+    /// tone marked (`ni3` → `nǐ`, `lve4` → `lüè`, `de5` → `de`): on a or
+    /// e, on the o of ou, else on the last vowel.
+    public static func tonedPinyin(ofCode code: String) -> String? {
+        guard let digit = code.last?.wholeNumberValue, let tone = Tone(rawValue: digit) else { return nil }
+        var letters = Array(code.dropLast())
+        guard !letters.isEmpty, letters.allSatisfy(\.isASCIILowercaseLetter) else { return nil }
+        if tone != .neutral {
+            let vowels: [Character] = ["a", "e", "o", "i", "u", "v"]
+            let target = letters.firstIndex(of: "a") ?? letters.firstIndex(of: "e")
+                ?? letters.indices.first { letters[$0] == "o" && letters.indices.contains($0 + 1) && letters[$0 + 1] == "u" }
+                ?? letters.lastIndex { vowels.contains($0) }
+            guard let target, let marked = marks[letters[target]]?[tone.rawValue - 1] else { return nil }
+            letters[target] = marked
+        }
+        return String(letters).replacingOccurrences(of: "v", with: "ü")
+    }
+
+    private static let marks: [Character: [Character]] = [
+        "a": Array("āáǎà"), "o": Array("ōóǒò"), "e": Array("ēéěè"), "i": Array("īíǐì"), "u": Array("ūúǔù"), "v": Array("ǖǘǚǜ"),
+    ]
+
     /// The code librime reads for a tone-marked pinyin syllable of the
     /// dictionary (`nǐ` → `ni3`, `de` → `de5`), as the schema's `tones`
     /// rules write it.
