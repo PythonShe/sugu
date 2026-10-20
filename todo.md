@@ -81,7 +81,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Input menu: Chinese script, pause learning, Check for Updates (D-036)
 - [x] Candidate window: width cap with truncation, hover highlight (D-037)
 - [x] ~~Undo after commit: verify the deletion in hosts that ignore the replacement range~~ — declined (D-038)
-- [ ] Zhuyin — deferred past v1; needs its own composition model (D-040)
+- [x] Zhuyin — its own composition model (D-073, §16; was deferred by D-040)
 - [x] Japanese live conversion, as a preference (D-039)
 
 ## 10. v1 gaps (advisor pass 3)
