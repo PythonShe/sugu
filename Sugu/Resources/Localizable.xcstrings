@@ -53,19 +53,19 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "単語を追加…"
+            "value": "単語を登録…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加词…"
+            "value": "添加词语…"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "加入詞⋯"
+            "value": "加入字詞⋯"
           }
         }
       }
@@ -94,19 +94,19 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 語を追加しました。"
+            "value": "%lld語を追加しました。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已添加 %lld 个词。"
+            "value": "已添加 %lld 个词语。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "已加入 %lld 個詞。"
+            "value": "已加入 %lld 個字詞。"
           }
         }
       }
@@ -215,13 +215,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一年后"
+            "value": "1 年后"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "一年後"
+            "value": "1 年後"
           }
         }
       }
@@ -370,7 +370,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "候補の表示："
+            "value": "候補の向き："
           }
         },
         "zh-Hans": {
@@ -462,7 +462,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "字形："
+            "value": "字体："
           }
         },
         "zh-Hans": {
@@ -519,7 +519,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "檢查更新⋯"
+            "value": "檢查更新項目⋯"
           }
         }
       }
@@ -541,7 +541,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "自動檢查更新"
+            "value": "自動檢查更新項目"
           }
         }
       }
@@ -575,7 +575,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "中国語の字形"
+            "value": "中国語の字体"
           }
         },
         "zh-Hans": {
@@ -713,19 +713,19 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "入力ミスを修正"
+            "value": "タイプミスを修正"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "纠正拼写错误"
+            "value": "纠正输入错误"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "修正拼字錯誤"
+            "value": "修正錯字"
           }
         }
       }
@@ -879,13 +879,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "要删除所有学到的词和添加的词，以及学到的短语吗？"
+            "value": "要删除所有已学习和添加的词语，以及已学习的短语吗？"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "要刪除所有學到的詞和加入的詞，以及學到的片語嗎？"
+            "value": "要刪除所有已學習及自行加入的字詞，以及已學習的片語嗎？"
           }
         }
       }
@@ -1034,7 +1034,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esc で英字に切り替え"
+            "value": "Escで英字に切り替え"
           }
         },
         "zh-Hans": {
@@ -1092,7 +1092,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輸出："
+            "value": "匯出："
           }
         }
       }
@@ -1115,7 +1115,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輸出⋯"
+            "value": "匯出⋯"
           }
         }
       }
@@ -1222,7 +1222,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "忘记最近一小时…"
+            "value": "忘记过去一小时…"
           }
         },
         "zh-Hant": {
@@ -1245,13 +1245,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "忘记不常用的词："
+            "value": "忘记未使用的词语："
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "忘記不常用的詞："
+            "value": "忘記未使用的字詞："
           }
         }
       }
@@ -1268,7 +1268,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "要忘记最近一小时学到的内容吗？"
+            "value": "要忘记过去一小时学到的内容吗？"
           }
         },
         "zh-Hant": {
@@ -1331,7 +1331,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "あいまい音："
+            "value": "あいまいピンイン："
           }
         },
         "zh-Hans": {
@@ -1389,7 +1389,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "語法模型："
+            "value": "文法模型："
           }
         }
       }
@@ -1481,7 +1481,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輸入："
+            "value": "匯入："
           }
         }
       }
@@ -1504,7 +1504,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輸入⋯"
+            "value": "匯入⋯"
           }
         }
       }
@@ -1521,13 +1521,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "包括学到的词"
+            "value": "包括已学习的词语"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "包含學到的詞"
+            "value": "包含已學習的字詞"
           }
         }
       }
@@ -1573,7 +1573,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輸入方式："
+            "value": "輸入："
           }
         }
       }
@@ -1590,13 +1590,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "智能 ABC"
+            "value": "智能 ABC 双拼"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "智慧 ABC"
+            "value": "智能 ABC 雙拼"
           }
         }
       }
@@ -1888,13 +1888,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "学到的词…"
+            "value": "已学习的词语…"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "學到的詞⋯"
+            "value": "已學習的字詞⋯"
           }
         }
       }
@@ -2009,7 +2009,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "更隨意"
+            "value": "更口語"
           }
         }
       }
@@ -2061,6 +2061,7 @@
       }
     },
     "Never": {
+      "comment": "Forget unused words: the option that keeps words forever.",
       "extractionState": "manual",
       "localizations": {
         "ja": {
@@ -2106,6 +2107,36 @@
         }
       }
     },
+    "Never synced": {
+      "comment": "Last synced status when the folder has never been synced.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "なし"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从未"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從未"
+          }
+        }
+      }
+    },
     "Next Page": {
       "extractionState": "manual",
       "localizations": {
@@ -2135,7 +2166,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "準備中"
+            "value": "準備ができていません"
           }
         },
         "zh-Hans": {
@@ -2193,30 +2224,30 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "在此 Mac 上"
+            "value": "在這台 Mac 上"
           }
         }
       }
     },
-    "On This Mac and Private Cloud Compute": {
+    "On This Mac and Apple Private Cloud Compute": {
       "extractionState": "manual",
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このMacとPrivate Cloud Compute"
+            "value": "このMacとApple Private Cloud Compute"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在此 Mac 上和私有云计算"
+            "value": "在此 Mac 上和 Apple 私有云计算中"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "在此 Mac 上和私密雲端運算"
+            "value": "在這台 Mac 上及 Apple 私密雲端運算中"
           }
         }
       }
@@ -2285,7 +2316,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "置頂"
+            "value": "釘選"
           }
         }
       }
@@ -2325,13 +2356,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "拼音加加"
+            "value": "拼音加加双拼"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "拼音加加"
+            "value": "拼音加加雙拼"
           }
         }
       }
@@ -2394,13 +2425,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "优先使用文稿中已有的词"
+            "value": "优先使用文稿中已有的词语"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "優先使用文件中已有的詞"
+            "value": "優先使用文件中已有的字詞"
           }
         }
       }
@@ -2469,7 +2500,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "標點："
+            "value": "標點符號："
           }
         }
       }
@@ -2480,19 +2511,19 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "カーソル前の文章で候補を並べ替える"
+            "value": "カーソルより前のテキストで候補を並べ替え"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "根据光标前的文字排列候选词"
+            "value": "根据光标前的文字对候选词排序"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "根據游標前的文字排列候選字"
+            "value": "根據游標前的文字排序候選字"
           }
         }
       }
@@ -2555,7 +2586,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "重新转换所选文字"
+            "value": "重新转换所选内容"
           }
         },
         "zh-Hant": {
@@ -2601,7 +2632,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为每个应用记住模式"
+            "value": "记住每个应用的输入模式"
           }
         },
         "zh-Hant": {
@@ -2692,7 +2723,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "要将所有设置恢复为默认值吗？"
+            "value": "要将所有设置还原为默认值吗？"
           }
         },
         "zh-Hant": {
@@ -2732,19 +2763,19 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選択部分を書き直す"
+            "value": "選択範囲を書き直す"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "改写所选内容"
+            "value": "重写所选内容"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "改寫所選內容"
+            "value": "改寫所選文字"
           }
         }
       }
@@ -2962,7 +2993,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Finderで表示"
+            "value": "Finderに表示"
           }
         },
         "zh-Hans": {
@@ -3175,13 +3206,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为长输入建议转换"
+            "value": "为较长的输入提供转换建议"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "為長輸入建議轉換"
+            "value": "輸入較長時建議轉換結果"
           }
         }
       }
@@ -3198,7 +3229,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "输入时建议翻译"
+            "value": "输入时提供翻译建议"
           }
         },
         "zh-Hant": {
@@ -3215,7 +3246,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sugu 診断情報"
+            "value": "Suguの診断情報"
           }
         },
         "zh-Hans": {
@@ -3238,7 +3269,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sugu 辞書"
+            "value": "Sugu辞書"
           }
         },
         "zh-Hans": {
@@ -3261,7 +3292,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sugu 設定"
+            "value": "Suguの設定"
           }
         },
         "zh-Hans": {
@@ -3422,7 +3453,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ダウンロードしたファイルが想定と一致しません。"
+            "value": "ダウンロードしたファイルが想定したものと一致しませんでした。"
           }
         },
         "zh-Hans": {
@@ -3473,13 +3504,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法添加这个词。"
+            "value": "无法添加该词语。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "無法加入這個詞。"
+            "value": "無法加入這個字詞。"
           }
         }
       }
@@ -3559,7 +3590,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選択部分を翻訳"
+            "value": "選択範囲を翻訳"
           }
         },
         "zh-Hans": {
@@ -3571,7 +3602,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "翻譯所選內容"
+            "value": "翻譯所選文字"
           }
         }
       }
@@ -3582,13 +3613,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選択したテキストの翻訳と書き直し"
+            "value": "選択したテキストを翻訳・書き直し"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "翻译和改写所选文本"
+            "value": "翻译和重写所选内容"
           }
         },
         "zh-Hant": {
@@ -3617,7 +3648,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "重試"
+            "value": "再試一次"
           }
         }
       }
@@ -3777,7 +3808,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用語法模型"
+            "value": "使用文法模型"
           }
         }
       }
@@ -3863,13 +3894,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "万象"
+            "value": "万象拼音"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "萬象"
+            "value": "萬象拼音"
           }
         }
       }
@@ -3932,13 +3963,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "词"
+            "value": "词语"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "詞"
+            "value": "字詞"
           }
         }
       }
@@ -3955,13 +3986,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "词："
+            "value": "词语："
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "詞："
+            "value": "字詞："
           }
         }
       }
@@ -3978,13 +4009,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "词："
+            "value": "词语："
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "詞："
+            "value": "字詞："
           }
         }
       }
@@ -4093,13 +4124,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "自然码"
+            "value": "自然码双拼"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "自然碼"
+            "value": "自然碼雙拼"
           }
         }
       }

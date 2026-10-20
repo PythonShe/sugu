@@ -41,7 +41,7 @@ final class DictionariesPane: SettingsPane {
                 status.stringValue = String(localized: "Failed")
                 status.textColor = .systemRed
             } else {
-                status.stringValue = model.lastSync.map { dates.localizedString(for: $0, relativeTo: Date()) } ?? String(localized: "Never")
+                status.stringValue = model.lastSync.map { dates.localizedString(for: $0, relativeTo: Date()) } ?? String(localized: "Never synced", defaultValue: "Never")
                 status.textColor = .secondaryLabelColor
             }
         }

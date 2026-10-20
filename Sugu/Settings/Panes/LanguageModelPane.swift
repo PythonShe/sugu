@@ -9,7 +9,7 @@ final class LanguageModelPane: SettingsPane {
         form.popUp(String(localized: "Language model:"), options: [
             (String(localized: "Off"), LanguageModelLevel.off),
             (String(localized: "On This Mac"), LanguageModelLevel.onDevice),
-            (String(localized: "On This Mac and Private Cloud Compute"), LanguageModelLevel.privateCloudCompute),
+            (String(localized: "On This Mac and Apple Private Cloud Compute"), LanguageModelLevel.privateCloudCompute),
         ], get: { model.preferences.languageModel }, set: { model.preferences.languageModel = $0 })
         let notReady = NSTextField(labelWithString: String(localized: "Not Ready"))
         notReady.textColor = .secondaryLabelColor
