@@ -13,6 +13,8 @@ enum Bench {
     struct Case {
         var typed: String
         var expected: String
+        /// Text before the caret while it is typed.
+        var context = ""
     }
 
     static func run(data: URL, bench: URL, zenzaiModel: URL? = nil, grammarModel: URL? = nil, languageModels: Bool = true, configure: (inout Preferences) -> Void = { _ in }) async throws -> Report {
@@ -68,6 +70,17 @@ enum Bench {
         report.japanese = measure(session, mode: .japanese, cases: try load(bench.appendingPathComponent("ja.tsv")))
         report.memory = Memory.current()
 
+        // The same readings after different text: with the field read and
+        // with it hidden.
+        for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] {
+            let set = bench.appendingPathComponent("\(name)-context.tsv")
+            guard FileManager.default.fileExists(atPath: set.path) else { continue }
+            let cases = try load(set)
+            var result = ContextResult(without: measure(session, mode: mode, cases: cases.map { Case(typed: $0.typed, expected: $0.expected) }))
+            result.with = measure(session, mode: mode, cases: cases, field: field)
+            report.context[name] = result
+        }
+
         // Words the user taught, in sentences: before teaching them, after,
         // and the main set again after, per language.
         for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] {
@@ -103,12 +116,17 @@ enum Bench {
         return (words, cases)
     }
 
+    /// Rows of typed and expected text, after the context when there are
+    /// three columns.
     static func load(_ url: URL) throws -> [Case] {
         try String(contentsOf: url, encoding: .utf8).split(whereSeparator: \.isNewline).compactMap { line in
             guard !line.hasPrefix("#") else { return nil }
-            let fields = line.split(separator: "\t")
-            guard fields.count == 2 else { return nil }
-            return Case(typed: String(fields[0]), expected: String(fields[1]))
+            let fields = line.split(separator: "\t").map(String.init)
+            switch fields.count {
+            case 2: return Case(typed: fields[0], expected: fields[1])
+            case 3: return Case(typed: fields[1], expected: fields[2], context: fields[0])
+            default: return nil
+            }
         }
     }
 
@@ -118,14 +136,17 @@ enum Bench {
         typed.replacingOccurrences(of: "ü", with: "v").filter { $0 != " " }.map { $0 }
     }
 
-    private static func measure(_ session: InputSession, mode: InputMode, cases: [Case]) -> LanguageResult {
+    /// With `field`, each case is typed after its context.
+    private static func measure(_ session: InputSession, mode: InputMode, cases: [Case], field: Field? = nil) -> LanguageResult {
         session.setMode(mode)
         // Load the engine before timing.
         _ = session.handle(key("a"))
         _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
 
         var result = LanguageResult()
+        defer { field?.context = "" }
         for test in cases {
+            field?.context = test.context
             for character in keys(for: test.typed) {
                 let started = DispatchTime.now().uptimeNanoseconds
                 _ = session.handle(key(character))
@@ -156,13 +177,15 @@ enum Bench {
     }
 }
 
-/// A text field that accepts everything and exposes nothing.
+/// A text field that accepts everything and exposes only `context`, the
+/// text before the caret, which typing leaves as it is.
 @MainActor
 private final class Field: InputClient {
+    var context = ""
     var bundleIdentifier: String? { "com.zheng-she.sugu-bench" }
     func commit(_ text: String) {}
     func setMarkedText(_ segments: [CompositionSegment], caret: Int) {}
-    func textBeforeCaret(limit: Int) -> String? { nil }
+    func textBeforeCaret(limit: Int) -> String? { context.isEmpty ? nil : String(context.suffix(limit)) }
     func textAfterCaret(limit: Int) -> String? { nil }
     func deleteBeforeCaret(count: Int) -> Bool { false }
     func selectedText() -> String? { nil }

@@ -33,6 +33,12 @@ struct LearnedResult: Codable {
     var mainSet = LanguageResult()
 }
 
+/// The same readings typed after different text.
+struct ContextResult: Codable {
+    var without: LanguageResult
+    var with = LanguageResult()
+}
+
 struct Memory: Codable {
     var footprintMB: Double
     var residentMB: Double
@@ -61,6 +67,8 @@ struct Report: Codable {
     var memory = Memory(footprintMB: 0, residentMB: 0)
     /// Sentences using words the user taught, by language (zh, ja).
     var learned: [String: LearnedResult] = [:]
+    /// Readings typed after text that decides them, by language.
+    var context: [String: ContextResult] = [:]
 
     var keystrokeP99: Double { percentile(chinese.keystrokes + japanese.keystrokes, 0.99) }
 
@@ -89,6 +97,13 @@ struct Report: Codable {
                                    name, result.before.topOneRate * 100, result.after.topOneRate * 100, result.mainSet.topOneRate * 100))
             if !result.after.failures.isEmpty {
                 sections.append("  misses after learning:\n" + result.after.failures.map { "    \($0)" }.joined(separator: "\n"))
+            }
+        }
+        for (name, result) in context.sorted(by: { $0.key > $1.key }) {
+            sections.append(String(format: "Context (%@): top-1 %.0f%% without the text before, %.0f%% with it",
+                                   name, result.without.topOneRate * 100, result.with.topOneRate * 100))
+            if !result.with.failures.isEmpty {
+                sections.append("  misses with it:\n" + result.with.failures.map { "    \($0)" }.joined(separator: "\n"))
             }
         }
         return (sections + [

@@ -14,8 +14,10 @@ enum BuildLanguageModel {
         var excluded = Set<String>()
         for bench in benches {
             for line in try String(contentsOf: bench, encoding: .utf8).split(whereSeparator: \.isNewline) where !line.hasPrefix("#") {
+                // Typed and expected, or context, typed and expected.
                 let fields = line.split(separator: "\t")
-                if fields.count >= 2 { excluded.insert(key(String(fields[1]))) }
+                if fields.count == 2 { excluded.insert(key(String(fields[1]))) }
+                if fields.count == 3 { excluded.insert(key(String(fields[0] + fields[2]))) }
             }
         }
         let simplified = try openCC.map { directory in

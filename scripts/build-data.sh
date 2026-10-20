@@ -25,7 +25,9 @@ CORPUS="$(mktemp)"
 trap 'rm -f "$CORPUS"' EXIT
 gunzip -c "$ROOT/.vendor/tatoeba/ja.txt.gz" >"$CORPUS"
 "$TOOL" build-lm --corpus "$CORPUS" --out "$ROOT/Data/LM/ja.lm" \
-  --exclude "$ROOT/Bench/ja.tsv" --exclude "$ROOT/Bench/ja-learned.tsv"
+  --exclude "$ROOT/Bench/ja.tsv" --exclude "$ROOT/Bench/ja-learned.tsv" \
+  --exclude "$ROOT/Bench/ja-context.tsv"
 gunzip -c "$ROOT/.vendor/tatoeba/cmn.txt.gz" >"$CORPUS"
 "$TOOL" build-lm --corpus "$CORPUS" --out "$ROOT/Data/LM/zh.lm" --opencc "$ROOT/.vendor/opencc" \
-  --exclude "$ROOT/Bench/zh.tsv" --exclude "$ROOT/Bench/zh-learned.tsv"
+  --exclude "$ROOT/Bench/zh.tsv" --exclude "$ROOT/Bench/zh-learned.tsv" \
+  --exclude "$ROOT/Bench/zh-context.tsv"
