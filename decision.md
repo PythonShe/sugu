@@ -408,3 +408,24 @@ any call made without the owner present. Each entry: what, why, reversibility.
   before. Reading it costs ~70 µs and happens only while secure input is
   on. The check runs before a new field is attached, so a secure field's
   text is never read for vocabulary.
+
+## D-032 · Zenzai loads off the main thread (2026-10-20)
+- AzooKey loads the Zenzai model on the first conversion that asks for
+  it, on the thread converting — Sugu's main thread, inside a keystroke.
+  Measured: 8.6 s the first time after the model is installed (llama.cpp
+  compiles its Metal shaders), ~60 ms in later processes. The app being
+  typed in froze for that long.
+- Japanese now starts without Zenzai. The hub loads a second converter with
+  the model in a detached task (one throwaway conversion), and the engine
+  adopts it between compositions, re-importing the user words; from then on
+  conversions use Zenzai. A model that fails to load leaves Zenzai off and
+  is logged, rather than AzooKey retrying the load at every conversion. A
+  model installed or removed is loaded afresh.
+- Measured with `sugu-bench --zenzai` (which now waits for the load):
+  Japanese top-1 90% (78% without), keystroke p99 ~20 ms, resident 270 MB.
+  Zenzai stays experimental and outside the default-configuration budgets.
+- Known and unchanged by this: with Zenzai on, learned Japanese words lose
+  to the model's own reading in sentences (taught names 0% → 0%, against
+  30% → 90% without it). Zenzai reranks AzooKey's lattice by the language
+  model and rewrites the result, and the dynamic user dictionary does not
+  bind it.

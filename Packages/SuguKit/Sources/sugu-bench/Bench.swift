@@ -52,6 +52,8 @@ enum Bench {
             chineseWordsDelay: .zero
         )
         await engines.waitUntilReady()
+        engines.prepare(.japanese)
+        await engines.waitForZenzai()
         let latin = LatinInference(
             syllables: syllables,
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: lexicon)

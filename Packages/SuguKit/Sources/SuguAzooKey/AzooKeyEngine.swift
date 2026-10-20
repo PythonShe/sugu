@@ -33,8 +33,9 @@ public final class AzooKeyEngine: CompositionEngine {
         var before: ComposingText
     }
 
-    private let converter: KanaKanjiConverter
+    private var converter: KanaKanjiConverter
     private var configuration: Configuration
+    private var userWords: [DicdataElement] = []
     private var composing = ComposingText()
     private var leftContext = ""
 
@@ -72,7 +73,7 @@ public final class AzooKeyEngine: CompositionEngine {
     /// Words from Sugu's learned store and user dictionary, given to the
     /// converter so they take part in lattice search.
     public func setUserWords(_ words: [(reading: String, text: String)]) {
-        let elements = words.map { word in
+        userWords = words.map { word in
             DicdataElement(
                 word: word.text,
                 ruby: WidthConversion.katakana(word.reading),
@@ -81,12 +82,49 @@ public final class AzooKeyEngine: CompositionEngine {
                 value: -5
             )
         }
-        converter.importDynamicUserDictionary(elements)
+        converter.importDynamicUserDictionary(userWords)
+    }
+
+    /// A converter that has loaded a Zenzai model, made off the main thread:
+    /// the first load compiles Metal shaders, seconds after an install or a
+    /// system update, which must not happen inside a keystroke.
+    public struct ZenzaiConverter: @unchecked Sendable {
+        // Handed from the thread that made it to the engine, never shared.
+        fileprivate let converter: KanaKanjiConverter
+        public let model: URL
+    }
+
+    /// nil when the model does not load: AzooKey would otherwise try again,
+    /// on the main thread, at every conversion.
+    public nonisolated static func loadZenzai(_ model: URL, workingDirectory: URL) async -> ZenzaiConverter? {
+        await Task.detached(priority: .utility) {
+            let converter = KanaKanjiConverter.withDefaultDictionary()
+            var configuration = Configuration(workingDirectory: workingDirectory)
+            configuration.zenzaiModel = model
+            var composing = ComposingText()
+            composing.insertAtCursorPosition("あ", inputStyle: .direct)
+            _ = converter.requestCandidates(composing, options: options(configuration, leftContext: "", textReplacer: .empty, predictions: false))
+            converter.stopComposition()
+            // AzooKey reports a failed load only in this status line.
+            guard converter.zenzStatus == "load \(model.absoluteString)" else { return nil }
+            return ZenzaiConverter(converter: converter, model: model)
+        }.value
+    }
+
+    /// Takes over a converter that loaded Zenzai; call between compositions.
+    public func adopt(_ loaded: ZenzaiConverter) {
+        precondition(state.isEmpty, "a converter is swapped only between compositions")
+        converter = loaded.converter
+        converter.importDynamicUserDictionary(userWords)
     }
 
     private var inputStyle: InputStyle { configuration.kanaInput ? .direct : .roman2kana }
 
     private func options(predictions: Bool) -> ConvertRequestOptions {
+        Self.options(configuration, leftContext: leftContext, textReplacer: textReplacer, predictions: predictions)
+    }
+
+    private nonisolated static func options(_ configuration: Configuration, leftContext: String, textReplacer: TextReplacer, predictions: Bool) -> ConvertRequestOptions {
         var zenzai = ConvertRequestOptions.ZenzaiMode.off
         if let model = configuration.zenzaiModel {
             zenzai = .on(

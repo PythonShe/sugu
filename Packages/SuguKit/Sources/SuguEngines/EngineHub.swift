@@ -62,6 +62,10 @@ public final class EngineHub: EngineSource {
     private let runtime: RimeRuntime
     private var chinese: RimeEngine?
     private var japanese: AzooKeyEngine?
+    /// The Zenzai model the Japanese converter has loaded, once it has.
+    /// Until then Japanese converts without it.
+    private var zenzaiLoaded: URL?
+    private var zenzaiLoading: Task<Void, Never>?
     private var preparing: Task<Void, Never>?
     private var userWordsRefresh: Task<Void, Never>?
     private var chineseWordsUpdate: Task<Void, Never>?
@@ -117,6 +121,7 @@ public final class EngineHub: EngineSource {
             Log.engines.notice("Japanese ready in \(ContinuousClock.now - started, privacy: .public)")
             japanese = engine
             if let store { engine.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) }) }
+            loadZenzai()
             return engine
         case .english:
             return nil
@@ -300,6 +305,7 @@ public final class EngineHub: EngineSource {
         if let japanese, previous.kanaInput != preferences.kanaInput || previous.japanesePredictions != preferences.japanesePredictions
             || previous.typoCorrection != preferences.typoCorrection || previous.zenzaiEnabled != preferences.zenzaiEnabled {
             japanese.update(japaneseConfiguration)
+            loadZenzai()
         }
     }
 
@@ -323,7 +329,7 @@ public final class EngineHub: EngineSource {
         configuration.kanaInput = preferences.kanaInput
         configuration.predictions = preferences.japanesePredictions
         configuration.typoCorrection = preferences.typoCorrection
-        configuration.zenzaiModel = preferences.zenzaiEnabled && isZenzaiModelInstalled ? locations.zenzaiModel : nil
+        configuration.zenzaiModel = preferences.zenzaiEnabled && isZenzaiModelInstalled && zenzaiLoaded == locations.zenzaiModel ? locations.zenzaiModel : nil
         try? FileManager.default.createDirectory(at: locations.azooKey, withIntermediateDirectories: true)
         return configuration
     }
@@ -333,6 +339,41 @@ public final class EngineHub: EngineSource {
         // Only redeploy Chinese if it was in use; otherwise it loads with the
         // new data on first use.
         if schema != runtime.schema, runtime.isReady || preparing != nil { chinese = nil; warmUp(.chinese) }
+        // A new or removed model file is loaded afresh.
+        zenzaiLoaded = nil
         japanese?.update(japaneseConfiguration)
+        loadZenzai()
+    }
+
+    /// Loads Zenzai off the main thread and hands the converter to the
+    /// Japanese engine between compositions (decision D-032).
+    private func loadZenzai() {
+        guard preferences.zenzaiEnabled, isZenzaiModelInstalled, japanese != nil,
+              zenzaiLoaded != locations.zenzaiModel, zenzaiLoading == nil else { return }
+        let model = locations.zenzaiModel
+        let workingDirectory = locations.azooKey
+        zenzaiLoading = Task { [weak self] in
+            let started = ContinuousClock.now
+            let loaded = await AzooKeyEngine.loadZenzai(model, workingDirectory: workingDirectory)
+            while let japanese = self?.japanese, !japanese.state.isEmpty {
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+            guard let self else { return }
+            zenzaiLoading = nil
+            guard let loaded else {
+                Log.engines.error("Zenzai model did not load")
+                return
+            }
+            guard let japanese, preferences.zenzaiEnabled, locations.zenzaiModel == loaded.model else { return }
+            japanese.adopt(loaded)
+            zenzaiLoaded = loaded.model
+            japanese.update(japaneseConfiguration)
+            Log.engines.notice("Zenzai ready in \(ContinuousClock.now - started, privacy: .public)")
+        }
+    }
+
+    /// Waits until Zenzai is loaded, when it is on (for tools and tests).
+    public func waitForZenzai() async {
+        while let task = zenzaiLoading { await task.value }
     }
 }

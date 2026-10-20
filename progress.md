@@ -3,6 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Zenzai loads in the background and is adopted between compositions
+  (D-032): the first load was 8.6 s on the main thread after install.
+  With Zenzai, Japanese top-1 90%; learned names do not survive its
+  rewrite (open).
 - Installing selects Sugu (`--register` also calls `TISSelectInputSource`);
   README updated. Menu-bar mode icons via input modes considered and kept
   out (D-005).
