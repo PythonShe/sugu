@@ -3,6 +3,13 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Japanese habits from the ninth advisor pass (D-075): Shift-Space types
+  the other space width, kana 、。 follow the punctuation style, F9/F10
+  cycle case, ⌃⇧R reconverts and ⌃I/⌃O resize clauses, 、。！？ commit
+  with a conversion, symbols by Japanese name, 人名/地名 marks, and 英数
+  twice retypes the last commit as romaji (かな twice back). CI passes:
+  keystroke p99 3.81 ms, candidate draw p99 0.91 ms, footprint 81 MB,
+  fuzz 0 failures.
 - Habits from other input methods (D-074): ⇧⌫ forgets a learned
   candidate, Google's z-symbols in romaji, 以词定字 with [ ], Add Word…
   in the input menu filled from the selection, ⌃. for punctuation width,
