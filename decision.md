@@ -150,8 +150,13 @@ any call made without the owner present. Each entry: what, why, reversibility.
   `cn_dicts.zip` (GPL-3.0, never bundled, user-initiated only), zenz-v3.1
   small Q5_K_M at a fixed Hugging Face revision (CC-BY-SA-4.0). A moving
   upstream file fails verification instead of installing unreviewed data.
-- The grammar model adds ~90 MB of resident clean pages and did not improve
-  a small probe, so it stays an optional download (ADR 0002 d4).
+- The grammar model is an optional download (ADR 0002 d4), on once
+  installed. Measured with `sugu-bench --grammar` on the 50-sentence set:
+  Chinese top-1 90% → 94% and characters 98.3% → 99.0% (it fixes 调/条,
+  大雪/大学, 的/得); keystroke p99 3.5 → 3.7 ms with a warm page cache;
+  footprint 58 → 59 MB, while resident grows ~220 MB of clean, evictable
+  pages of the 398 MB file. The gain is real but the file is too large to
+  bundle, so it stays a download.
 
 ## D-016 · Folder sync (2026-10-20)
 - Each Mac writes only `<random id>.sugudict` in the chosen folder and reads

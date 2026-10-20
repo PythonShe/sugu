@@ -15,7 +15,7 @@ enum Bench {
         var expected: String
     }
 
-    static func run(data: URL, bench: URL, zenzaiModel: URL? = nil, configure: (inout Preferences) -> Void = { _ in }) async throws -> Report {
+    static func run(data: URL, bench: URL, zenzaiModel: URL? = nil, grammarModel: URL? = nil, configure: (inout Preferences) -> Void = { _ in }) async throws -> Report {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-bench-\(getpid())", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: work) }
         var preferences = Preferences()
@@ -32,6 +32,11 @@ enum Bench {
             try FileManager.default.createDirectory(at: locations.models, withIntermediateDirectories: true)
             try FileManager.default.createSymbolicLink(at: locations.zenzaiModel, withDestinationURL: zenzaiModel)
             preferences.zenzaiEnabled = true
+        }
+        if let grammarModel {
+            try FileManager.default.createDirectory(at: locations.rimeUser, withIntermediateDirectories: true)
+            try FileManager.default.createSymbolicLink(at: locations.grammarModel, withDestinationURL: grammarModel)
+            preferences.useGrammarModel = true
         }
         let engines = EngineHub(
             locations: locations,

@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Grammar model measured (`sugu-bench --grammar`): Chinese top-1 90% → 94%,
+  keystroke p99 3.7 ms, footprint unchanged; D-015 updated with the data.
 - Cross-language proper nouns and per-app script (D-021): Japanese kanji
   forms as a Chinese script, Chinese forms after Japanese names, Sugu's own
   candidates in the script in use, a script column in the Apps pane.
