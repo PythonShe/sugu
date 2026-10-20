@@ -68,6 +68,7 @@ Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (defau
 - [ ] Bind the R2 bucket in the Pages project settings if the `wrangler.toml` binding is not picked up.
 - [ ] **Move `sugu.zheng-she.com` from the bucket's custom domain to the Pages project.** Before the first release this carries no risk (nothing is installed yet); afterwards, check `/appcast.xml` and the downloads answer throughout.
 - [ ] Optionally a cache rule for `/releases/*`, so downloads come from the edge rather than the function.
+- [ ] **Put the reviewed grammar model in the bucket** at `models/wanxiang-lts-zh-hans-9eedac1d.gram`. Upstream republishes its `LTS` file under one name, so the app downloads Sugu's copy and falls back to upstream only while this one is missing. Download it from the upstream URL in `ModelLibrary.swift`, check `shasum -a 256` gives `9eedac1d…e9ed89`, then `cf r2 objects put models/wanxiang-lts-zh-hans-9eedac1d.gram --bucket-name sugu-updates --file <file> --content-type application/octet-stream`.
 
 ## 4. Proving it
 

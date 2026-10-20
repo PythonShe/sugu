@@ -29,6 +29,8 @@ public final class EngineHub: EngineSource {
     /// Reads AzooKey's dictionary into memory once the Japanese engine is made.
     private var japaneseDictionaryLoading: Task<Void, Never>?
     private var preparing: Task<Void, Never>?
+    /// A redeployment waiting for the Chinese composition to end.
+    private var pendingRedeploy: Task<Void, Never>?
     private var userWordsRefresh: Task<Void, Never>?
     private var chineseWordsUpdate: Task<Void, Never>?
     private var chineseWordsWrite: Task<ChineseWordsWrite, Never>?
@@ -351,10 +353,7 @@ public final class EngineHub: EngineSource {
     public func apply(_ preferences: Preferences) {
         let previous = self.preferences
         self.preferences = preferences
-        if schema != runtime.schema, runtime.isReady || preparing != nil {
-            chinese = nil
-            warmUp(.chinese)
-        }
+        redeployChinese()
         if let japanese, previous.kanaInput != preferences.kanaInput || previous.japanesePredictions != preferences.japanesePredictions
             || previous.liveConversion != preferences.liveConversion
             || previous.typoCorrection != preferences.typoCorrection || previous.zenzaiEnabled != preferences.zenzaiEnabled {
@@ -414,16 +413,39 @@ public final class EngineHub: EngineSource {
         }
     }
 
-    /// Reloads the Chinese engine after a model was installed or removed.
-    public func modelsDidChange() {
-        // Only redeploy Chinese if it was in use; otherwise it loads with the
-        // new data on first use.
-        if schema != runtime.schema, runtime.isReady || preparing != nil { chinese = nil; warmUp(.chinese) }
-        // A new or removed model file is loaded afresh.
-        zenzaiLoaded = nil
-        zenzaiGeneration += 1
-        japanese?.update(japaneseConfiguration)
-        loadZenzai()
+    /// Reloads what uses a model after it was installed or removed.
+    public func modelDidChange(_ item: ModelLibrary.Item) {
+        switch item {
+        case .grammarModel, .rimeIce:
+            redeployChinese()
+        case .zenzaiModel:
+            // A new or removed model file is loaded afresh.
+            zenzaiLoaded = nil
+            zenzaiGeneration += 1
+            japanese?.update(japaneseConfiguration)
+            loadZenzai()
+        }
+    }
+
+    /// Redeploys Chinese for a changed schema, if it was in use; otherwise
+    /// it loads with the new schema on first use. A redeployment ends
+    /// librime's sessions, so one asked for during a composition (a
+    /// download finishing) waits for it to end.
+    private func redeployChinese() {
+        guard schema != runtime.schema, runtime.isReady || preparing != nil else { return }
+        if let chinese, !chinese.state.isEmpty {
+            guard pendingRedeploy == nil else { return }
+            pendingRedeploy = Task { [weak self] in
+                while let chinese = self?.chinese, !chinese.state.isEmpty {
+                    try? await Task.sleep(for: .milliseconds(250))
+                }
+                self?.pendingRedeploy = nil
+                self?.redeployChinese()
+            }
+            return
+        }
+        chinese = nil
+        warmUp(.chinese)
     }
 
     /// Loads Zenzai off the main thread and hands the converter to the

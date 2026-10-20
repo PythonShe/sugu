@@ -8,7 +8,7 @@ import SuguRime
 @MainActor
 public protocol ModelHost: AnyObject {
     var locations: EngineHub.Locations { get }
-    func modelsDidChange()
+    func modelDidChange(_ item: ModelLibrary.Item)
 }
 
 extension EngineHub: ModelHost {}
@@ -29,8 +29,11 @@ public final class ModelLibrary {
         public var download: Download {
             switch self {
             case .grammarModel:
+                // Upstream republishes its LTS file under the same name, so
+                // the reviewed copy is served from Sugu's site, by checksum.
                 Download(
-                    url: URL(string: "https://github.com/amzxyz/rime-wanxiang-data/releases/download/LTS/wanxiang-lts-zh-hans.gram")!,
+                    url: URL(string: "https://sugu.zheng-she.com/models/wanxiang-lts-zh-hans-9eedac1d.gram")!,
+                    fallback: URL(string: "https://github.com/amzxyz/rime-wanxiang-data/releases/download/LTS/wanxiang-lts-zh-hans.gram")!,
                     sha256: "9eedac1d836f3fdafb61b162035c8937253aedc106be40b2b957d9ab64e9ed89",
                     size: 398_497_836
                 )
@@ -80,6 +83,7 @@ public final class ModelLibrary {
         case checksumMismatch
         case server(status: Int)
         case extraction
+        case notEnoughSpace
         case other(String)
     }
 
@@ -119,12 +123,12 @@ public final class ModelLibrary {
             do {
                 try await perform(item)
                 set(item, .installed)
-                engines.modelsDidChange()
+                engines.modelDidChange(item)
             } catch where Self.isCancellation(error) {
                 // A cancel can arrive after the files were moved in.
                 let installed = isInstalled(item)
                 set(item, installed ? .installed : .notInstalled)
-                if installed { engines.modelsDidChange() }
+                if installed { engines.modelDidChange(item) }
             } catch {
                 Log.downloads.error("\(String(describing: item), privacy: .public) failed: \(String(describing: error), privacy: .public)")
                 set(item, .failed(Self.failure(for: error)))
@@ -149,7 +153,7 @@ public final class ModelLibrary {
             deleteFiles(of: item)
             removing.remove(item)
             set(item, .notInstalled)
-            engines.modelsDidChange()
+            engines.modelDidChange(item)
         }
     }
 
@@ -188,11 +192,21 @@ public final class ModelLibrary {
             let extracted = work.appendingPathComponent("extracted", isDirectory: true)
             try await ZipArchive.extract(archive, to: extracted)
             try Task.checkCancellation()
-            try? fm.removeItem(at: locations.rimeIceTables)
-            try fm.createDirectory(at: locations.rimeIceTables, withIntermediateDirectories: true)
+            // The tables are gathered beside the old ones and swapped in at
+            // once; without its manifest the dictionary counts as missing,
+            // so a failure part way leaves none rather than half of one.
+            let tables = work.appendingPathComponent("tables", isDirectory: true)
+            try fm.createDirectory(at: tables, withIntermediateDirectories: true)
             for table in RimeSchema.rimeIceTables {
                 let name = "\(table).dict.yaml"
-                try fm.moveItem(at: extracted.appendingPathComponent("cn_dicts/\(name)"), to: locations.rimeIceTables.appendingPathComponent(name))
+                try fm.moveItem(at: extracted.appendingPathComponent("cn_dicts/\(name)"), to: tables.appendingPathComponent(name))
+            }
+            try? fm.removeItem(at: locations.rimeIceManifest)
+            if fm.fileExists(atPath: locations.rimeIceTables.path) {
+                _ = try fm.replaceItemAt(locations.rimeIceTables, withItemAt: tables)
+            } else {
+                try fm.createDirectory(at: locations.rimeIceTables.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try fm.moveItem(at: tables, to: locations.rimeIceTables)
             }
             try RimeSchema.rimeIceManifest(version: item.version)
                 .write(to: locations.rimeIceManifest, atomically: true, encoding: .utf8)
@@ -217,6 +231,7 @@ public final class ModelLibrary {
         case DownloadError.checksumMismatch: .checksumMismatch
         case DownloadError.server(let status): .server(status: status)
         case DownloadError.extractionFailed: .extraction
+        case DownloadError.notEnoughSpace: .notEnoughSpace
         default: .other(error.localizedDescription)
         }
     }

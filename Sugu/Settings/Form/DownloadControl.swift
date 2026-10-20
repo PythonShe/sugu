@@ -98,6 +98,7 @@ extension ModelLibrary.Failure {
         case .checksumMismatch: String(localized: "The download did not match the expected file.")
         case .server(let status): HTTPURLResponse.localizedString(forStatusCode: status).capitalized
         case .extraction: String(localized: "The archive could not be opened.")
+        case .notEnoughSpace: String(localized: "There is not enough space on the disk.")
         case .other(let description): description
         }
     }

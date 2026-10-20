@@ -7,8 +7,10 @@ import SuguCore
 final class RimeSession {
     private let runtime: RimeRuntime
     private var id: RimeSessionId = 0
+    /// The runtime's deployment the session was made in.
+    private var deployment = 0
     var script: ChineseScript {
-        didSet { if id != 0 { applyScript() } }
+        didSet { if isOpen { applyScript() } }
     }
 
     init(runtime: RimeRuntime, script: ChineseScript) {
@@ -24,13 +26,18 @@ final class RimeSession {
 
     private var api: RimeApi { runtime.api }
 
-    var isOpen: Bool { id != 0 }
+    /// Whether the session is open in librime. A redeployment ends every
+    /// session, and librime may give a later one the same id, so an id
+    /// from an earlier deployment is never used.
+    var isOpen: Bool { id != 0 && deployment == runtime.deployments }
 
     /// Opens the session unless it is open; false when librime cannot.
     func open() -> Bool {
-        if id != 0, api.find_session?(id) ?? 0 != 0 { return true }
+        if isOpen, api.find_session?(id) ?? 0 != 0 { return true }
+        id = 0
         guard let made = try? runtime.makeSession() else { return false }
         id = made
+        deployment = runtime.deployments
         applyScript()
         return true
     }
@@ -38,8 +45,7 @@ final class RimeSession {
     /// Closes the session; librime shares one open user dictionary among
     /// sessions and closes it with the last.
     func destroy() {
-        guard id != 0 else { return }
-        _ = api.destroy_session?(id)
+        if isOpen { _ = api.destroy_session?(id) }
         id = 0
     }
 
@@ -53,38 +59,38 @@ final class RimeSession {
     // MARK: Composition
 
     var input: String {
-        guard id != 0, let input = api.get_input?(id) else { return "" }
+        guard isOpen, let input = api.get_input?(id) else { return "" }
         return String(cString: input)
     }
 
     func setInput(_ text: String) {
-        guard id != 0 else { return }
+        guard isOpen else { return }
         _ = api.set_input?(id, text)
     }
 
     func processKey(_ keycode: Int32) {
-        guard id != 0 else { return }
+        guard isOpen else { return }
         _ = api.process_key?(id, keycode, 0)
     }
 
     func clearComposition() {
-        guard id != 0 else { return }
+        guard isOpen else { return }
         api.clear_composition?(id)
     }
 
     func highlight(_ index: Int) {
-        guard id != 0 else { return }
+        guard isOpen else { return }
         _ = api.highlight_candidate?(id, index)
     }
 
     func select(_ index: Int) {
-        guard id != 0 else { return }
+        guard isOpen else { return }
         _ = api.select_candidate?(id, index)
     }
 
     /// The text librime committed since the last call, if any.
     func takeCommit() -> String? {
-        guard id != 0 else { return nil }
+        guard isOpen else { return nil }
         var commit = RimeCommit()
         commit.data_size = RimeAPI.dataSize(of: RimeCommit.self)
         guard api.get_commit?(id, &commit) ?? 0 != 0 else { return nil }
@@ -94,7 +100,7 @@ final class RimeSession {
 
     /// Reads librime's context while it is valid.
     func withContext<T>(_ body: (RimeContext) -> T) -> T? {
-        guard id != 0 else { return nil }
+        guard isOpen else { return nil }
         var context = RimeContext()
         context.data_size = RimeAPI.dataSize(of: RimeContext.self)
         guard api.get_context?(id, &context) ?? 0 != 0 else { return nil }
@@ -105,7 +111,7 @@ final class RimeSession {
     /// The first `limit` candidates of the current menu, with librime's
     /// comments as annotations.
     func candidates(limit: Int) -> [Candidate] {
-        guard id != 0 else { return [] }
+        guard isOpen else { return [] }
         var iterator = RimeCandidateListIterator()
         guard api.candidate_list_begin?(id, &iterator) ?? 0 != 0 else { return [] }
         defer { api.candidate_list_end?(&iterator) }

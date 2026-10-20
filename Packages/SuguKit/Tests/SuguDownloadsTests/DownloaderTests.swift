@@ -34,6 +34,32 @@ import Testing
         #expect(!FileManager.default.fileExists(atPath: destination.path))
     }
 
+    /// A primary copy that is not the reviewed file gives way to the
+    /// fallback, which replaces an older file in place.
+    @Test func fallsBackAndReplaces() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let wrong = directory.appendingPathComponent("wrong.bin")
+        let right = directory.appendingPathComponent("right.bin")
+        try Data("other".utf8).write(to: wrong)
+        try Data("sugu".utf8).write(to: right)
+        let destination = directory.appendingPathComponent("model.bin")
+        try Data("old".utf8).write(to: destination)
+        let download = Download(url: wrong, fallback: right, sha256: try Downloader.sha256(of: right), size: 4)
+        try await Downloader.fetch(download, to: destination)
+        #expect(try Data(contentsOf: destination) == Data("sugu".utf8))
+    }
+
+    @Test func refusesWhatTheDiskCannotHold() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("source.bin")
+        try Data("sugu".utf8).write(to: source)
+        await #expect(throws: DownloadError.notEnoughSpace) {
+            try await Downloader.fetch(Download(url: source, sha256: try Downloader.sha256(of: source), size: Int64.max), to: directory.appendingPathComponent("model.bin"))
+        }
+    }
+
     @Test func extractsZip() async throws {
         let directory = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

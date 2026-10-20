@@ -29,6 +29,9 @@ public final class RimeRuntime {
 
     public let directories: Directories
     public private(set) var schema: RimeSchema?
+    /// How many times librime's sessions were ended, so a session id from
+    /// before is known to be gone.
+    private(set) var deployments = 0
     private let strings = CStringPool()
     private var isInitialized = false
     private var deployment: Task<Void, any Swift.Error>?
@@ -79,6 +82,7 @@ public final class RimeRuntime {
             isInitialized = true
         }
         api.cleanup_all_sessions?()
+        deployments += 1
         // The sessions are gone and the build is being replaced: not ready
         // again until this deployment succeeds.
         self.schema = nil

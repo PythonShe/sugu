@@ -3587,6 +3587,30 @@
         }
       }
     },
+    "There is not enough space on the disk.": {
+      "comment": "Shown when a download in Settings needs more free disk space than there is.",
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ディスクの空き容量が足りません。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁盘空间不足。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "磁碟空間不足。"
+          }
+        }
+      }
+    },
     "Traditional": {
       "extractionState": "manual",
       "localizations": {

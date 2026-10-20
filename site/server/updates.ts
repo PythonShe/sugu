@@ -15,6 +15,10 @@ function kind(key: string): { type: string; cache: string; download?: boolean } 
   if (/^releases\/\d+\.\d+\.\d+\/Sugu-\d+\.\d+\.\d+\.(pkg|zip)$/.test(key)) {
     return { type: 'application/octet-stream', cache: immutable, download: true };
   }
+  // Named with their checksum's start, so a name is never reused.
+  if (/^models\/[a-z0-9-]+-[0-9a-f]{8}\.(gram|gguf|zip)$/.test(key)) {
+    return { type: 'application/octet-stream', cache: immutable, download: true };
+  }
   if (/^releases\/\d+\.\d+\.\d+\/notes\/(en|ja|zh-Hans|zh-Hant)\.md$/.test(key)) {
     return { type: 'text/markdown; charset=utf-8', cache: 'no-cache' };
   }

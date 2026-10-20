@@ -19,7 +19,7 @@ private final class StubHost: ModelHost {
         )
     }
 
-    func modelsDidChange() { changes += 1 }
+    func modelDidChange(_ item: ModelLibrary.Item) { changes += 1 }
 }
 
 @MainActor
