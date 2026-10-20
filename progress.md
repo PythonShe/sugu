@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Control keys inside a composition (D-028): Emacs editing keys, ⌃N/⌃P,
+  ⌃G, ⌃M, Kotoeri's ⌃J ⌃K ⌃; ⌃L ⌃:, and ⌃[ as Escape. 129 package tests.
 - Advisor review for v1 gaps (D-027 first): Chinese letters typed while
   librime deploys stay in the composition and move to librime when it is
   ready; a failed deployment retries with backoff from a fresh build and

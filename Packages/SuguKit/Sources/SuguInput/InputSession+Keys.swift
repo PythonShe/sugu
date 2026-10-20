@@ -27,6 +27,17 @@ extension InputSession {
             switchCJKMode()
             return true
         }
+        if let binding = controlBinding(for: key) {
+            switch binding {
+            case .key(let code, let modifiers):
+                return handle(KeyInput(keyCode: code, characters: "", modifiers: modifiers))
+            case .caret(let forward):
+                guard let engine = active else { return true }
+                if engine.state.phase == .converting { engine.moveFocus(forward: forward) } else { engine.moveCaret(forward ? .right : .left) }
+                refresh()
+                return true
+            }
+        }
         if key.isShortcut {
             // Shortcuts belong to the app; finish the composition first.
             if !isEmpty { commitComposition() }
@@ -241,6 +252,43 @@ extension InputSession {
     }
 
     // MARK: Function keys (F6–F10)
+
+    enum ControlBinding {
+        /// Acts as this key would.
+        case key(UInt16, KeyModifiers)
+        /// Moves the caret, or the focused clause while converting.
+        case caret(forward: Bool)
+    }
+
+    /// Control keys inside a composition, as in the text system's Emacs
+    /// bindings and Apple's Japanese input method: ⌃H ⌃D delete, ⌃A ⌃E ⌃B
+    /// ⌃F move, ⌃N ⌃P choose, ⌃G cancels, ⌃M commits, and ⌃J ⌃K ⌃; ⌃L ⌃:
+    /// are F6–F10. ⌃[ is Escape with or without a composition, for vim.
+    /// Read from the layout's characters, like the text system.
+    func controlBinding(for key: KeyInput) -> ControlBinding? {
+        guard key.modifiers.contains(.control), key.modifiers.isDisjoint(with: [.command, .option]),
+              let character = key.charactersIgnoringModifiers.lowercased().first else { return nil }
+        if character == "[" { return .key(VirtualKey.escape, []) }
+        guard !isEmpty else { return nil }
+        switch character {
+        case "h": return .key(VirtualKey.delete, [])
+        case "d": return .key(VirtualKey.forwardDelete, [])
+        case "a": return .key(VirtualKey.home, [])
+        case "e": return .key(VirtualKey.end, [])
+        case "b": return .caret(forward: false)
+        case "f": return .caret(forward: true)
+        case "n": return .key(VirtualKey.tab, [])
+        case "p": return .key(VirtualKey.tab, [.shift])
+        case "g": return .key(VirtualKey.escape, [])
+        case "m": return .key(VirtualKey.returnKey, [])
+        case "j": return .key(VirtualKey.f6, [])
+        case "k": return .key(VirtualKey.f7, [])
+        case ";": return .key(VirtualKey.f8, [])
+        case "l": return .key(VirtualKey.f9, [])
+        case ":": return .key(VirtualKey.f10, [])
+        default: return nil
+        }
+    }
 
     private func handleFunctionKey(_ key: KeyInput) -> Bool? {
         guard let state = active?.state else { return nil }

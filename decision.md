@@ -347,3 +347,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
   ten minutes, on the next use of Chinese, each retry rebuilding librime's
   compiled copy from the bundled data. Settings › Chinese shows a Status
   row (Failed, Try Again) only while it is failing.
+
+## D-028 · Control keys inside a composition (2026-10-20)
+- Any ⌃ or ⌘ key committed the composition and went to the app, so ⌃H or
+  ⌃A in a composition fired an app command over freshly committed text,
+  and Kotoeri's ⌃J/⌃K did nothing Japanese.
+- While composing, the text system's Emacs keys act on the composition
+  (⌃H ⌃D delete, ⌃A ⌃E ⌃B ⌃F move, ⌃B ⌃F moving the focused clause while
+  converting), ⌃N ⌃P choose the next and previous candidate, ⌃G cancels,
+  ⌃M commits, and Apple's Japanese input method keys ⌃J ⌃K ⌃; ⌃L ⌃: are
+  F6–F10 (hiragana, katakana, half-width katakana, full-width and plain
+  romaji; F9 and F10 also in Chinese). ⌃[ is Escape with or without a
+  composition, so vim's English rule (ADR 0003 d3) sees it.
+- They are read from the layout's characters, as the text system reads
+  them. Without a composition, other ⌃ keys stay the app's; ⌘ always is.

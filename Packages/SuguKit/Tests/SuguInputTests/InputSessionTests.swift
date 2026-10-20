@@ -207,6 +207,37 @@ struct InputSessionTests {
         #expect(client.document == "ｎｉｈｏｎｇｏ")
     }
 
+    /// Emacs and Kotoeri control keys edit the composition instead of
+    /// committing it and reaching the app.
+    @Test func controlKeysEditTheComposition() {
+        let session = makeSession()
+        type("nihaox", into: session)
+        #expect(session.handle(Key.char("h", [.control])))
+        #expect(client.markedText == "nihao")
+        _ = session.handle(Key.char("n", [.control]))
+        #expect(session.display.candidates?.highlightedIndex == 1)
+        _ = session.handle(Key.char("p", [.control]))
+        #expect(session.display.candidates?.highlightedIndex == 0)
+        #expect(session.handle(Key.char("g", [.control])))
+        #expect(session.isEmpty && client.document.isEmpty)
+        // Without a composition they are the app's.
+        #expect(!session.handle(Key.char("a", [.control])))
+
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.char("l", [.control]))
+        #expect(client.markedText == "ｎｉｈｏｎｇｏ")
+        _ = session.handle(Key.char("m", [.control]))
+        #expect(client.document == "ｎｉｈｏｎｇｏ")
+    }
+
+    /// ⌃[ is Escape for vim, composing or not.
+    @Test func controlBracketIsEscape() {
+        let session = makeSession { $0.appRules["com.example.editor"] = AppRule(escapeSwitchesToEnglish: true) }
+        #expect(!session.handle(Key.char("[", [.control])))
+        #expect(session.mode == .english)
+    }
+
     @Test func modeIsRememberedPerApp() {
         let session = makeSession()
         session.setMode(.japanese)

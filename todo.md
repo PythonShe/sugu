@@ -43,6 +43,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Caret mode indicator
 - [x] Mode toggle keys (Shift tap, Caps Lock, 英数/かな), per-app mode rules, secure-input/terminal English, vim Esc
 - [x] Mac-standard keys: F6–F10, Option symbols, numpad, caret movement, romaji typo tolerance
+- [x] Control keys in a composition: Emacs editing, ⌃N/⌃P, Kotoeri ⌃J–⌃:, ⌃[ (D-028)
 - [x] Reconvert selection, left context, document vocabulary (off by default; D-022)
 - [x] Cross-language proper nouns (ADR 0003 d11): `dongjing` → 東京, romaji → Chinese forms; per-app script variant (D-021)
 - [x] Pause-gated candidate window (off by default)
