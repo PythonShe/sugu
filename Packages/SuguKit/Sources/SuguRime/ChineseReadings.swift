@@ -11,18 +11,38 @@ public enum ChineseReadings {
     public static func syllables(of text: String, wordList: Data) -> [String]? {
         let characters = Array(text)
         guard !characters.isEmpty else { return nil }
-        // The likeliest reading of each listed word found in the text.
+        // The likeliest reading of each listed word found in the text. Lines
+        // are read as bytes; only words starting with a character of the
+        // text become strings.
+        let firsts = Set(characters.map { Array(String($0).utf8) })
         var found: [String: (syllables: [String], weight: Double)] = [:]
         var total = 0.0
-        for line in String(decoding: wordList, as: UTF8.self).split(separator: "\n") {
-            let fields = line.split(separator: "\t")
-            guard fields.count == 3, let weight = Double(fields[2]) else { continue }
-            total += weight
-            let word = String(fields[0])
-            guard text.contains(word), weight > found[word]?.weight ?? 0 else { continue }
-            let syllables = fields[1].split(separator: " ").map(String.init)
-            guard syllables.count == word.count else { continue }
-            found[word] = (syllables, weight)
+        wordList.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
+            let tab = UInt8(ascii: "\t"), newline = UInt8(ascii: "\n")
+            var start = 0
+            while start < bytes.count {
+                var end = start
+                while end < bytes.count, bytes[end] != newline { end += 1 }
+                defer { start = end + 1 }
+                guard let firstTab = (start..<end).first(where: { bytes[$0] == tab }),
+                      let secondTab = (firstTab + 1..<end).first(where: { bytes[$0] == tab }) else { continue }
+                var weight = 0.0
+                for index in secondTab + 1..<end {
+                    let digit = bytes[index] &- UInt8(ascii: "0")
+                    guard digit < 10 else { break }
+                    weight = weight * 10 + Double(digit)
+                }
+                total += weight
+                // The first character's bytes: up to 4 in UTF-8.
+                let lead = bytes[start]
+                let length = lead < 0x80 ? 1 : lead < 0xE0 ? 2 : lead < 0xF0 ? 3 : 4
+                guard start + length <= firstTab, firsts.contains(Array(bytes[start..<start + length])) else { continue }
+                let word = String(decoding: bytes[start..<firstTab], as: UTF8.self)
+                guard text.contains(word), weight > found[word]?.weight ?? 0 else { continue }
+                let syllables = String(decoding: bytes[firstTab + 1..<secondTab], as: UTF8.self).split(separator: " ").map(String.init)
+                guard syllables.count == word.count else { continue }
+                found[word] = (syllables, weight)
+            }
         }
         guard total > 0 else { return nil }
         let longest = found.keys.map(\.count).max() ?? 0

@@ -1001,9 +1001,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   the scheme in use (`PinyinDecoder.keys(typing:)`), with an apostrophe
   only where librime would read the keys as fewer or other syllables
   (xi'an, fang'an). A learned reading still comes first.
-- The list is streamed for the lines of words in the selection and
-  nothing stays loaded: reconversion is a menu command, and the 2 MB list
-  in memory as text would cost more than reading it then.
+- The list is scanned as bytes for the lines of words in the selection
+  (only words starting with one of its characters become strings), 7–9
+  ms per reconversion, and nothing stays loaded: the 2 MB list in memory
+  as text would cost more than reading it then. Decoding it as one
+  string took 65–90 ms (found by review).
+- Also from that review, checked and not a bug: the request cache of
+  D-060 compares inputs with the caret, but AzooKey's no-change path
+  (`previousInputData == inputData`) uses the same equality, so a caret
+  move never reaches it.
 - Text with a character in no listed word (Latin, punctuation) is left
   alone, as before. From the advisor survey (pass 4).
 
