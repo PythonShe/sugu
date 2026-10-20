@@ -211,7 +211,8 @@ extension InputSession {
     }
 
     /// Reconverts the selected text in fields that expose it: the selection
-    /// becomes a composition of its reading when Sugu knows one.
+    /// becomes a composition of its reading, the one it was learned with or
+    /// else the dictionary's.
     public func reconvertSelection() {
         guard mode != .english, isEmpty, canReadField, let client, let selected = client.selectedText(), !selected.isEmpty,
               let engine = engines.engine(for: mode) else { return }
@@ -219,7 +220,7 @@ extension InputSession {
         if mode == .japanese {
             reading = WidthConversion.hiragana(selected).isHiraganaReading ? WidthConversion.hiragana(selected) : (store?.reading(for: selected, mode: mode) ?? selected)
         } else {
-            guard let known = store?.reading(for: selected, mode: mode) else { return }
+            guard let known = store?.reading(for: selected, mode: mode) ?? engines.chineseReading(of: selected) else { return }
             reading = known
         }
         active = engine

@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Reconvert Selection works on any Chinese text, not only learned words
+  (D-066).
 - Chinese words offer the emoji they name, from CLDR (D-065).
 - The mode indicator no longer appears at the pointer when switching
   apps changes the mode (D-064).

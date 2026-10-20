@@ -167,6 +167,9 @@ final class FakeEngineSource: EngineSource {
     var conversions: [String: String] = [:]
     func setChineseScript(_ script: ChineseScript) { self.script = script }
     func chineseText(_ text: String) -> String? { conversions[text] }
+    /// Readings by text, standing in for the word list.
+    var readings: [String: String] = [:]
+    func chineseReading(of text: String) -> String? { readings[text] }
 }
 
 @MainActor

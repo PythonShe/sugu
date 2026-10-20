@@ -991,3 +991,19 @@ any call made without the owner present. Each entry: what, why, reversibility.
   compiled ocd2 table was no faster than the text table, so the build
   needs no OpenCC tool. Suggested by the advisor survey (pass 4).
 
+## D-066 · Reconverting any Chinese text (2026-10-20)
+- Reconvert Selection in Chinese did nothing unless the selection was a
+  learned word, since only the store knew a reading. Japanese falls back
+  to the text itself; Chinese text needs its pinyin.
+- The reading now comes from the bundled word list (`ChineseReadings`):
+  the selection, in Simplified, split into listed words where their
+  weights are likeliest (长城很长 → chang cheng hen chang), then typed in
+  the scheme in use (`PinyinDecoder.keys(typing:)`), with an apostrophe
+  only where librime would read the keys as fewer or other syllables
+  (xi'an, fang'an). A learned reading still comes first.
+- The list is streamed for the lines of words in the selection and
+  nothing stays loaded: reconversion is a menu command, and the 2 MB list
+  in memory as text would cost more than reading it then.
+- Text with a character in no listed word (Latin, punctuation) is left
+  alone, as before. From the advisor survey (pass 4).
+

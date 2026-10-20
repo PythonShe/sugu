@@ -16,6 +16,45 @@ struct PinyinDecoderTests {
         return try #require(PinyinDecoder(schema: schema, syllables: syllables, sharedData: dataDirectory.appendingPathComponent("Rime")))
     }
 
+    /// Keys for syllables, with an apostrophe only where the keys would
+    /// read otherwise.
+    @Test func keysTypeSyllables() throws {
+        #expect(try decoder().keys(typing: ["tong", "yi"]) == "tongyi")
+        #expect(try decoder().keys(typing: ["xi", "an"]) == "xi'an")
+        #expect(try decoder().keys(typing: ["fang", "an"]) == "fang'an")
+        #expect(try decoder(RimeSchema(scheme: .xiaohe)).keys(typing: ["zhong", "guo"]) == "vsgo")
+    }
+
+    /// The likeliest split of text into listed words gives its reading.
+    @Test func textReadsAsItsWords() throws {
+        let list = Data("""
+        长\tchang\t36122
+        长\tzhang\t49072
+        长城\tchang cheng\t30000
+        城\tcheng\t20000
+        银行\tyin hang\t40000
+        行\txing\t90000
+        银\tyin\t10000
+
+        """.utf8)
+        #expect(ChineseReadings.syllables(of: "长城", wordList: list) == ["chang", "cheng"])
+        #expect(ChineseReadings.syllables(of: "银行", wordList: list) == ["yin", "hang"])
+        #expect(ChineseReadings.syllables(of: "长", wordList: list) == ["zhang"])
+        #expect(ChineseReadings.syllables(of: "长a", wordList: list) == nil)
+    }
+
+    /// The bundled word list and the decoder give keys librime reads back
+    /// as the text's syllables.
+    @Test func bundledTextReadsAsKeys() throws {
+        let list = try Data(contentsOf: dataDirectory.appendingPathComponent("Lexicon/\(Lexicon.pinyinWordsFile)"), options: .mappedIfSafe)
+        let decoder = try decoder()
+        func keys(_ text: String) -> String? { ChineseReadings.syllables(of: text, wordList: list).flatMap(decoder.keys(typing:)) }
+        #expect(keys("银行") == "yinhang")
+        #expect(keys("西安") == "xi'an")
+        #expect(keys("长城很长") == "changchenghenchang")
+        #expect(keys("我们同意了") == "womentongyile")
+    }
+
     @Test func fullPinyin() throws {
         let decoder = try decoder()
         #expect(decoder.syllables(typedAs: "zhangsanfeng", count: 3) == [["zhang", "san", "feng"]])

@@ -24,6 +24,9 @@ public protocol EngineSource: AnyObject {
     /// Chinese text in the script in use, for candidates that do not come
     /// from librime; nil when it cannot be converted.
     func chineseText(_ text: String) -> String?
+    /// Keys that type Chinese text, for reconverting text Sugu did not
+    /// type; nil when there is no reading.
+    func chineseReading(of text: String) -> String?
 }
 
 /// Remembers the last mode per app across launches.

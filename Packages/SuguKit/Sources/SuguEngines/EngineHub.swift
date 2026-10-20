@@ -169,6 +169,18 @@ public final class EngineHub: EngineSource {
         converter(for: chineseScript)?.convert(text)
     }
 
+    /// Keys that type Chinese `text` in the scheme in use, for reconverting
+    /// it; nil when a character is in no listed word. Reads the word list
+    /// for this alone.
+    public func chineseReading(of text: String) -> String? {
+        let simplified = converter(for: .simplified)?.convert(text) ?? text
+        guard let wordList = try? Data(contentsOf: locations.lexicon.appendingPathComponent(Lexicon.pinyinWordsFile), options: .mappedIfSafe),
+              let syllables = ChineseReadings.syllables(of: simplified, wordList: wordList) else { return nil }
+        let schema = schema
+        let decoder = decoders.flatMap { $0.schema == schema ? $0.scheme : nil } ?? Self.makeDecoders(for: schema, locations: locations)?.1
+        return decoder?.keys(typing: syllables)
+    }
+
     private func converter(for script: ChineseScript) -> ScriptConverter? {
         if let converter = scriptConverters[script] { return converter }
         let openCC = locations.rimeShared.appendingPathComponent("opencc")

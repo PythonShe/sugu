@@ -11,17 +11,24 @@ public struct PinyinDecoder: Sendable {
 
     private let readings: [String: [Reading]]
     private let longestSpelling: Int
+    /// The keys that type each syllable in full, not abbreviated or by a
+    /// fuzzy rule.
+    let spellings: [String: String]
 
     /// Spellings of `syllables` under `rules`, as written in a schema.
     init(syllables: some Sequence<String>, rules: [String]) {
         let algebra = SpellingAlgebra(rules: rules)
         var readings: [String: [Reading]] = [:]
+        var spellings: [String: String] = [:]
         for syllable in syllables {
-            for spelling in algebra.spellings(of: syllable) {
+            let all = algebra.spellings(of: syllable)
+            for spelling in all {
                 readings[spelling.text, default: []].append(Reading(syllable: syllable, isDerived: spelling.isDerived))
             }
+            spellings[syllable] = all.filter { !$0.isDerived }.map(\.text).min { ($0.count, $0) < ($1.count, $1) }
         }
         self.readings = readings
+        self.spellings = spellings
         longestSpelling = readings.keys.map(\.count).max() ?? 0
     }
 

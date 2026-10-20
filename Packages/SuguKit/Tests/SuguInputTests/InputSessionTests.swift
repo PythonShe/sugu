@@ -183,6 +183,23 @@ struct InputSessionTests {
         #expect(changes.map(\.1) == [false, true])
     }
 
+    /// Selected Chinese text becomes a composition of the reading it was
+    /// learned with, or else the dictionary's.
+    @Test func selectedChineseReconverts() {
+        let session = makeSession()
+        source.readings = ["你好": "nihao", "世界": "shi'jie"]
+        store.learn(Commit(text: "世界", reading: "shijie"), mode: .chinese)
+        for (selection, reading) in [("你好", "nihao"), ("世界", "shijie")] {
+            client.selection = selection
+            session.reconvertSelection()
+            #expect(chinese.state.reading == reading)
+            session.abandonComposition()
+        }
+        client.selection = "Sugu"
+        session.reconvertSelection()
+        #expect(session.isEmpty)
+    }
+
     @Test func secureInputPassesEverythingThrough() {
         let session = makeSession()
         session.isSecureInput = true
