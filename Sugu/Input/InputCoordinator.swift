@@ -35,7 +35,7 @@ final class InputCoordinator {
 
     func activate(client: any IMKTextInput & NSObjectProtocol, controller: IMKInputController) {
         let adapter = attach(client, controller: controller)
-        session.isSecureInput = IsSecureEventInputEnabled()
+        session.isSecureInput = isSecureInputHere()
         session.attach(adapter)
         syncCapsLock()
         AppEnvironment.shared.sync?.pullIfDue()
@@ -61,13 +61,29 @@ final class InputCoordinator {
         return adapter
     }
 
+    /// Whether secure input belongs to the app being typed in: a password
+    /// prompt in Terminal, an app's own password field. Secure input is
+    /// global, so left on by an app in the background, or by the login
+    /// window, it would otherwise turn Sugu off in every app.
+    private func isSecureInputHere() -> Bool {
+        guard IsSecureEventInputEnabled() else { return false }
+        guard let session = CGSessionCopyCurrentDictionary() as? [String: Any],
+              let holder = (session["kCGSSessionSecureInputPID"] as? NSNumber)?.int32Value else { return true }
+        if let bundleID = client?.bundleIdentifier {
+            let apps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            if !apps.isEmpty { return apps.contains { $0.processIdentifier == holder } }
+        }
+        return holder == NSWorkspace.shared.frontmostApplication?.processIdentifier
+    }
+
     // MARK: Events
 
     func handle(_ event: NSEvent, client: any IMKTextInput & NSObjectProtocol, controller: IMKInputController) -> Bool {
-        session.isSecureInput = IsSecureEventInputEnabled()
-        if self.client?.represents(client) != true {
-            session.attach(attach(client, controller: controller))
-        }
+        let isNewClient = self.client?.represents(client) != true
+        let adapter = attach(client, controller: controller)
+        // Known before the session attaches, which may read the field.
+        session.isSecureInput = isSecureInputHere()
+        if isNewClient { session.attach(adapter) }
         switch event.type {
         case .flagsChanged:
             flagsChanged(event)

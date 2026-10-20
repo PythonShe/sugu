@@ -387,3 +387,18 @@ any call made without the owner present. Each entry: what, why, reversibility.
   entries (`OSLogStore`, current process). It is made only on that click
   and saved where the user picks; Sugu sends nothing (ADR 0003, zero
   telemetry).
+
+## D-031 · Secure input counts only in the app that holds it (2026-10-20)
+- Sugu passed every key through while `IsSecureEventInputEnabled()` was
+  true. That flag is global: an app in the background that leaves secure
+  input on (Terminal's Secure Keyboard Entry, a password manager), or the
+  login window while the screen is locked, turned Sugu into plain English in
+  every app, with nothing to show why.
+- The window server names the process holding secure input
+  (`kCGSSessionSecureInputPID` in `CGSessionCopyCurrentDictionary()`).
+  Sugu now treats input as secure only when that process is the app being
+  typed in, matched by the client's bundle identifier (the frontmost app
+  when it has none); when the holder cannot be read, it stays secure, as
+  before. Reading it costs ~70 µs and happens only while secure input is
+  on. The check runs before a new field is attached, so a secure field's
+  text is never read for vocabulary.

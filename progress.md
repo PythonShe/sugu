@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Secure input left on by another process (seen live: loginwindow while
+  the screen is locked) no longer turns Sugu off everywhere (D-031).
 - Unified-log diagnostics and Export Diagnostics in Advanced (D-030); the
   `SuguTests` bundle checks the report reads the log back.
 - A damaged learned store is set aside and a fresh one opened (D-029).
