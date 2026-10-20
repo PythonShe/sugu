@@ -264,6 +264,16 @@ struct InputSessionTests {
         #expect(client.markedText == "け゛ー")
     }
 
+    @Test func shiftTapCommitsTypedLettersThenSwitchesToEnglish() {
+        let session = makeSession()
+        type("hello", into: session)
+        session.shiftTapped()
+        #expect(client.document == "hello")
+        #expect(session.mode == .english)
+        session.shiftTapped()
+        #expect(session.mode == .chinese)
+    }
+
     @Test func modeIsRememberedPerApp() {
         let session = makeSession()
         session.setMode(.japanese)

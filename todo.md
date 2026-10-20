@@ -84,7 +84,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Japanese live conversion, as a preference (D-039)
 
 ## 10. v1 gaps (advisor pass 3)
-- [ ] Shift tap: ignore taps with mouse activity during the hold; mid-composition commit the typed letters, then switch to English
+- [x] Shift tap: ignore taps with mouse activity during the hold; mid-composition commit the typed letters, then switch to English (D-041)
 - [ ] Width-aware Chinese punctuation from what Sugu produced last, not a synchronous field read
 - [ ] Turning Zenzai off releases the model
 - [ ] Learned-word expiry also on setting change and daily, not only at launch

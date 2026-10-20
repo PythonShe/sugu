@@ -180,6 +180,18 @@ public final class InputSession {
         }
     }
 
+    /// A Shift tap: switches to English, and a Chinese composition of typed
+    /// letters is committed as those letters, which were meant as English.
+    /// A composition with a choice made in it is committed as it shows.
+    public func shiftTapped() {
+        if mode == .chinese, let engine = active, transformed == nil,
+           !engine.state.isEmpty, engine.state.segments.allSatisfy({ $0.role == .input }),
+           let raw = engine.commitRaw() {
+            commitText(raw.text, reading: raw.reading, learn: false)
+        }
+        toggleEnglish()
+    }
+
     /// English ↔ the last Chinese or Japanese mode.
     public func toggleEnglish() {
         setMode(mode == .english ? lastCJKMode : .english)

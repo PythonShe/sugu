@@ -10,17 +10,21 @@ public struct ShiftTapDetector: Sendable {
     public init() {}
 
     /// Feeds a modifier change (a flags-changed event); returns true when it
-    /// completes a tap. Caps Lock, numpad and fn state are ignored.
-    public mutating func flagsChanged(keyCode: UInt16, modifiers: KeyModifiers, timestamp: TimeInterval) -> Bool {
-        let held = modifiers.subtracting([.capsLock, .numericPad, .function])
+    /// completes a tap. Caps Lock, numpad and fn state are ignored. A
+    /// mouse click or scroll while Shift was down (`secondsSinceMouse`
+    /// shorter than the press) makes it a Shift-click, not a tap.
+    public mutating func flagsChanged(keyCode: UInt16, modifiers: KeyModifiers, timestamp: TimeInterval,
+                                      secondsSinceMouse: TimeInterval = .infinity) -> Bool {
+        let down = modifiers.subtracting([.capsLock, .numericPad, .function])
         let isShiftKey = keyCode == VirtualKey.shift || keyCode == VirtualKey.rightShift
-        if isShiftKey, held == .shift {
+        if isShiftKey, down == .shift {
             pressedAt = timestamp
             return false
         }
         defer { pressedAt = nil }
-        guard isShiftKey, held.isEmpty, let pressedAt else { return false }
-        return timestamp - pressedAt <= Self.maximumDuration
+        guard isShiftKey, down.isEmpty, let pressedAt else { return false }
+        let held = timestamp - pressedAt
+        return held <= Self.maximumDuration && secondsSinceMouse > held
     }
 
     /// Any other key cancels a pending tap (Shift was used as a modifier).

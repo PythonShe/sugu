@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Shift-clicks no longer switch to English; a Shift tap after typed
+  letters commits them as English (D-041). PCC entitlement plumbing:
+  optional `Config/Local.xcconfig`; signing waits on an Xcode account.
 - Review of D-033–D-039: voicing marks join kana inside AzooKey (the
   shown text is not kana under live conversion), and a mode turned back on
   takes its place for the preferred languages. CI passes (p99 3.7 ms).

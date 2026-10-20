@@ -120,10 +120,18 @@ final class InputCoordinator {
             syncCapsLock()
             return
         }
-        let tapped = shiftTap.flagsChanged(keyCode: event.keyCode, modifiers: KeyTranslator.modifiers(from: event.modifierFlags), timestamp: event.timestamp)
+        let tapped = shiftTap.flagsChanged(keyCode: event.keyCode, modifiers: KeyTranslator.modifiers(from: event.modifierFlags),
+                                           timestamp: event.timestamp, secondsSinceMouse: Self.secondsSinceMouse())
         if tapped, preferences.preferences.englishToggle == .shiftTap {
-            session.toggleEnglish()
+            session.shiftTapped()
         }
+    }
+
+    /// Time since the last click, drag or scroll anywhere, from the window
+    /// server; IMK sends Sugu no mouse events.
+    private static func secondsSinceMouse() -> TimeInterval {
+        let types: [CGEventType] = [.leftMouseDown, .rightMouseDown, .otherMouseDown, .leftMouseDragged, .scrollWheel]
+        return types.map { CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: $0) }.min() ?? .infinity
     }
 
     private var capsLockSelectsEnglish: Bool { preferences.preferences.englishToggle == .capsLock }

@@ -543,3 +543,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Shipping the spelling without that model would type Zhuyin keys into an
   input method built for pinyin. Deferred until it can be done whole, as
   its own mode of Chinese composition with its own test set.
+
+## D-041 · Shift taps: not Shift-clicks; typed letters stay letters (2026-10-20)
+- IMK sends an input method key and modifier events only, so Shift
+  pressed for a Shift-click or Shift-scroll looked like a tap and switched
+  to English. The tap now also needs no click, drag or scroll since Shift
+  went down, read from the window server
+  (`CGEventSource.secondsSinceLastEventType`, no permission needed).
+- A Shift tap with a Chinese composition of plain letters commits those
+  letters, then switches to English: someone who tapped Shift after
+  `hello` meant English, as Sogou, Microsoft Pinyin and Rime's
+  `commit_code` treat it. A composition with a choice in it, an F-key
+  form, or Japanese commits as it shows, as before.

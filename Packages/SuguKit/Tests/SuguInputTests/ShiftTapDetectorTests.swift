@@ -16,6 +16,16 @@ struct ShiftTapDetectorTests {
         #expect(tap4)
     }
 
+    @Test func aShiftClickIsNotATap() {
+        var detector = ShiftTapDetector()
+        _ = detector.flagsChanged(keyCode: VirtualKey.shift, modifiers: [.shift], timestamp: 1)
+        let clicked = detector.flagsChanged(keyCode: VirtualKey.shift, modifiers: [], timestamp: 1.3, secondsSinceMouse: 0.1)
+        #expect(!clicked)
+        _ = detector.flagsChanged(keyCode: VirtualKey.shift, modifiers: [.shift], timestamp: 2)
+        let tapped = detector.flagsChanged(keyCode: VirtualKey.shift, modifiers: [], timestamp: 2.2, secondsSinceMouse: 5)
+        #expect(tapped)
+    }
+
     @Test func holdsAndChordsAreNotTaps() {
         var detector = ShiftTapDetector()
         _ = detector.flagsChanged(keyCode: VirtualKey.shift, modifiers: [.shift], timestamp: 1)
