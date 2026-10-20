@@ -162,3 +162,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
   NSGridView forms (right-aligned labels, standard controls) built by a
   small `SettingsForm` helper; lists are NSTableViews with the standard
   add/remove control.
+
+## D-018 · Benchmark as the accuracy and latency gate (2026-10-20)
+- `sugu-bench` drives `InputSession` with the real engines one key at a
+  time, as the shell does, over `Bench/zh.tsv` and `Bench/ja.tsv` (original
+  sentences, Apache-2.0). It reports top-1, first-page and character
+  accuracy, keystroke and conversion percentiles, and memory; `--check`
+  fails when a budget is exceeded, for CI.
+- Seed results: Chinese top-1 90%, keystroke p99 3.4 ms; Japanese top-1
+  76%, keystroke p99 ~4 ms, conversion p99 3.8 ms; footprint 60 MB.
+- Japanese latency was 18.7 ms p99 because the emoji text replacer was
+  rebuilt (reading its file) on every converter request; it is built once.
+- Zenzai (zenz-v3.1 small) raises Japanese top-1 to 80% at +60 MB footprint
+  (resident 270 MB) and ~2× keystroke time, so it stays experimental and
+  opt-in (D-007).

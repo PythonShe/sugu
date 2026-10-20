@@ -55,8 +55,8 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [ ] `ThirdPartyNotices.txt` bundled (Acknowledgements button reads it)
 
 ## 7. Proof & delivery
-- [ ] `sugu-bench`: accuracy harness (top-1, keystrokes/char) + latency/memory measurement
+- [x] `sugu-bench`: accuracy harness (top-1, keystrokes/char) + latency/memory measurement (D-018)
 - [ ] CI workflow: build, tests, budgets
 - [ ] Packaging: signed/notarized `.pkg` scripts, Sparkle (profile off), dev install script
 - [ ] README, third-party notices/attribution, ADR updates
-- [ ] Code review passes (reviewer agents) and fixes
+- [~] Code review passes (reviewer agents) and fixes — first pass: 11 findings being fixed

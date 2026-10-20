@@ -3,6 +3,12 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- `sugu-bench` added with 50-sentence Chinese and Japanese seed sets
+  (D-018). Fixes it surfaced: Japanese keystroke p99 18.7 → ~4 ms (emoji
+  replacer built once), trailing n → ん before conversion, romaji symbol
+  keys (ー 「」 ・), and toned ü syllables missing from the pinyin list
+  (lü/nü were treated as English). Chinese top-1 88 → 90%, Japanese 70 →
+  76%. Zenzai measured: 80% top-1, +60 MB.
 - Settings window in AppKit (toolbar tabs, NSGridView forms, NSTableView
   lists): modes and toggles, candidate style, pinyin scheme/script/fuzzy,
   dictionary choice, downloads with progress, Japanese options and Zenzai,
