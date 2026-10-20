@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Chinese: a 1.7 MB grammar model built from Tatoeba is bundled (D-048);
+  top-1 without the download 90% → 94%.
 - Japanese conversions ranked by a character 5-gram model built from
   Tatoeba (ADR 0005, D-047): bench top-1 78% → 86%, keystroke p99
   unchanged, 16.4 MB bundled. Personal n-grams and Chinese ranking next.

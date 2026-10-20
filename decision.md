@@ -653,3 +653,24 @@ any call made without the owner present. Each entry: what, why, reversibility.
   numerals (十分 → 10分) and orthography (宜しく, 子ども).
 - Also found: AzooKey bundles its Zenz tokenizer (CC BY-SA 4.0) as a
   resource; it is now attributed in the notices.
+
+## D-048 · Bundled Chinese grammar from Tatoeba (2026-10-20)
+- librime offers one whole sentence, so the Japanese reranking has nothing
+  to choose from in Chinese. octagram does score sentences: it adds
+  `collocation_penalty` (-14) to the log value of the longest collocation
+  of context and word it finds, and compares that with
+  `non_collocation_penalty` (-6). Its `.gram` keys are character strings
+  (and `word$` for sentence ends) with a value.
+- `sugu-tool build-grammar` counts collocations of 2–6 characters and
+  endings of 1–5 in Tatoeba's Mandarin sentences after OpenCC t2s, keeps
+  those seen twice, scales counts by 100 and runs octagram's own
+  `build_grammar`. Scale on `Bench/zh.tsv`: 30 → 92%, 100 and 300 → 94%,
+  1000 → 92%, 3000 → 90%, 30000 → 88%; 100 also keeps learned words at
+  83% and the main set after learning at 94%.
+- Named `sugu-zh-hans` in the shared data directory. librime resolves a
+  `.gram` from the user directory first; the download is
+  `wanxiang-lts-zh-hans` there, so the schema names whichever applies and
+  turning the download off returns to the bundled one. The setting now
+  says "large grammar model".
+- Bench sentences are left out; builds are identical (octagram sorts its
+  input).

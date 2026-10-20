@@ -40,13 +40,21 @@ does it.
    `sugu-bench` top-1 goes from 78% to 86% and characters from 95.7% to
    97.5%; learned names stay first; keystroke p99 is unchanged.
 
+6. **Chinese gets the same data through librime.** librime builds one
+   sentence and offers no alternatives to rerank, but it already scores
+   collocations with librime-octagram. Sugu bundles a small grammar model
+   (1.7 MB) built from Tatoeba's Mandarin sentences in Simplified script:
+   character collocations of two to six characters and sentence endings
+   seen at least twice, counts scaled to octagram's penalties. The
+   downloaded wanxiang model (ADR 0002, decision 4) replaces it when the
+   user turns that on. On the Chinese seed set top-1 goes from 90% to 94%,
+   the same as the download.
+
 ## Later phases
 
 - A personal model from what the user commits, kept in the learned store
   with the same gates as learned words, blended with the bundled one; it
   can also feed Zenzai's personalization.
-- Chinese: the same ranking over librime's candidates where it helps
-  without the grammar model download.
 
 ## Considered options
 

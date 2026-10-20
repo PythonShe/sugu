@@ -17,16 +17,25 @@ public struct RimeSchema: Sendable, Equatable {
     /// dictionary is Simplified, and the model scores sentences before the
     /// script filter runs, so the Simplified model serves every script.
     public static let grammarLanguage = "wanxiang-lts-zh-hans"
+    /// The small grammar model Sugu bundles (ADR 0005), in the shared
+    /// directory; librime looks in the user directory first, so the names
+    /// differ and the downloaded model is used only when chosen.
+    public static let bundledGrammarLanguage = "sugu-zh-hans"
 
     public var scheme: PinyinScheme
     public var fuzzy: Set<FuzzyPinyin>
+    /// The downloaded grammar model.
     public var useGrammar: Bool
+    /// The bundled grammar model, used when the downloaded one is not.
+    public var bundledGrammar: Bool
     public var dictionary: ChineseDictionary
 
-    public init(scheme: PinyinScheme = .fullPinyin, fuzzy: Set<FuzzyPinyin> = [], useGrammar: Bool = false, dictionary: ChineseDictionary = .wanxiang) {
+    public init(scheme: PinyinScheme = .fullPinyin, fuzzy: Set<FuzzyPinyin> = [], useGrammar: Bool = false, bundledGrammar: Bool = false,
+                dictionary: ChineseDictionary = .wanxiang) {
         self.scheme = scheme
         self.fuzzy = fuzzy
         self.useGrammar = useGrammar
+        self.bundledGrammar = bundledGrammar
         self.dictionary = dictionary
     }
 
@@ -129,11 +138,11 @@ public struct RimeSchema: Sendable, Equatable {
             "  initial_quality: 3",
             "  max_homophones: 8",
         ]
-        if useGrammar {
+        if useGrammar || bundledGrammar {
             lines += [
                 "  contextual_suggestions: false",
                 "grammar:",
-                "  language: \(Self.grammarLanguage)",
+                "  language: \(useGrammar ? Self.grammarLanguage : Self.bundledGrammarLanguage)",
                 "  collocation_max_length: 6",
                 "  collocation_min_length: 2",
                 "  collocation_penalty: -14",

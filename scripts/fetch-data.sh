@@ -33,14 +33,16 @@ fetch_wanxiang() {
 
 fetch_tatoeba() {
   local dest="$ROOT/.vendor/tatoeba"
-  if [[ -f "$dest/.ref" && "$(cat "$dest/.ref")" == "$TATOEBA_OPUS_VERSION" ]]; then
+  if [[ -f "$dest/.ref" && "$(cat "$dest/.ref")" == "$TATOEBA_OPUS_VERSION" && -f "$dest/ja.txt.gz" && -f "$dest/cmn.txt.gz" ]]; then
     echo "Tatoeba $TATOEBA_OPUS_VERSION already present"
     return
   fi
   curl -fsSL -o "$TMP/ja.txt.gz" "https://object.pouta.csc.fi/OPUS-Tatoeba/$TATOEBA_OPUS_VERSION/mono/ja.txt.gz"
   echo "$TATOEBA_JA_SHA256  $TMP/ja.txt.gz" | shasum -a 256 -c -
+  curl -fsSL -o "$TMP/cmn.txt.gz" "https://object.pouta.csc.fi/OPUS-Tatoeba/$TATOEBA_OPUS_VERSION/mono/cmn.txt.gz"
+  echo "$TATOEBA_CMN_SHA256  $TMP/cmn.txt.gz" | shasum -a 256 -c -
   rm -rf "$dest" && mkdir -p "$dest"
-  mv "$TMP/ja.txt.gz" "$dest/"
+  mv "$TMP/ja.txt.gz" "$TMP/cmn.txt.gz" "$dest/"
   echo "$TATOEBA_OPUS_VERSION" > "$dest/.ref"
   echo "Tatoeba $TATOEBA_OPUS_VERSION -> $dest"
 }

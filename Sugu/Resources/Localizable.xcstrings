@@ -1193,29 +1193,6 @@
         }
       }
     },
-    "Grammar model:": {
-      "extractionState": "manual",
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文法モデル："
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "语法模型："
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "語法模型："
-          }
-        }
-      }
-    },
     "Half Width": {
       "extractionState": "manual",
       "localizations": {
@@ -1533,6 +1510,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "語言："
+          }
+        }
+      }
+    },
+    "Large grammar model:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大きな文法モデル："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大型语法模型："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大型語法模型："
           }
         }
       }
@@ -3307,25 +3307,25 @@
         }
       }
     },
-    "Use the grammar model": {
+    "Use the large grammar model": {
       "extractionState": "manual",
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "文法モデルを使用"
+            "value": "大きな文法モデルを使用"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用语法模型"
+            "value": "使用大型语法模型"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用語法模型"
+            "value": "使用大型語法模型"
           }
         }
       }
