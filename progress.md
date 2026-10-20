@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Release script signs in the Private Cloud Compute entitlement when given
+  a Developer ID profile (D-045); a release build without one carries none.
 - Unchanged marked text is not sent to the app again, and the composition's
   screen position is read once per marked text, so moving through
   predictions costs no calls to the app.

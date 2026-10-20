@@ -600,3 +600,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
   composition ends. The hub forgets the loaded model on disable, so turning
   it back on loads it again off the main thread (D-032).
 - Tested against a real model only when `SUGU_ZENZAI_MODEL` names one.
+
+## D-045 · Private Cloud Compute in release builds (2026-10-20)
+- The entitlement is restricted, so a build may carry it only with a
+  provisioning profile that grants it; signed without one, macOS refuses
+  to launch the app. `scripts/release.sh` adds it only when
+  `DEVELOPER_ID_PROFILE` names an installed Developer ID profile with the
+  capability, and then checks the signed app has it. Otherwise the release
+  has no entitlement, and the Private Cloud Compute level falls back to
+  the on-device model.
+- Signing settings go through `SUGU_ENTITLEMENTS` and `SUGU_PROFILE` in
+  `Config/Signing.xcconfig`, which only the app target includes: passed
+  as `CODE_SIGN_ENTITLEMENTS` on the command line they also reached the
+  Swift package targets and failed the build. Command-line values override
+  a developer's `Config/Local.xcconfig`.

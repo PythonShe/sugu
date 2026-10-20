@@ -1,5 +1,10 @@
 // Ad hoc signing by default. An untracked Config/Local.xcconfig can sign
 // with a development team, e.g. to carry the Private Cloud Compute
-// entitlement (see Config/Local.xcconfig.example).
+// entitlement (see Config/Local.xcconfig.example). scripts/release.sh sets
+// the SUGU_ settings for Developer ID; they apply to the app target only.
 CODE_SIGN_IDENTITY = -
+SUGU_ENTITLEMENTS =
+SUGU_PROFILE =
+CODE_SIGN_ENTITLEMENTS = $(SUGU_ENTITLEMENTS)
+PROVISIONING_PROFILE_SPECIFIER = $(SUGU_PROFILE)
 #include? "Local.xcconfig"

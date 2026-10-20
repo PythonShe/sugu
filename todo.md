@@ -95,4 +95,4 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Levels, switches, seam, selection commands, composition suggestions (D-043)
 - [x] Entitlement signing through `Config/Local.xcconfig`; offscreen probe
 - [ ] Verify answers once Apple Intelligence is ready on the development Mac
-- [ ] Release signing: Developer ID profile with the capability in `scripts/release.sh`
+- [x] Release signing: optional Developer ID profile in `scripts/release.sh` (D-045)

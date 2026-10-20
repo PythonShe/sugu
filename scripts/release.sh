@@ -10,6 +10,10 @@
 #   NOTARY_PROFILE              a `xcrun notarytool store-credentials` profile
 #   SPARKLE_PUBLIC_ED_KEY       public key from Sparkle's generate_keys
 #   SPARKLE_PRIVATE_KEY_FILE    optional; otherwise sign_update reads the keychain
+#   DEVELOPER_ID_PROFILE        optional; name of an installed Developer ID
+#                               provisioning profile with Private Cloud Compute
+#                               (ADR 0004). Without it the build carries no
+#                               entitlement and uses the on-device model only.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -37,13 +41,22 @@ fi
 # Dependencies, tests and budgets first.
 scripts/ci.sh
 
+# The entitlement is restricted: it ships only with a profile that grants
+# it. These settings override any Config/Local.xcconfig.
+ENTITLEMENTS=""
+[[ -n "${DEVELOPER_ID_PROFILE:-}" ]] && ENTITLEMENTS="Sugu/App/Sugu-PCC.entitlements"
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$WORK/Sugu.xcarchive" archive -quiet \
   CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_IDENTITY="$DEVELOPER_ID_APPLICATION" \
+  SUGU_ENTITLEMENTS="$ENTITLEMENTS" SUGU_PROFILE="${DEVELOPER_ID_PROFILE:-}" \
   OTHER_CODE_SIGN_FLAGS="--timestamp" SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY"
 
 APP="$WORK/Sugu.xcarchive/Products/Library/Input Methods/Sugu.app"
 codesign --verify --deep --strict "$APP"
+if [[ -n "$ENTITLEMENTS" ]]; then
+  codesign -d --entitlements :- "$APP" 2>/dev/null | grep -q "com.apple.developer.private-cloud-compute" \
+    || { echo "the Private Cloud Compute entitlement is missing" >&2; exit 1; }
+fi
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")"
 MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")"
