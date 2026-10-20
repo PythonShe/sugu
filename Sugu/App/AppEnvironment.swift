@@ -64,7 +64,7 @@ final class AppEnvironment {
         let days = preferences.preferences.learnedWordExpiryDays
         if days > 0 { _ = store?.expire(olderThan: days) }
         // Load the engine the session starts in, so the first key is fast.
-        if session.mode == .chinese { engines.warmUp(.chinese) }
+        engines.prepare(session.mode)
         sync?.pullIfDue()
     }
 

@@ -50,6 +50,13 @@ public final class RimeRuntime {
         try await task.value
     }
 
+    /// Removes librime's compiled copy of the user data, so the next
+    /// deployment builds it again from the sources.
+    public func discardBuild() {
+        guard deployment == nil else { return }
+        try? FileManager.default.removeItem(at: directories.user.appendingPathComponent("build"))
+    }
+
     /// True once a deployment succeeded and none is running.
     public var isReady: Bool { isInitialized && deployment == nil && schema != nil }
 

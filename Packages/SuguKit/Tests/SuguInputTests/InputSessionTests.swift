@@ -52,6 +52,33 @@ struct InputSessionTests {
         #expect(session.display.candidates?.candidates.first?.text == "拟好")
     }
 
+    /// Letters typed while librime is set up stay in the composition and
+    /// move to it once it is ready.
+    @Test func lettersWaitForTheChineseEngine() {
+        source.engines[.chinese] = nil
+        let session = makeSession()
+        #expect(source.prepared.contains(.chinese))
+        type("ni", into: session)
+        #expect(client.markedText == "ni")
+        #expect(client.document.isEmpty)
+        source.engines[.chinese] = chinese
+        source.onEngineReady?(.chinese)
+        type("hao", into: session)
+        #expect(session.display.candidates?.candidates.first?.text == "你好")
+        _ = session.handle(Key.space)
+        #expect(client.document == "你好")
+    }
+
+    /// Should setup fail, what was typed can still be committed.
+    @Test func lettersCommitWithoutTheChineseEngine() {
+        source.engines[.chinese] = nil
+        let session = makeSession()
+        type("ni'hao", into: session)
+        _ = session.handle(Key.space)
+        #expect(client.document == "ni'hao")
+        #expect(store.lookup("ni'hao", mode: .chinese).isEmpty)
+    }
+
     @Test func enterCommitsLetters() {
         let session = makeSession()
         type("shijie", into: session)

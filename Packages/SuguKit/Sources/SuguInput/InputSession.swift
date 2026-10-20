@@ -6,7 +6,12 @@ import SuguLearning
 /// their mode; `nil` means the engine is not ready yet.
 @MainActor
 public protocol EngineSource: AnyObject {
+    /// The engine for a mode; nil while it is still being set up.
     func engine(for mode: InputMode) -> (any CompositionEngine)?
+    /// Starts setting up a mode's engine, so it is ready by the first key.
+    func prepare(_ mode: InputMode)
+    /// Called when an engine `engine(for:)` returned nil for is ready.
+    var onEngineReady: ((InputMode) -> Void)? { get set }
     /// Called after the learned store changed through a commit, so engines
     /// that take user words (AzooKey) can refresh them.
     func learnedWordsDidChange()
@@ -51,6 +56,7 @@ public final class InputSession {
     private let modeMemory: (any ModeMemory)?
     var assembler: CandidateAssembler
     let expression: ExpressionEngine
+    let loading = LoadingEngine()
 
     weak var client: (any InputClient)?
     private var lastCJKMode: InputMode
@@ -90,6 +96,7 @@ public final class InputSession {
         self.lastCJKMode = initial == .english ? .chinese : initial
         self.display = .idle(initial)
         applyPreferences()
+        engines.onEngineReady = { [weak self] mode in self?.engineBecameReady(mode) }
     }
 
     public var isEmpty: Bool { active?.state.isEmpty ?? true }
@@ -131,6 +138,7 @@ public final class InputSession {
         } else if preferences.rememberModePerApp, let bundleID, let remembered = modeMemory?.mode(for: bundleID) {
             setMode(remembered, remember: false)
         }
+        if mode != .english { engines.prepare(mode) }
         publish()
     }
 
@@ -154,7 +162,10 @@ public final class InputSession {
             modeMemory?.remember(newMode, for: bundleID)
         }
         publish()
-        if changed { onModeChange?(newMode) }
+        if changed {
+            if newMode != .english { engines.prepare(newMode) }
+            onModeChange?(newMode)
+        }
     }
 
     /// English ↔ the last Chinese or Japanese mode.

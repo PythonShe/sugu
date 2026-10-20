@@ -5,6 +5,12 @@ import SuguLearning
 extension InputSession {
     // MARK: Composition lifecycle
 
+    /// Hands the letters typed while the engine was set up over to it.
+    func engineBecameReady(_ mode: InputMode) {
+        guard mode == self.mode, active === loading, let engine = engines.engine(for: mode) else { return }
+        begin(with: engine, input: loading.state.reading)
+    }
+
     func begin(with engine: any CompositionEngine, input: String) {
         active = engine
         engine.clear()

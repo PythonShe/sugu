@@ -11,7 +11,7 @@ import SuguLearning
 @MainActor
 final class SettingsModel {
     enum Change {
-        case preferences, downloads, words, sync
+        case preferences, downloads, words, sync, engines
     }
 
     var preferences: Preferences {
@@ -63,6 +63,7 @@ final class SettingsModel {
         })
         environment.library.onChange = { [weak self] _ in self?.reloadDownloads() }
         environment.sync?.onChange = { [weak self] in self?.reloadSync() }
+        environment.engines.onChineseStatusChange = { [weak self] in self?.notify(.engines) }
     }
 
     private func preferencesChanged() {
@@ -107,6 +108,11 @@ final class SettingsModel {
         modes.insert(.english)
         preferences.enabledModes = InputMode.allCases.filter(modes.contains)
     }
+
+    // MARK: Engines
+
+    var chineseFailed: Bool { environment.engines.chineseError != nil }
+    func retryChinese() { environment.engines.retryChinese() }
 
     // MARK: Downloads
 

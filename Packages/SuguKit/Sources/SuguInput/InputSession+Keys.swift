@@ -60,8 +60,8 @@ extension InputSession {
                 begin(with: expression, input: String(character))
                 return true
             }
-            if character.isASCIILowercaseLetter, let engine = engines.engine(for: .chinese) {
-                begin(with: engine, input: String(character))
+            if character.isASCIILowercaseLetter {
+                begin(with: engines.engine(for: .chinese) ?? loading, input: String(character))
                 return true
             }
             if ChinesePunctuator.handles(character) {

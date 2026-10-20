@@ -26,6 +26,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] `SuguAzooKey`: converter wrapper, clause conversion, romaji/kana input, prediction
 - [x] Zenzai (experimental): trait, model download, runtime toggle, left context
 - [x] Engine lazy loading per mode (`EngineHub`)
+- [x] Keys typed before Chinese is ready are held and handed over; failed deployment retries and shows in Settings (D-027)
 
 ## 4. Learning & data
 - [x] `SuguLearning`: SQLite store (learn, pin, delete, forget last hour, expiry); pause + no-learn list are enforced by the input session

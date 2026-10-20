@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Advisor review for v1 gaps (D-027 first): Chinese letters typed while
+  librime deploys stay in the composition and move to librime when it is
+  ready; a failed deployment retries with backoff from a fresh build and
+  shows Failed / Try Again in Settings › Chinese; engines are prepared at
+  mode change and focus. 127 package tests.
 - Bench romaji fixed: `meeru` types めえる (メール is `me-ru`) and
   降りそう is `furisou`, not `furusou`. Learned Japanese sentences 80% →
   90%; the main set stays at 78%, since AzooKey still ranks 古そう first for

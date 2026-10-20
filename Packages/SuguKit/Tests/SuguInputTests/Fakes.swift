@@ -134,6 +134,9 @@ final class FakeEngineSource: EngineSource {
     var engines: [InputMode: any CompositionEngine] = [:]
     var learnedChanges = 0
     func engine(for mode: InputMode) -> (any CompositionEngine)? { engines[mode] }
+    var prepared: [InputMode] = []
+    func prepare(_ mode: InputMode) { prepared.append(mode) }
+    var onEngineReady: ((InputMode) -> Void)?
     func learnedWordsDidChange() { learnedChanges += 1 }
     var script = ChineseScript.simplified
     /// Script conversions by text, standing in for OpenCC.

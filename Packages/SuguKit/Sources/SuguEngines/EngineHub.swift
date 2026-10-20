@@ -72,11 +72,15 @@ public final class EngineHub: EngineSource {
     private let chineseWordsDelay: Duration
     private var decoders: (schema: RimeSchema, scheme: PinyinDecoder, fullPinyin: PinyinDecoder?)?
     /// Set when the last Chinese deployment failed, for the settings window.
-    public private(set) var chineseError: (any Error)?
-    /// The schema whose deployment failed; not retried until settings or
-    /// installed data change it, so a broken deploy does not repeat on
-    /// every keystroke.
-    private var failedSchema: RimeSchema?
+    public private(set) var chineseError: (any Error)? {
+        didSet { if (chineseError == nil) != (oldValue == nil) { onChineseStatusChange?() } }
+    }
+    public var onChineseStatusChange: (() -> Void)?
+    /// After a failed deployment: when that schema may be tried again, and
+    /// the wait after another failure. The wait doubles up to ten minutes,
+    /// so a broken deployment is not repeated on every keystroke.
+    private var retry: (schema: RimeSchema, at: ContinuousClock.Instant, wait: Duration)?
+    public var onEngineReady: ((InputMode) -> Void)?
     private var chineseScript: ChineseScript
     /// Converters by script, opened on first use and kept, so switching
     /// between apps with different scripts does not reopen them.
@@ -152,29 +156,54 @@ public final class EngineHub: EngineSource {
 
     // MARK: Lifecycle
 
+    /// Gets a mode's engine ready before its first key: Chinese deploys in
+    /// the background; Japanese is created now, at a mode change or focus
+    /// rather than on a keystroke.
+    public func prepare(_ mode: InputMode) {
+        switch mode {
+        case .chinese: warmUp(.chinese)
+        case .japanese: _ = engine(for: .japanese)
+        case .english: break
+        }
+    }
+
     /// Starts loading the engine for a mode in the background, so it is
     /// ready by the first keystroke.
-    public func warmUp(_ mode: InputMode) {
+    private func warmUp(_ mode: InputMode) {
         let schema = schema
-        guard mode == .chinese, preparing == nil, schema != failedSchema, !runtime.isReady || runtime.schema != schema else { return }
+        guard mode == .chinese, preparing == nil, !runtime.isReady || runtime.schema != schema else { return }
+        if let retry, retry.schema == schema, ContinuousClock.now < retry.at { return }
+        // A retry rebuilds from the bundled data, in case the build left
+        // behind is what fails.
+        let rebuild = retry?.schema == schema
         preparing = Task {
             do {
+                if rebuild { runtime.discardBuild() }
                 try await runtime.prepare(schema, version: version)
                 chineseError = nil
-                failedSchema = nil
+                retry = nil
                 // Opening the session reads the user dictionary; done here,
                 // not on the first keystroke.
                 _ = engine(for: .chinese)
                 chinese?.openSession()
                 updateChineseWords(after: .zero)
+                onEngineReady?(.chinese)
             } catch {
                 chineseError = error
-                failedSchema = schema
+                let wait = retry.flatMap { $0.schema == schema ? min($0.wait * 2, .seconds(600)) : nil } ?? .seconds(5)
+                retry = (schema, ContinuousClock.now + wait, wait)
             }
             preparing = nil
             // Settings may have changed while deploying.
             if runtime.schema != self.schema { warmUp(.chinese) }
         }
+    }
+
+    /// Tries a failed Chinese deployment again now, from a fresh build.
+    public func retryChinese() {
+        guard let retry else { return }
+        self.retry = (retry.schema, ContinuousClock.now, retry.wait)
+        warmUp(.chinese)
     }
 
     /// Waits until the Chinese engine is deployed (for tools and tests).

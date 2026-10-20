@@ -7,6 +7,11 @@ final class ChinesePane: SettingsPane {
 
     override func build() {
         let model = model
+        let failed = NSTextField(labelWithString: String(localized: "Failed"))
+        failed.textColor = .systemRed
+        let tryAgain = form.makeButton(String(localized: "Try Again")) { model.retryChinese() }
+        let status = form.row(String(localized: "Status:"), NSStackView(views: [failed, tryAgain]))
+        form.onRefresh { status.isHidden = !model.chineseFailed }
         form.popUp(String(localized: "Pinyin:"), options: PinyinScheme.allCases.map { ($0.title, $0) },
                    get: { model.preferences.pinyinScheme }, set: { model.preferences.pinyinScheme = $0 })
         form.popUp(String(localized: "Characters:"), options: ChineseScript.allCases.map { ($0.title, $0) },

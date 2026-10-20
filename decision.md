@@ -327,3 +327,23 @@ any call made without the owner present. Each entry: what, why, reversibility.
   dictionary (D-025): librime reads `xian` both ways and would offer them
   for the bare keys. Sugu's exact-reading match serves them.
 
+
+## D-027 · Keys typed before Chinese is ready stay in the composition (2026-10-20)
+- librime deploys in the background: ~35 ms from the bundled build, seconds
+  after a scheme or dictionary change, or with rime-ice. Until then the hub
+  had no Chinese engine, and the session let letters through to the
+  document as Latin text; after a failed deployment that went on until the
+  settings changed, with nothing shown anywhere.
+- Now letters typed in that window go to a `LoadingEngine` in the session:
+  marked text without candidates. The hub calls `onEngineReady` when
+  librime is up, and the session hands the letters over as a new
+  composition, so `nihao` typed during deployment shows 你好 with nothing
+  lost. If librime does not come up, Space or Return commits the letters
+  as typed, never learned.
+- The session asks the hub to `prepare` a mode on a mode change and on
+  focus, so deployment (Chinese) and converter creation (Japanese, ~20 ms)
+  happen there rather than on the first key.
+- A failed deployment is retried, not abandoned: after 5 s, doubling to
+  ten minutes, on the next use of Chinese, each retry rebuilding librime's
+  compiled copy from the bundled data. Settings › Chinese shows a Status
+  row (Failed, Try Again) only while it is failing.
