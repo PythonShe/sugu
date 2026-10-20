@@ -674,3 +674,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   says "large grammar model".
 - Bench sentences are left out; builds are identical (octagram sorts its
   input).
+
+## D-049 · The Chinese keystroke tail is librime's (2026-10-20)
+- Measured per key on the Chinese bench: librime's `process_key` is
+  0.56 ms on average and 4–6 ms for the slowest keys, all past 25 letters
+  of a single composition; Sugu's refresh and session work add about
+  0.1 ms. The first run after rebuilding `Data/` also showed 20–120 ms keys
+  from cold pages of the memory-mapped tables, which a running input
+  method pays once.
+- Variants, alternated four times: `enable_completion: false` and
+  `max_homophones: 4` move the p99 by 0.1–0.3 ms with the same accuracy.
+  Not worth narrowing what librime considers; settings unchanged. Bench
+  p99 runs 3.9–4.2 ms on an idle machine and higher under load.
