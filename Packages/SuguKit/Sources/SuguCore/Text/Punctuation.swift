@@ -15,6 +15,26 @@ public enum JapanesePunctuationStyle: String, Codable, Sendable, CaseIterable {
 
     public var comma: String { self == .touten || self == .toutenPeriod ? "、" : "，" }
     public var period: String { self == .touten || self == .commaMaru ? "。" : "．" }
+
+    /// What a symbol key adds to a romaji composition, as in the system
+    /// Japanese input method: the long-vowel mark, corner brackets, the
+    /// middle dot and wave dash, and full width for the rest. Letters and
+    /// digits pass through for the romaji table and the converter.
+    public func romajiInput(for character: Character) -> String {
+        switch character {
+        case ",": comma
+        case ".": period
+        case "-": "ー"
+        case "[": "「"
+        case "]": "」"
+        case "/": "・"
+        case "~": "〜"
+        default:
+            character.isASCII && !character.isLetter && !character.isNumber
+                ? WidthConversion.fullWidth(String(character))
+                : String(character)
+        }
+    }
 }
 
 /// Maps punctuation keys to output in Chinese mode, tracking open/close state

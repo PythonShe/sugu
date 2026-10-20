@@ -22,6 +22,17 @@ struct TextTests {
         #expect(punctuator.output(for: ".", after: nil) == "。")
     }
 
+    @Test func romajiSymbols() {
+        let style = JapanesePunctuationStyle.touten
+        #expect(style.romajiInput(for: "-") == "ー")
+        #expect(style.romajiInput(for: "[") == "「")
+        #expect(style.romajiInput(for: "/") == "・")
+        #expect(style.romajiInput(for: "?") == "？")
+        #expect(style.romajiInput(for: "k") == "k")
+        #expect(style.romajiInput(for: "3") == "3")
+        #expect(JapanesePunctuationStyle.commaPeriod.romajiInput(for: ".") == "．")
+    }
+
     @Test func pairedQuotesAlternate() {
         var punctuator = ChinesePunctuator(width: .full)
         #expect(punctuator.output(for: "\"", after: nil) == "“")

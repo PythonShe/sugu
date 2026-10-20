@@ -374,14 +374,10 @@ public final class InputSession {
         return false
     }
 
-    /// Romaji input passes letters through; punctuation follows the chosen
-    /// Japanese style.
+    /// Romaji input maps symbol keys to Japanese symbols; kana input
+    /// passes keys through to the kana table.
     private func japaneseInput(for character: Character) -> String {
-        switch character {
-        case ",": preferences.japanesePunctuation.comma
-        case ".": preferences.japanesePunctuation.period
-        default: String(character)
-        }
+        preferences.kanaInput ? String(character) : preferences.japanesePunctuation.romajiInput(for: character)
     }
 
     // MARK: Function keys (F6–F10)
