@@ -3,6 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- First installed-package test (D-089): the package installs, registers
+  and Sugu types after adding it in Input Sources (the postinstall's enable
+  had no effect until a new login). Settings… crashed on the numeric tab
+  identifiers; fixed, and CI builds the real settings window offscreen.
 - Soak: `sugu-bench --fuzz 50000` run for 54 minutes, with both engines
   in-process. Physical footprint 66 MB at the start, 82 MB after 200
   sessions, 90 MB at 54 minutes (peak 99 MB); resident flat at 200–230 MB

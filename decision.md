@@ -1577,3 +1577,20 @@ any call made without the owner present. Each entry: what, why, reversibility.
   tracked at the root again and referenced from CLAUDE.md, the README and
   the architecture notes. `docs/internal/` stays ignored for design-session
   scratch material.
+
+## D-089 · Settings panes named by strings; registration checks itself (2026-10-20)
+- First test of an installed package: Settings… crashed Sugu. In toolbar
+  style `NSTabViewController` names each toolbar item after its tab's
+  identifier and needs a string; the panes used their `Int` raw values, so
+  `-[__NSCFNumber isEqualToString:]` threw when the window was built. The
+  panes are `String` raw values now, and the saved pane is their name (an
+  older saved number matches none and the window opens on General).
+  `--snapshot-settings` builds the real window before rendering the panes,
+  and `scripts/ci.sh` runs it on the debug app, so this path is covered.
+- `Sugu --register` from the postinstall registered the source, but
+  `TISEnableInputSource` returned `noErr` without enabling it on macOS 27,
+  and run again by hand the same. Registration now reads the sources back
+  and reports failure unless Sugu is enabled; selecting follows only then.
+  After logging out and back in, Sugu is listed in Input Sources and adds
+  normally, so the install steps (README, home page) say to add it there
+  when it is missing.
