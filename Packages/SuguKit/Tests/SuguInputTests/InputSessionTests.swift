@@ -462,6 +462,40 @@ struct InputSessionTests {
         #expect(!session.retypeLastCommit(asRomaji: true))
     }
 
+    /// Terminals, fields that changed and fields Sugu may not read keep
+    /// their text.
+    @Test func retypeLeavesTerminalsAndChangedFieldsAlone() {
+        let terminal = FakeClient(bundleIdentifier: "com.googlecode.iterm2")
+        let session = makeSession()
+        session.attach(terminal)
+        session.setMode(.japanese)
+        for c in "nihongo" { _ = session.handle(Key.char(c)) }
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.enter)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.eisu, characters: ""))
+        #expect(!session.retypeLastCommit(asRomaji: true))
+        #expect(terminal.document == "日本語")
+
+        session.attach(client)
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.enter)
+        client.document += "!"
+        _ = session.handle(KeyInput(keyCode: VirtualKey.eisu, characters: ""))
+        #expect(!session.retypeLastCommit(asRomaji: true))
+        #expect(client.document == "日本語!")
+
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.enter)
+        client.exposesText = false
+        _ = session.handle(KeyInput(keyCode: VirtualKey.eisu, characters: ""))
+        #expect(!session.retypeLastCommit(asRomaji: true))
+        #expect(client.document == "日本語!日本語")
+    }
+
     /// A composition 英数 commits is retyped too.
     @Test func eisuTwiceRetypesWhatItCommitted() {
         let session = makeSession()
@@ -817,6 +851,31 @@ struct InputSessionTests {
         client.documentAfterCaret = "计划已经拟好"
         type("nihao", into: session)
         #expect(session.display.candidates?.candidates.first?.text == "拟好")
+    }
+
+    /// A password field that turns secure mid-composition gets nothing:
+    /// the composition is dropped, not typed into it.
+    @Test func secureInputCancelsAComposition() {
+        let session = makeSession()
+        type("nihao", into: session)
+        session.isSecureInput = true
+        #expect(session.isEmpty)
+        #expect(client.marked.isEmpty)
+        #expect(client.document.isEmpty)
+        #expect(store.count == 0)
+    }
+
+    /// A Shift tap commits a composition with a form chosen in it as it
+    /// shows, not as the letters typed.
+    @Test func shiftTapCommitsAChosenFormAsShown() {
+        let session = makeSession()
+        type("nihao", into: session)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.f9, characters: "\u{F70C}"))
+        let shown = client.markedText
+        #expect(shown != "nihao")
+        session.shiftTapped()
+        #expect(client.document == shown)
+        #expect(session.mode == .english)
     }
 
     /// Terminals cannot take back what reached the shell, so ⌃⌫ is theirs.

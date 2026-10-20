@@ -176,3 +176,39 @@ struct LearnedStoreTests {
         #expect(store.count == 2)
     }
 }
+
+/// Another process holding the file (a second Sugu during an update).
+@MainActor
+struct LearnedStoreLockTests {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sugu-tests-\(UUID().uuidString)")
+        .appendingPathComponent("learned.sqlite")
+
+    /// Holds a write lock on the store's file for `seconds`.
+    func holdLock(for seconds: Double) throws {
+        nonisolated(unsafe) let other = try SQLiteDatabase(url: url)
+        try other.execute("BEGIN IMMEDIATE")
+        Thread.detachNewThread {
+            Thread.sleep(forTimeInterval: seconds)
+            try? other.execute("COMMIT")
+        }
+    }
+
+    @Test func learnsWhileTheFileIsHeldBriefly() throws {
+        let store = try LearnedStore(url: url)
+        try holdLock(for: 0.1)
+        store.learn(Commit(text: "你好", reading: "nihao"), mode: .chinese)
+        let reopened = try LearnedStore(url: url)
+        #expect(reopened.lookup("nihao", mode: .chinese).map(\.text) == ["你好"])
+    }
+
+    @Test func keepsWorkingAfterTheFileWasHeldTooLong() throws {
+        let store = try LearnedStore(url: url)
+        try holdLock(for: 0.5)
+        store.learn(Commit(text: "你好", reading: "nihao"), mode: .chinese)
+        Thread.sleep(forTimeInterval: 0.5)
+        store.learn(Commit(text: "世界", reading: "shijie"), mode: .chinese)
+        let reopened = try LearnedStore(url: url)
+        #expect(reopened.lookup("shijie", mode: .chinese).map(\.text) == ["世界"])
+    }
+}
