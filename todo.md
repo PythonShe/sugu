@@ -87,7 +87,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Shift tap: ignore taps with mouse activity during the hold; mid-composition commit the typed letters, then switch to English (D-041)
 - [x] Width-aware Chinese punctuation from what Sugu produced last, not a synchronous field read (D-042)
 - [x] Turning Zenzai off releases the model (D-044)
-- [ ] Learned-word expiry also on setting change and daily, not only at launch
+- [x] Learned-word expiry also on setting change and daily, not only at launch
 - [ ] VoiceOver: candidate rows and pager as accessibility children
 - [ ] Skip identical marked-text updates and caret-rect reads on highlight moves
 

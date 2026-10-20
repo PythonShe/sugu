@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Learned words also expire when the date changes and when the expiry
+  setting changes, not only at launch.
 - Turning Zenzai off frees the model between compositions (D-044).
 - Apple language models (ADR 0004, D-043): Translate and Rewrite Selection,
   model conversions and translations for long compositions, a Language

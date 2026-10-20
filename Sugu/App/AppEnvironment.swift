@@ -24,6 +24,7 @@ final class AppEnvironment {
     let sync: DictionarySync?
     let updater = Updater()
     private var settings: SettingsWindowController?
+    private var expiryDays = 0
 
     private init() {
         let preferences = self.preferences.preferences
@@ -69,8 +70,11 @@ final class AppEnvironment {
                 AppEnvironment.shared.sync?.storeDidChange()
             }
         }
-        let days = preferences.preferences.learnedWordExpiryDays
-        if days > 0 { _ = store?.expire(olderThan: days) }
+        // The process lives for days: expire again when the date changes.
+        NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { AppEnvironment.shared.expireLearnedWords() }
+        }
+        expireLearnedWords()
         // Load the engine the session starts in, so the first key is fast.
         engines.prepare(session.mode)
         sync?.pullIfDue()
@@ -86,5 +90,11 @@ final class AppEnvironment {
         let current = preferences.preferences
         engines.apply(current)
         coordinator.preferencesDidChange(current)
+        if current.learnedWordExpiryDays != expiryDays { expireLearnedWords() }
+    }
+
+    private func expireLearnedWords() {
+        expiryDays = preferences.preferences.learnedWordExpiryDays
+        store?.expire(olderThan: expiryDays)
     }
 }
