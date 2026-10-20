@@ -1275,3 +1275,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
   before the session, with or without a composition. ⌃⇧F for the script
   is left out: the input menu and Settings have it, and it would take a
   common app shortcut.
+- Symbols by name: CLDR's Chinese annotations, already behind the emoji
+  filter (D-065), name most symbols (不等于 ≠, 约等于 ≈, 根号 √, 千分号 ‰,
+  因为 ∵), so no second table. A short Sugu-written list adds the names
+  CLDR leaves out or gives one symbol (箭头 → ← ↑ ↓, 摄氏度 ℃, 对号 ✓,
+  圆周率 π, Greek letters by name), in both scripts, before CLDR's emoji;
+  everyday words (属于, 顿号) are left out, as a symbol after one pushes
+  its homophones down a row. D-009's data-first rule has no data here.
+  Accuracy and keystroke time unchanged.

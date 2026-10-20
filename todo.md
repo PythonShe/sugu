@@ -154,5 +154,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] `[` `]` commit the first or last character of the highlighted Chinese word (D-074)
 - [x] Add Word from the input menu, filled from the selection (D-074)
 - [x] ⌃. switches the punctuation width (D-074)
-- [ ] Symbols by their Chinese names
+- [x] Symbols by their Chinese names (D-074)
 - [ ] The mode in the menu bar

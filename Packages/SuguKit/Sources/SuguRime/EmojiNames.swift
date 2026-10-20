@@ -36,15 +36,43 @@ public enum EmojiNames {
             }
         }
         var lines: [String] = []
-        for word in Set(names.keys).union(keywords.keys).sorted() where isHan(word) {
+        for word in Set(names.keys).union(keywords.keys).union(symbolNames.keys).sorted() where isHan(word) {
             var emoji: [String] = []
             for candidate in (names[word] ?? []) + (keywords[word] ?? []) where !emoji.contains(candidate) {
                 emoji.append(candidate)
             }
-            lines.append("\(word)\t\(([word] + emoji.prefix(emojiPerWord)).joined(separator: " "))")
+            let symbols = symbolNames[word] ?? []
+            let offered = symbols + emoji.filter { !symbols.contains($0) }.prefix(emojiPerWord)
+            lines.append("\(word)\t\(([word] + offered).joined(separator: " "))")
         }
         return lines.joined(separator: "\n") + "\n"
     }
+
+    /// Symbols by the names Chinese input methods offer them under, which
+    /// CLDR's annotations leave out or give one of (箭头 names only ←);
+    /// written by Sugu, in both scripts, and only names that are not
+    /// everyday words, whose homophones each symbol pushes down a row.
+    /// They come before CLDR's emoji.
+    static let symbolNames: [String: [String]] = {
+        let simplified: [String: [String]] = [
+            "箭头": ["→", "←", "↑", "↓"], "右箭头": ["→"], "左箭头": ["←"], "上箭头": ["↑"], "下箭头": ["↓"],
+            "双向箭头": ["↔", "⇔"], "摄氏度": ["℃"], "华氏度": ["℉"], "对号": ["✓"], "错号": ["✗"],
+            "五角星": ["★", "☆"], "无穷": ["∞"], "圆周率": ["π"], "注册商标": ["®"], "书名号": ["《》"],
+            "求和": ["∑"], "空集": ["∅"],
+            "阿尔法": ["α"], "贝塔": ["β"], "伽马": ["γ"], "德尔塔": ["δ", "Δ"], "西格玛": ["σ", "Σ"],
+            "拉姆达": ["λ"], "欧米伽": ["ω", "Ω"], "千分号": ["‰"],
+        ]
+        let traditional: [String: String] = [
+            "箭头": "箭頭", "右箭头": "右箭頭", "左箭头": "左箭頭", "上箭头": "上箭頭", "下箭头": "下箭頭",
+            "双向箭头": "雙向箭頭", "摄氏度": "攝氏度", "华氏度": "華氏度", "对号": "對號", "错号": "錯號",
+            "无穷": "無窮", "圆周率": "圓周率", "注册商标": "註冊商標", "书名号": "書名號",
+            "贝塔": "貝塔",
+            "伽马": "伽馬", "德尔塔": "德爾塔", "西格玛": "西格瑪", "拉姆达": "拉姆達", "千分号": "千分號",
+        ]
+        var names = simplified
+        for (word, form) in traditional { names[form] = simplified[word] }
+        return names
+    }()
 
     /// The OpenCC configuration for the table: whole words, longest first.
     public static let configuration = """

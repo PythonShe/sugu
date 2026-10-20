@@ -23,6 +23,15 @@ struct EmojiNamesTests {
         #expect(!lines.contains { $0.hasPrefix("脸\t") || $0.hasPrefix("smile\t") })
     }
 
+    /// Symbols CLDR does not name come first, in both scripts.
+    @Test func symbolsByTheirNames() {
+        let arrows = Data("<ldml><annotations><annotation cp=\"←\">箭头 | 左</annotation></annotations></ldml>".utf8)
+        let lines = EmojiNames.table(fromAnnotations: [arrows]).split(separator: "\n")
+        #expect(lines.contains("箭头\t箭头 → ← ↑ ↓"))
+        #expect(lines.contains("箭頭\t箭頭 → ← ↑ ↓"))
+        #expect(lines.contains("摄氏度\t摄氏度 ℃"))
+    }
+
     @Test func emojiAreFullyQualified() {
         let table = EmojiNames.table(fromAnnotations: [annotations])
         #expect(table.contains("好的\t好的 🙆‍♂️"))

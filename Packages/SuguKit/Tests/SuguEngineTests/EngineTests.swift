@@ -46,7 +46,10 @@ struct RimeEngineTests {
     /// either script.
     @Test func wordsOfferTheirEmoji() async throws {
         try await Shared.runtime.prepare(RimeSchema(), version: "test")
-        for (reading, script, word, emoji) in [("tongyi", ChineseScript.simplified, "同意", "👍"), ("aixin", .traditional, "愛心", "❤️")] {
+        for (reading, script, word, emoji) in [
+            ("tongyi", ChineseScript.simplified, "同意", "👍"), ("aixin", .traditional, "愛心", "❤️"),
+            ("jiantou", .simplified, "箭头", "→"), ("sheshidu", .traditional, "攝氏度", "℃"),
+        ] {
             let engine = RimeEngine(runtime: Shared.runtime, script: script)
             engine.insert(reading)
             let texts = engine.state.candidates.map(\.text)
