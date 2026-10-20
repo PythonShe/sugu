@@ -40,9 +40,9 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Candidate window (NSPanel, Core Text, CALayer; vertical/horizontal; paging; system materials)
 - [x] Caret mode indicator
 - [x] Mode toggle keys (Shift tap, Caps Lock, 英数/かな), per-app mode rules, secure-input/terminal English, vim Esc
-- [~] Mac-standard keys: F6–F10, Option symbols, numpad, caret movement, romaji typo tolerance — verify Option/numpad paths in a session test
-- [~] Reconvert selection, left context, document vocabulary (off by default) — document vocabulary ranking still to wire
-- [ ] Cross-language proper nouns (ADR 0003 d11): `dongjing` → 東京, romaji → Chinese forms; per-app script variant
+- [x] Mac-standard keys: F6–F10, Option symbols, numpad, caret movement, romaji typo tolerance
+- [x] Reconvert selection, left context, document vocabulary (off by default; D-022)
+- [x] Cross-language proper nouns (ADR 0003 d11): `dongjing` → 東京, romaji → Chinese forms; per-app script variant (D-021)
 - [x] Pause-gated candidate window (off by default)
 - [x] VoiceOver announcements, scaling, increased contrast
 - [x] Input menu (modes, Settings…, Learned Words…)
@@ -59,4 +59,4 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] CI workflow: build, tests, budgets (`scripts/ci.sh`; manual trigger, D-019)
 - [x] Packaging: signed/notarized `.pkg` scripts, Sparkle (profile off), dev install script (D-020)
 - [x] README, third-party notices/attribution, ADR updates
-- [~] Code review passes (reviewer agents) and fixes — first pass fixed (11 findings + 3 minor); second pass after packaging
+- [~] Code review passes (reviewer agents) and fixes — first pass (11 + 3 minor) and second pass (9) fixed; third pass over d9/d11

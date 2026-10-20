@@ -204,3 +204,28 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Advanced settings.
 - `scripts/install-dev.sh` installs a build into `~/Library/Input Methods`
   for development; it is never run by automation here.
+
+## D-021 · Cross-language names and script per app (2026-10-20)
+- Japanese kanji forms are a Chinese script: an OpenCC chain (simplified →
+  traditional → JPVariants, generated as `s2jp.json`) that librime applies
+  like the other scripts, so `dongjing` gives 東京 and `hengbin` 横浜.
+- Romaji gives Chinese forms only for words AzooKey tags as proper nouns
+  (person, place, organization classes), inserted right after the name on
+  the first page and only when Chinese is enabled; general vocabulary is
+  left alone because its Chinese form is often a different word.
+- Sugu's own candidates (learned, computed, Chinese forms) go through the
+  same OpenCC chain in-process (`ScriptConverter`), so they match the
+  script librime outputs.
+- An app rule may choose its own script; the session applies it on focus.
+
+## D-022 · Document vocabulary (2026-10-20)
+- Off by default. When on, up to 2,000 characters on each side of the caret
+  are read once when the field gains focus, plus what is committed during
+  focus, and kept in memory only. Its words get the same reranking as the
+  left context (same length as the engine's first choice, within the first
+  ten).
+- The engines' own left context stays at 200 characters before the caret,
+  so a long document does not slow conversion; reading happens at focus,
+  not on the keystroke path, and never in secure input or excluded apps.
+- Learned words still come first: they are the user's own choices.
+

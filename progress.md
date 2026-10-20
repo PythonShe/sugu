@@ -3,6 +3,17 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Cross-language proper nouns and per-app script (D-021): Japanese kanji
+  forms as a Chinese script, Chinese forms after Japanese names, Sugu's own
+  candidates in the script in use, a script column in the Apps pane.
+- Document vocabulary wired (D-022); numpad digits no longer select in
+  Japanese conversion; Option and numpad session tests. 88 package tests.
+- Second review pass fixed: pins sync on existing words, one unreadable
+  file no longer stops sync, turning on learned-word sync re-reads older
+  files, ⌃⌫ also unlearns, a highlighted Sugu candidate is what Enter and
+  focus loss commit, cancelled downloads are not failures, model removal
+  waits for a running download, `make-notices.sh` fails on a checksum
+  mismatch.
 - First review pass fixed: computed candidates no longer learned; ⌃⌫ undo
   checks the text left of the caret and restores into the engine that
   composed it (expressions are not undoable); one gate for reading the
