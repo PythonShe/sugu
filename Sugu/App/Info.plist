@@ -44,6 +44,16 @@
 	<string>zh-Hans</string>
 	<key>TISIconIsTemplate</key>
 	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/PythonShe/sugu/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>$(SPARKLE_PUBLIC_ED_KEY)</string>
+	<key>SUEnableSystemProfiling</key>
+	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAllowsAutomaticUpdates</key>
+	<false/>
 	<key>tsInputMethodIconFileKey</key>
 	<string>InputSourceIcon.pdf</string>
 	<key>tsInputMethodCharacterRepertoireKey</key>

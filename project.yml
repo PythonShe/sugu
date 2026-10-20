@@ -36,6 +36,8 @@ targets:
         product: SuguInput
       - package: SuguKit
         product: SuguDictionaries
+      - package: SuguKit
+        product: SuguUpdates
     settings:
       base:
         PRODUCT_NAME: Sugu
@@ -48,6 +50,8 @@ targets:
         CODE_SIGN_IDENTITY: "-"
         INSTALL_PATH: /Library/Input Methods
         COMBINE_HIDPI_IMAGES: YES
+        # Set by scripts/release.sh; without it the updater stays off.
+        SPARKLE_PUBLIC_ED_KEY: ""
 schemes:
   Sugu:
     build:

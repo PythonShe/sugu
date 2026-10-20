@@ -17,6 +17,13 @@ final class AdvancedPane: SettingsPane {
         form.button(String(localized: "Show in Finder"), label: String(localized: "Data folder:")) { model.showDataFolder() }
 
         form.gap()
+        let automatic = form.checkbox(String(localized: "Check for updates automatically"), label: String(localized: "Updates:"),
+                                      get: { model.checksForUpdatesAutomatically }, set: { model.checksForUpdatesAutomatically = $0 })
+        let checkNow = form.button(String(localized: "Check Now")) { model.checkForUpdates() }
+        automatic.isEnabled = model.updatesAvailable
+        checkNow.isEnabled = model.updatesAvailable
+
+        form.gap()
         form.row(String(localized: "Version:"), NSTextField(labelWithString: model.version))
         let link = NSTextField(labelWithAttributedString: NSAttributedString(string: "github.com/PythonShe/sugu", attributes: [
             .link: URL(string: "https://github.com/PythonShe/sugu")!,

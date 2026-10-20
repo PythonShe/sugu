@@ -183,6 +183,17 @@ final class SettingsModel {
         NSWorkspace.shared.activateFileViewerSelecting([folder])
     }
 
+    // MARK: Updates
+
+    var updatesAvailable: Bool { environment.updater.isAvailable }
+
+    var checksForUpdatesAutomatically: Bool {
+        get { environment.updater.checksAutomatically }
+        set { environment.updater.checksAutomatically = newValue }
+    }
+
+    func checkForUpdates() { environment.updater.checkForUpdates() }
+
     var version: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""

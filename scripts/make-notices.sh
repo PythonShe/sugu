@@ -75,6 +75,8 @@ entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https
   "$(fetch cldr-LICENSE "https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_REF/LICENSE" "$CLDR_LICENSE_SHA256")"
 entry "llama.cpp $LLAMA_CPP_REF (azooKey build, for Zenzai)" "https://github.com/azooKey/llama.cpp" "MIT" \
   "$(fetch llama.cpp-LICENSE "https://raw.githubusercontent.com/azooKey/llama.cpp/$LLAMA_CPP_REF/LICENSE" "$LLAMA_CPP_LICENSE_SHA256")"
+entry "Sparkle $SPARKLE_VERSION" "https://sparkle-project.org" "MIT (bsdiff and other parts: BSD-style, below)" \
+  "$(fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle/$SPARKLE_VERSION/LICENSE" "$SPARKLE_LICENSE_SHA256")"
 entry "SwiftyMarisa $(version swiftymarisa)" "https://github.com/ensan-hcl/SwiftyMarisa" \
   "BSD-2-Clause (chosen from BSD-2-Clause OR LGPL)" "$CHECKOUTS/SwiftyMarisa/LICENSE.md"
 entry "swift-tokenizers $(version swift-tokenizers)" "https://github.com/ensan-hcl/swift-tokenizers" "Apache-2.0" "$CHECKOUTS/swift-tokenizers/LICENSE"

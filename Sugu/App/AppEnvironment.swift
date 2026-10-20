@@ -2,6 +2,7 @@ import AppKit
 import SuguCore
 import SuguInput
 import SuguLearning
+import SuguUpdates
 
 /// The process-wide object graph: preferences, the learned store, engines,
 /// the input session and the windows around it.
@@ -18,6 +19,7 @@ final class AppEnvironment {
     let inputMenu: InputMenu
     let library: ModelLibrary
     let sync: DictionarySync?
+    let updater = Updater()
     private var settings: SettingsWindowController?
 
     private init() {

@@ -21,6 +21,7 @@ let package = Package(
         .library(name: "SuguLearning", targets: ["SuguLearning"]),
         .library(name: "SuguDictionaries", targets: ["SuguDictionaries"]),
         .library(name: "SuguDownloads", targets: ["SuguDownloads"]),
+        .library(name: "SuguUpdates", targets: ["SuguUpdates"]),
         .executable(name: "sugu-tool", targets: ["sugu-tool"]),
         .executable(name: "sugu-bench", targets: ["sugu-bench"]),
     ],
@@ -30,6 +31,8 @@ let package = Package(
             exact: "0.11.2",
             traits: ["Zenzai"]
         ),
+        // Keep in step with SPARKLE_VERSION in scripts/versions.sh.
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
     ],
     targets: [
         .binaryTarget(name: "librime", path: "../../Frameworks/librime.xcframework"),
@@ -67,6 +70,11 @@ let package = Package(
             swiftSettings: swiftSettings
         ),
         .target(name: "SuguDownloads", swiftSettings: swiftSettings),
+        .target(
+            name: "SuguUpdates",
+            dependencies: [.product(name: "Sparkle", package: "Sparkle")],
+            swiftSettings: swiftSettings
+        ),
         .target(
             name: "SuguInput",
             dependencies: ["SuguCore", "SuguRime", "SuguAzooKey", "SuguLearning", "SuguDownloads"],
