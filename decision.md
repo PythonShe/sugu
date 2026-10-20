@@ -1038,7 +1038,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   named by its row label; a table editor passes the label to its table;
   the text-size slider is named and its icons hidden; a download control
   is a group named for its item, so its button is never a bare
-  "Download".
+  "Download". A checkbox or button keeps its own title: the row label
+  would hide which mode a checkbox turns on.
 - Removing a download and Forget Last Hour ask first, as Delete All and
   Reset do. Export no longer asks before its save panel: choosing where
   to save is already the confirmation.

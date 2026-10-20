@@ -31,11 +31,12 @@ final class SettingsForm {
     // MARK: Rows
 
     /// Adds a row; `label` names the row or, for later rows of a group, is nil.
-    /// A row of several controls is a group VoiceOver reads by the label.
+    /// A row of several controls is a group VoiceOver reads by the label; a
+    /// button with a title keeps the title as its name.
     @discardableResult
     func row(_ label: String?, _ view: NSView) -> NSGridRow {
         let title = label.map { NSTextField(labelWithString: $0) }
-        if let label {
+        if let label, (view as? NSButton)?.title.isEmpty != false {
             if view is NSStackView && !(view is TableEditor) || view is NSGridView {
                 view.setAccessibilityElement(true)
                 view.setAccessibilityRole(.group)
