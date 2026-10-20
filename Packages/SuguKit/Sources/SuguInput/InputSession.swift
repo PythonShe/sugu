@@ -96,10 +96,13 @@ public final class InputSession {
     var transformed: String?
     var punctuator = ChinesePunctuator()
     var context = ""
-    /// The field's text around the caret when it gained focus, plus what was
-    /// committed since: its words rank first while the field has focus
-    /// (document vocabulary). Kept in memory only.
+    /// The field's text around the caret when its first composition began,
+    /// plus what was committed since: its words rank first while the field
+    /// has focus (document vocabulary). Kept in memory only.
     var vocabulary = ""
+    /// The field's text has been read for `vocabulary` since it gained
+    /// focus. Not read on focus, where reading the field can stall it.
+    var readsVocabulary = true
     /// The commit ⌃⌫ can take back.
     var undoable: PendingUndo?
     /// The Japanese commit 英数 twice retypes as its romaji, or the romaji
@@ -178,7 +181,8 @@ public final class InputSession {
         undoable = nil
         retypable = nil
         lastTyped = nil
-        vocabulary = readVocabulary()
+        vocabulary = ""
+        readsVocabulary = true
         let bundleID = client.bundleIdentifier
         let rule = preferences.rule(for: bundleID)
         applyChineseScript()

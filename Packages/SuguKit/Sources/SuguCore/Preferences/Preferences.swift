@@ -141,7 +141,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         "dev.warp.Warp-Stable",
         "com.mitchellh.ghostty",
         "net.kovidgoyal.kitty",
-        "io.alacritty",
+        "org.alacritty",
         "com.github.wez.wezterm",
     ]
 

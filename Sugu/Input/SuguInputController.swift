@@ -45,10 +45,17 @@ final class SuguInputController: IMKInputController {
     }
 
     override func inputControllerWillClose() {
-        nonisolated(unsafe) let client = client()
+        nonisolated(unsafe) let controller = self
         MainActor.assumeIsolated {
-            AppEnvironment.shared.coordinator.deactivate(client: client)
+            AppEnvironment.shared.coordinator.close(controller: controller)
         }
+    }
+
+    override func hidePalettes() {
+        MainActor.assumeIsolated {
+            AppEnvironment.shared.coordinator.hidePalettes()
+        }
+        super.hidePalettes()
     }
 
     override func menu() -> NSMenu! {

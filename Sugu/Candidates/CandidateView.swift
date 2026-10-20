@@ -286,7 +286,19 @@ final class CandidateView: NSView {
         needsDisplay = true
     }
 
+    /// When the view last had a click or a scroll, as event time.
+    private(set) var lastPointerEvent: TimeInterval = -.infinity
+
+    override func mouseDown(with event: NSEvent) {
+        lastPointerEvent = event.timestamp
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        lastPointerEvent = event.timestamp
+    }
+
     override func mouseUp(with event: NSEvent) {
+        lastPointerEvent = event.timestamp
         let point = convert(event.locationInWindow, from: nil)
         if let pager {
             if pager.previous.contains(point) { onTurnPage?(-1); return }
@@ -299,6 +311,7 @@ final class CandidateView: NSView {
 
     /// One page per wheel notch, or per trackpad swipe.
     override func scrollWheel(with event: NSEvent) {
+        lastPointerEvent = event.timestamp
         let delta = style.layout == .vertical ? event.scrollingDeltaY : event.scrollingDeltaX
         if event.phase == [], event.momentumPhase == [] {
             if delta != 0 { onTurnPage?(delta > 0 ? -1 : 1) }

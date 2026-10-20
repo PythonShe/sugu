@@ -165,3 +165,13 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Symbols by their Japanese names (やじるし →) (D-075)
 - [x] 人名 and 地名 on the candidates (D-075)
 - [x] 英数 twice turns the last commit into Latin; かな twice back
+
+## 19. Host apps (advisor pass 10, D-076)
+- [x] Nothing reads the field during activation: the focus-switch indicator waits, document vocabulary is read as the first composition begins (D-076)
+- [x] Terminals keep what reached the shell: no ⌃⌫ undo or 英数-twice retype there (D-076)
+- [x] Alacritty's real bundle ID, and marked text before its commits (D-076)
+- [x] A closing connection detaches its field by controller; hidePalettes hides Sugu's windows (D-076)
+- [x] Caps Lock read from the session; held 英数 and かな are pressed once (D-076)
+- [x] A click in the candidate window does not count as moving the caret (D-076)
+- [x] Password-only system apps count as secure input (D-076)
+- [ ] Check on device: the login window and Wi-Fi sheets see no composition, Alacritty takes punctuation, hidePalettes on screen lock, a click elsewhere commits in TextEdit and Chrome

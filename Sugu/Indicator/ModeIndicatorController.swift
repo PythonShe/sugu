@@ -49,6 +49,13 @@ final class ModeIndicatorController {
         }
     }
 
+    /// Hides the label at once.
+    func hide() {
+        dismissal?.cancel()
+        dismissal = nil
+        panel.orderOut(nil)
+    }
+
     private func dismiss() {
         guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
             panel.orderOut(nil)

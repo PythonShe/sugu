@@ -810,14 +810,26 @@ struct InputSessionTests {
         #expect((source.engines[.chinese] as? FakeEngine)?.leftContext.isEmpty == true)
     }
 
-    @Test func documentVocabularyIsNotReadInSecureInput() {
-        client.documentAfterCaret = "计划已经拟好"
+    /// The field is read as its first composition begins, not on focus,
+    /// where reading it can stall the app.
+    @Test func documentVocabularyIsReadWhenTheFirstCompositionBegins() {
         let session = makeSession { $0.documentVocabulary = true }
-        session.isSecureInput = true
-        session.attach(client)
-        session.isSecureInput = false
+        client.documentAfterCaret = "计划已经拟好"
         type("nihao", into: session)
-        #expect(session.display.candidates?.candidates.first?.text == "你好")
+        #expect(session.display.candidates?.candidates.first?.text == "拟好")
+    }
+
+    /// Terminals cannot take back what reached the shell, so ⌃⌫ is theirs.
+    @Test func undoLeavesTerminalsAlone() {
+        let terminal = FakeClient(bundleIdentifier: "com.apple.Terminal")
+        let session = makeSession()
+        session.attach(terminal)
+        session.setMode(.chinese)
+        for c in "nihao" { _ = session.handle(Key.char(c)) }
+        _ = session.handle(Key.space)
+        #expect(terminal.document == "你好")
+        #expect(!session.handle(Key.undo))
+        #expect(terminal.document == "你好")
     }
 
     @Test func optionKeysTypeTheirSymbolAfterFinishingTheComposition() {

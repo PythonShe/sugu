@@ -18,6 +18,9 @@ final class TextInputClient: InputClient {
     private var markedRect: (character: Int, rect: NSRect)?
 
     private static let notFound = NSRange(location: NSNotFound, length: NSNotFound)
+    /// Apps that take committed text only after marked text, as Squirrel
+    /// found (its `force_marked_text_for_direct_commit`).
+    private static let needsMarkedTextFirst: Set<String> = ["org.alacritty"]
 
     init(client: any IMKTextInput & NSObjectProtocol, controller: IMKInputController) {
         self.client = client
@@ -28,9 +31,19 @@ final class TextInputClient: InputClient {
         (other as AnyObject?) === client
     }
 
+    /// Whether this field came through `controller`, or through one that
+    /// has gone.
+    func belongs(to controller: IMKInputController) -> Bool {
+        self.controller == nil || self.controller === controller
+    }
+
     var bundleIdentifier: String? { client.bundleIdentifier() }
 
     func commit(_ text: String) {
+        // Alacritty drops text inserted without marked text first.
+        if marked == nil, bundleIdentifier.map(Self.needsMarkedTextFirst.contains) == true {
+            client.setMarkedText(text, selectionRange: NSRange(location: (text as NSString).length, length: 0), replacementRange: Self.notFound)
+        }
         client.insertText(text, replacementRange: Self.notFound)
         marked = nil
         markedRect = nil

@@ -31,6 +31,10 @@ extension InputSession {
         list.setHighlight(nil)
         showsConversionWindow = false
         context = readContext()
+        if readsVocabulary {
+            readsVocabulary = false
+            vocabulary = readVocabulary()
+        }
         engine.setLeftContext(context)
         engine.insert(input)
         refresh()
@@ -234,7 +238,7 @@ extension InputSession {
     /// input. Replaces only what is still left of the caret.
     /// Returns whether there was a commit to retype.
     public func retypeLastCommit(asRomaji: Bool) -> Bool {
-        guard let retypable, retypable.isRomaji != asRomaji, isEmpty, canReadField, let client else { return false }
+        guard let retypable, retypable.isRomaji != asRomaji, isEmpty, canEditCommitted, let client else { return false }
         let shown = retypable.isRomaji ? retypable.romaji : retypable.text
         let replacement = retypable.isRomaji ? retypable.text : retypable.romaji
         guard client.textBeforeCaret(limit: shown.count) == shown,
@@ -256,7 +260,7 @@ extension InputSession {
     /// Deletes only when the text left of the caret is still exactly what
     /// was committed, so a field that moved the caret loses nothing.
     func undoLastCommit() -> Bool {
-        guard let undoable, undoable.mode == mode, canReadField, let client else { return false }
+        guard let undoable, undoable.mode == mode, canEditCommitted, let client else { return false }
         let text = undoable.text
         guard client.textBeforeCaret(limit: text.count) == text,
               client.deleteBeforeCaret(count: text.count) else { return false }

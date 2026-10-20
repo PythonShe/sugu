@@ -50,6 +50,23 @@ final class InputCoordinator {
         candidateWindow.reset()
     }
 
+    /// A connection closing, perhaps without deactivation (the app quit or
+    /// the panel went away): the field it served goes too. Matched by
+    /// controller, since the closing controller may no longer report its
+    /// client.
+    func close(controller: IMKInputController) {
+        guard let current = client, current.belongs(to: controller) else { return }
+        session.detach(current)
+        client = nil
+        candidateWindow.reset()
+    }
+
+    /// IMK asks for every window to close.
+    func hidePalettes() {
+        candidateWindow.hide()
+        indicator.hide()
+    }
+
     func commitComposition(client: Any?) {
         guard let current = self.client, current.represents(client) else { return }
         session.commitComposition()
@@ -77,6 +94,7 @@ final class InputCoordinator {
     /// the client nor frontmost. A helper process (a browser's web content)
     /// may hold it for the client's field, so anything else stays secure.
     private func isSecureInputHere() -> Bool {
+        if let bundleID = client?.bundleIdentifier, Self.passwordOnlyApps.contains(bundleID) { return true }
         guard IsSecureEventInputEnabled() else { return false }
         guard let session = CGSessionCopyCurrentDictionary() as? [String: Any],
               let holder = (session["kCGSSessionSecureInputPID"] as? NSNumber)?.int32Value,
@@ -85,6 +103,15 @@ final class InputCoordinator {
         guard app.activationPolicy == .regular, !app.isActive else { return true }
         return app.bundleIdentifier == client?.bundleIdentifier
     }
+
+    /// Apps whose only fields are passwords and that do not turn on
+    /// secure input, as fcitx5-macos lists them.
+    private static let passwordOnlyApps: Set<String> = [
+        "com.apple.loginwindow",
+        "com.apple.wifi.WiFiAgent",
+        "com.apple.wifi-settings-extension",
+        "com.apple.LocalAuthenticationRemoteService",
+    ]
 
     // MARK: Events
 
@@ -103,8 +130,10 @@ final class InputCoordinator {
                 return lastKey.handled
             }
             shiftTap.interrupt()
-            // A click since the last key may have moved the caret.
-            if let lastKey, Self.secondsSinceMouse() < ProcessInfo.processInfo.systemUptime - lastKey.timestamp {
+            // A click since the last key may have moved the caret, unless
+            // it was in the candidate window.
+            let lastMouse = ProcessInfo.processInfo.systemUptime - Self.secondsSinceMouse()
+            if let lastKey, lastMouse > lastKey.timestamp, lastMouse > candidateWindow.lastPointerEvent + 0.05 {
                 session.caretMayHaveMoved()
             }
             let handled = keyDown(event)
@@ -116,6 +145,10 @@ final class InputCoordinator {
     }
 
     private func keyDown(_ event: NSEvent) -> Bool {
+        if event.keyCode == VirtualKey.eisu || event.keyCode == VirtualKey.kana {
+            // Held, they switch once and are not pressed twice.
+            if event.isARepeat { return true }
+        }
         if event.keyCode == VirtualKey.eisu || event.keyCode == VirtualKey.kana, let lastKey, lastKey.keyCode == event.keyCode,
            event.timestamp - lastKey.timestamp <= ShiftTapDetector.maximumDuration,
            session.retypeLastCommit(asRomaji: event.keyCode == VirtualKey.eisu) {
@@ -170,10 +203,12 @@ final class InputCoordinator {
 
     private var capsLockSelectsEnglish: Bool { preferences.preferences.englishToggle == .capsLock }
 
-    /// With the Caps Lock toggle, the light shows English.
+    /// With the Caps Lock toggle, the light shows English. Read from the
+    /// session, since Sugu sees no flag changes while another input source
+    /// or field has the keyboard.
     private func syncCapsLock() {
         guard capsLockSelectsEnglish else { return }
-        let isOn = NSEvent.modifierFlags.contains(.capsLock)
+        let isOn = CGEventSource.flagsState(.combinedSessionState).contains(.maskAlphaShift)
         if isOn != (session.mode == .english) { session.toggleEnglish() }
     }
 
@@ -189,12 +224,21 @@ final class InputCoordinator {
 
     /// Shows the new mode at the caret. A switch that came with the focus
     /// shows only where the field reports its caret: an app switch is not
-    /// worth a label at the pointer.
+    /// worth a label at the pointer. It waits until activation has
+    /// returned, since asking a Chromium app for its caret then can stall
+    /// both processes (as azooKey-Desktop found).
     private func modeDidChange(to mode: InputMode, byUser: Bool) {
         guard preferences.preferences.showModeIndicator, let client else { return }
-        let caret = client.compositionRect()
-        guard byUser || caret != .zero else { return }
-        indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, near: caret)
+        if byUser {
+            indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, near: client.compositionRect())
+            return
+        }
+        Task { @MainActor [weak self] in
+            guard let self, self.client === client, session.mode == mode else { return }
+            let caret = client.compositionRect()
+            guard caret != .zero else { return }
+            indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, near: caret)
+        }
     }
 
     // MARK: Menu commands

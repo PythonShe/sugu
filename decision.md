@@ -1329,3 +1329,41 @@ any call made without the owner present. Each entry: what, why, reversibility.
   fields Sugu may read, as ⌃⌫ does. The romaji takes back what the
   Japanese taught; turning back teaches it again. Kana input has no
   romaji to retype.
+
+## D-076 · Host-app behavior (advisor pass 10) (2026-10-20)
+- Activation reads nothing from the field. Chromium answers caret and
+  text queries by synchronous IPC to a renderer that may be busy (up to
+  1.5 s, and azooKey-Desktop records a deadlock when asked inside
+  `activateServer`). The mode indicator for a switch that came with the
+  focus waits until activation returns and the field is still the same;
+  document vocabulary is read as the field's first composition begins,
+  beside the left-context read that already happens there, and covers
+  1,000 characters each side instead of 2,000.
+- Terminals report their screen as the field, so ⌃⌫'s check that the
+  commit is still left of the caret passes, but text that reached the
+  shell cannot be deleted by a replacement range (iTerm2 ignores it).
+  Undo and the 英数-twice retype are off in `Preferences.terminalApps`;
+  the key goes to the terminal.
+- Alacritty's bundle ID is `org.alacritty`, not `io.alacritty`, so it did
+  not start in English. It drops text inserted without marked text first
+  (Squirrel's `force_marked_text_for_direct_commit`); Sugu sets the text
+  as marked text before committing it there.
+- `inputControllerWillClose` detaches by controller, not by the client
+  the closing controller reports, which may already be gone (vChewing
+  does the same); the candidate window is reset with it. `hidePalettes`
+  hides the candidate window and the mode label, leaving the composition.
+- Caps Lock as the English switch reads the light from the session's
+  event state (`CGEventSource.flagsState`), as Squirrel does: Sugu's own
+  `NSEvent.modifierFlags` misses changes made while another input source
+  had the keyboard. Auto-repeated 英数 and かな are swallowed, so holding
+  either is one press, not the double press that retypes.
+- A click or scroll in the candidate window no longer counts as a click
+  that may have moved the caret (D-042), so the punctuation after a
+  candidate chosen with the mouse still knows what it follows.
+- The login window, the Wi-Fi join sheets and the local-authentication
+  prompt have only password fields and do not turn on secure input
+  (fcitx5-macos's list); Sugu treats them as secure.
+- Not taken: dropping `client.length()` from the vocabulary read (some
+  hosts return nothing for a range past the end), and per-app defaults
+  to English beyond terminals (Squirrel's Xcode, Spotlight) — a product
+  choice, not a fault.

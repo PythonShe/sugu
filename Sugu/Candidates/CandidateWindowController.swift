@@ -29,6 +29,9 @@ final class CandidateWindowController {
 
     var isVisible: Bool { panel.isVisible }
 
+    /// When the window last had a click or a scroll, as event time.
+    var lastPointerEvent: TimeInterval { view.lastPointerEvent }
+
     func show(_ presentation: CandidatePresentation, mode: InputMode, near rect: NSRect, preferences: Preferences) {
         pending?.cancel()
         pending = nil
