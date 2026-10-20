@@ -2,14 +2,16 @@ import AppKit
 
 /// The settings window: a toolbar of panes, each a grid of native controls.
 @MainActor
-final class SettingsWindowController: NSWindowController {
+final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     enum Pane: Int, CaseIterable {
         case general, chinese, japanese, apps, learning, dictionaries, advanced
     }
 
     private let tabs = NSTabViewController()
+    private let model: SettingsModel
 
     init(model: SettingsModel) {
+        self.model = model
         let window = NSWindow(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: true)
         window.isReleasedWhenClosed = false
         window.toolbarStyle = .preference
@@ -26,6 +28,7 @@ final class SettingsWindowController: NSWindowController {
         window.contentViewController = tabs
         window.center()
         window.setFrameAutosaveName("Settings")
+        window.delegate = self
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
@@ -46,8 +49,13 @@ final class SettingsWindowController: NSWindowController {
 
     func show(_ pane: Pane?) {
         if let pane { tabs.selectedTabViewItemIndex = pane.rawValue }
+        model.isVisible = true
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        model.isVisible = false
     }
 }
 

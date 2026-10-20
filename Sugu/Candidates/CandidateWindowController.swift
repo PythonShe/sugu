@@ -49,6 +49,8 @@ final class CandidateWindowController {
         pending?.cancel()
         pending = nil
         announced = nil
+        // The fallback anchor belongs to the composition that just ended.
+        lastAnchor = nil
         if panel.isVisible { panel.orderOut(nil) }
     }
 

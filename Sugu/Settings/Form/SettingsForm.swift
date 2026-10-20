@@ -8,8 +8,6 @@ import AppKit
 final class SettingsForm {
     let grid: NSGridView
     private var refreshers: [() -> Void] = []
-    private var handlers: [ControlHandler] = []
-
     init() {
         grid = NSGridView(numberOfColumns: 2, rows: 0)
         grid.rowSpacing = 8
@@ -125,10 +123,7 @@ final class SettingsForm {
 
     /// Routes a control's action to a closure.
     func bind(_ control: NSControl, _ handler: @escaping (NSControl) -> Void) {
-        let target = ControlHandler(handler)
-        handlers.append(target)
-        control.target = target
-        control.action = #selector(ControlHandler.perform(_:))
+        ControlHandler.attach(handler, to: control)
     }
 }
 
@@ -137,8 +132,19 @@ final class SettingsForm {
 final class ControlHandler: NSObject {
     private let handler: (NSControl) -> Void
 
-    init(_ handler: @escaping (NSControl) -> Void) {
+    nonisolated(unsafe) private static var key: UInt8 = 0
+
+    private init(_ handler: @escaping (NSControl) -> Void) {
         self.handler = handler
+    }
+
+    /// Makes `handler` the control's action. The control owns the target,
+    /// so a reused table cell replaces its handler instead of adding one.
+    static func attach(_ handler: @escaping (NSControl) -> Void, to control: NSControl) {
+        let target = ControlHandler(handler)
+        objc_setAssociatedObject(control, &key, target, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        control.target = target
+        control.action = #selector(perform(_:))
     }
 
     @objc func perform(_ sender: Any?) {

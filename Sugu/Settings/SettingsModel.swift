@@ -26,6 +26,14 @@ final class SettingsModel {
     private(set) var lastSync: Date?
     private(set) var syncFailed = false
 
+    /// Set while the settings window is open. Closed, store changes only
+    /// mark the word list stale, so commits do not rebuild it.
+    var isVisible = false {
+        didSet { if isVisible, wordsStale { reloadWords() } }
+    }
+    private var wordsStale = false
+    private var wordsReload: Task<Void, Never>?
+
     private let environment: AppEnvironment
     private var observers: [any NSObjectProtocol] = []
     private var listeners: [(Change) -> Void] = []
@@ -50,7 +58,7 @@ final class SettingsModel {
             MainActor.assumeIsolated { self?.preferencesChanged() }
         })
         observers.append(center.addObserver(forName: LearnedStore.didChangeNotification, object: environment.store, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.reloadWords() }
+            MainActor.assumeIsolated { self?.storeDidChange() }
         })
         environment.library.onChange = { [weak self] _ in self?.reloadDownloads() }
         environment.sync?.onChange = { [weak self] in self?.reloadSync() }
@@ -66,7 +74,18 @@ final class SettingsModel {
         notify(.downloads)
     }
 
+    /// Reloads at most once per run-loop turn, and only while visible.
+    private func storeDidChange() {
+        guard isVisible else { wordsStale = true; return }
+        guard wordsReload == nil else { return }
+        wordsReload = Task { [weak self] in
+            self?.wordsReload = nil
+            self?.reloadWords()
+        }
+    }
+
     private func reloadWords() {
+        wordsStale = false
         words = environment.store?.allWords() ?? []
         notify(.words)
     }
