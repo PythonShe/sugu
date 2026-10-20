@@ -1283,3 +1283,7 @@ any call made without the owner present. Each entry: what, why, reversibility.
   everyday words (属于, 顿号) are left out, as a symbol after one pushes
   its homophones down a row. D-009's data-first rule has no data here.
   Accuracy and keystroke time unchanged.
+- Declined: the mode as a second menu-bar item (Fcitx5's NSStatusItem).
+  It would stand beside the input source's own icon with the same menu,
+  two items for one input method; the native way, input modes, was
+  declined in D-005. The caret indicator and the menu's checkmarks stay.

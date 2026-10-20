@@ -155,4 +155,3 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Add Word from the input menu, filled from the selection (D-074)
 - [x] ⌃. switches the punctuation width (D-074)
 - [x] Symbols by their Chinese names (D-074)
-- [ ] The mode in the menu bar
