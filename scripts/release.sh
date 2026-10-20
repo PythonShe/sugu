@@ -1,7 +1,9 @@
 #!/bin/bash
 # Builds a release: a Developer ID–signed, notarized installer package and a
 # notarized, EdDSA-signed archive with its appcast entry for Sparkle. Output
-# goes to dist/. Nothing is uploaded.
+# goes to dist/. Nothing is uploaded: the package and archive go to the
+# GitHub release v<version>, then scripts/publish-appcast.sh publishes the
+# appcast.
 #
 # Needs, in the environment:
 #   TEAM_ID                     Apple developer team

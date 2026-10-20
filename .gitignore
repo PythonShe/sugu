@@ -37,3 +37,6 @@ build/
 !/Sugu.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
 /Sugu.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/*
 !/Sugu.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+# Cloudflare CLI cache
+/.cloudflare/

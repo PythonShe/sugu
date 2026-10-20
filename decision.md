@@ -1500,3 +1500,19 @@ any call made without the owner present. Each entry: what, why, reversibility.
   commits also teach their words.
 - Settings › Learning: Learn Phrases, on by default, enabled while Learn
   From Typing is on; off, n-grams are neither learned nor used.
+
+## D-084 · Update feed on the project's own domain (2026-10-20)
+- Owner decision: the appcast lives at `https://sugu.zheng-she.com/appcast.xml`,
+  the host the project's home page will use; the package and the archive
+  stay on GitHub Releases, beside the tagged source. Supersedes the feed
+  URL in D-020.
+- Why: `SUFeedURL` is fixed in every installed copy, so it should be an
+  address the project controls; GitHub's `releases/latest` URL breaks for
+  existing installs if the repository moves, is renamed, or a release goes
+  up without an appcast.
+- Hosting: the R2 bucket `sugu-updates` with `sugu.zheng-she.com` as its
+  custom domain (TLS 1.2 and up). When the home page is built, the host
+  moves to a Worker that serves the page and reads `appcast.xml` from the
+  same bucket, with the same URL.
+- `scripts/publish-appcast.sh` uploads `dist/appcast.xml` with the
+  Cloudflare CLI only once the archive it points at downloads.
