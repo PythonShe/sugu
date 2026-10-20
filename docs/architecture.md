@@ -75,6 +75,9 @@ checks accuracy and latency budgets.
 
 - `swift test --package-path Packages/SuguKit`: session behavior with fake
   engines and fields, engines against real data, store, sync, downloads.
+- `SuguTests` (the scheme's test action): shell code that needs
+  InputMethodKit, such as `TextInputClient`'s UTF-16 offsets, against a fake
+  field; a logic-test bundle with no host app.
 - `sugu-bench`: accuracy and keystroke latency over `Bench/`, memory.
 - `Sugu --measure-draw`: candidate-window layout and drawing time, offscreen.
 - `scripts/ci.sh` runs all of these after a Release build.

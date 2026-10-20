@@ -54,11 +54,31 @@ targets:
         COMBINE_HIDPI_IMAGES: YES
         # Set by scripts/release.sh; without it the updater stays off.
         SPARKLE_PUBLIC_ED_KEY: ""
+  # Logic tests for shell code that needs AppKit or InputMethodKit; no host
+  # app, so running them never launches the input method.
+  SuguTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: SuguTests
+      - path: Sugu/Input/TextInputClient.swift
+    dependencies:
+      - package: SuguKit
+        product: SuguInput
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.pythonshe.SuguTests
+        SWIFT_OBJC_INTEROP_MODE: objcxx
 schemes:
   Sugu:
     build:
       targets:
         Sugu: all
+        SuguTests: [test]
+    test:
+      targets:
+        - SuguTests
     run:
       config: Debug
     archive:

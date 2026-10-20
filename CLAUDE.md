@@ -24,6 +24,8 @@ dependency.
 xcodegen generate     # after any project.yml change
 xcodebuild -project Sugu.xcodeproj -scheme Sugu \
   -destination 'platform=macOS' build   # must pass
+swift test --package-path Packages/SuguKit   # package tests
+scripts/ci.sh         # everything: app tests, package tests, budgets
 ```
 
 ## 1. Architecture

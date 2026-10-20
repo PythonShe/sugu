@@ -19,6 +19,7 @@ PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Relea
   -showBuildSettings 2>/dev/null | awk '$1 == "BUILT_PRODUCTS_DIR" { print $3 }')"
 "${PRODUCTS:?}/Sugu.app/Contents/MacOS/Sugu" --measure-draw
 
+xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' test -quiet
 swift test --package-path Packages/SuguKit
 swift run --package-path Packages/SuguKit -c release sugu-bench \
   --data Data --bench Bench --json "${SUGU_BENCH_JSON:-/dev/null}" --check
