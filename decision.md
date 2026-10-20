@@ -176,6 +176,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Zenzai (zenz-v3.1 small) raises Japanese top-1 to 80% at +60 MB footprint
   (resident 270 MB) and ~2× keystroke time, so it stays experimental and
   opt-in (D-007).
+- The candidate window's draw budget is checked by the app binary itself:
+  `Sugu --measure-draw` lays out and draws full Chinese, Japanese and Latin
+  pages offscreen in both appearances and three styles, and fails when p99
+  reaches 16 ms. It runs in `scripts/ci.sh` after the Release build;
+  measured p99 1.2 ms (the first draw, loading fonts, takes ~12 ms).
 
 ## D-019 · CI runs on demand while the repository is private (2026-10-20)
 - `scripts/ci.sh` is the single full check (dependencies, Release build,

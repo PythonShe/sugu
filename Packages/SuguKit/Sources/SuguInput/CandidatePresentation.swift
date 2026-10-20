@@ -11,6 +11,15 @@ public struct CandidatePresentation: Sendable, Equatable {
     /// Suggestions shown while typing, before any conversion.
     public var isSuggestion: Bool
 
+    public init(candidates: [Candidate], highlightedIndex: Int?, page: Int = 0, hasPreviousPage: Bool = false, hasNextPage: Bool = false, isSuggestion: Bool = false) {
+        self.candidates = candidates
+        self.highlightedIndex = highlightedIndex
+        self.page = page
+        self.hasPreviousPage = hasPreviousPage
+        self.hasNextPage = hasNextPage
+        self.isSuggestion = isSuggestion
+    }
+
     /// Selection labels for the rows of this page: 1–9, then 0.
     public var labels: [String] {
         candidates.indices.map { $0 == 9 ? "0" : String($0 + 1) }

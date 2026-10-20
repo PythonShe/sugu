@@ -15,6 +15,9 @@ scripts/fetch-data.sh
 xcodegen generate --quiet
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' \
   -configuration Release CODE_SIGNING_ALLOWED=NO build -quiet
+PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
+  -showBuildSettings 2>/dev/null | awk '$1 == "BUILT_PRODUCTS_DIR" { print $3 }')"
+"${PRODUCTS:?}/Sugu.app/Contents/MacOS/Sugu" --measure-draw
 
 swift test --package-path Packages/SuguKit
 swift run --package-path Packages/SuguKit -c release sugu-bench \

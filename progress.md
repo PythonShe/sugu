@@ -6,6 +6,10 @@ Running log of what was built, verified, and what is next. Newest first.
 - Cross-language proper nouns and per-app script (D-021): Japanese kanji
   forms as a Chinese script, Chinese forms after Japanese names, Sugu's own
   candidates in the script in use, a script column in the Apps pane.
+- Draw budget now measured in CI (`Sugu --measure-draw`, p99 1.2 ms).
+  Japanese bench row 49 typed いけんい (romaji `nn` is ん); fixed, top-1
+  76 → 78%. The remaining Japanese misses are AzooKey's own first choice
+  with the right sentence second or third; Zenzai is the path for those.
 - Third review pass fixed: Chinese forms no longer enter the Japanese
   store; a learned word shown in another script is learned in its stored
   form; numpad keys continue `v` expressions; script converters open at

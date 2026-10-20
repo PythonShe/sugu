@@ -8,6 +8,10 @@ if let index = CommandLine.arguments.firstIndex(of: "--snapshot-settings"), inde
 }
 #endif
 
+if CommandLine.arguments.contains("--measure-draw") {
+    exit(DrawMeasurement.run() ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--register") {
     exit(InputSourceRegistration.registerAndEnable() ? 0 : 1)
 }
