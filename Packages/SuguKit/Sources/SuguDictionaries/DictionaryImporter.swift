@@ -7,7 +7,13 @@ public enum DictionaryImporter {
     public enum Error: Swift.Error, Equatable {
         case unrecognizedFormat
         case unreadable
+        /// More entries than `maximumEntries`.
+        case tooLarge
     }
+
+    /// Most entries one file may add. Imported words never expire and are
+    /// kept in memory for lookups, so a whole system dictionary is refused.
+    public static let maximumEntries = 100_000
 
     public static func read(_ url: URL, format: DictionaryFormat? = nil) throws -> [DictionaryEntry] {
         guard let format = format ?? DictionaryFormat.detect(url) else { throw Error.unrecognizedFormat }
@@ -28,11 +34,13 @@ public enum DictionaryImporter {
             entries = try rime(data)
         }
         var seen = Set<DictionaryEntry>()
-        return entries.filter { seen.insert($0).inserted }
+        let unique = entries.filter { seen.insert($0).inserted }
+        guard unique.count <= maximumEntries else { throw Error.tooLarge }
+        return unique
     }
 
-    private static func lines(_ data: Data) throws -> [Substring] {
-        guard let lines = TextDecoding.lines(of: data) else { throw Error.unreadable }
+    private static func lines(_ data: Data, language: InputMode) throws -> [Substring] {
+        guard let lines = TextDecoding.lines(of: data, language: language) else { throw Error.unreadable }
         return lines
     }
 
@@ -55,7 +63,7 @@ public enum DictionaryImporter {
     /// Google Japanese Input, Microsoft IME and ATOK: `reading<TAB>word<TAB>…`,
     /// with `!` comment lines.
     static func readingFirst(_ data: Data) throws -> [DictionaryEntry] {
-        try lines(data).compactMap { line in
+        try lines(data, language: .japanese).compactMap { line in
             guard !line.hasPrefix("!") else { return nil }
             let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
             guard fields.count >= 2 else { return nil }
@@ -65,7 +73,7 @@ public enum DictionaryImporter {
 
     /// `'ni'hao 你好`
     static func sogouText(_ data: Data) throws -> [DictionaryEntry] {
-        try lines(data).compactMap { line in
+        try lines(data, language: .chinese).compactMap { line in
             guard line.hasPrefix("'"), let space = line.firstIndex(where: { $0 == " " || $0 == "\t" }) else { return nil }
             let reading = line[..<space].split(separator: "'").joined()
             return entry(reading: reading, text: line[space...])
@@ -74,7 +82,7 @@ public enum DictionaryImporter {
 
     /// `text<TAB>code<TAB>weight`, after the YAML header when there is one.
     static func rime(_ data: Data) throws -> [DictionaryEntry] {
-        let lines = try lines(data)
+        let lines = try lines(data, language: .chinese)
         let body = lines.firstIndex(of: "...").map { lines[($0 + 1)...] } ?? lines[...]
         return body.compactMap { line in
             guard !line.hasPrefix("#") else { return nil }

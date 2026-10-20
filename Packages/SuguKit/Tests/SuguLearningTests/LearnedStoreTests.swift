@@ -131,9 +131,9 @@ struct LearnedStoreTests {
     }
 
     /// Imported pinyin separates every syllable; none of it is kept.
-    @Test func enteredReadingsDropApostrophes() throws {
+    @Test func enteredReadingsDropApostrophes() async throws {
         let store = try makeStore()
-        _ = try store.importUserWords([(reading: "zhou'an", text: "周安", mode: .chinese)])
+        _ = try await store.importUserWords([(reading: "zhou'an", text: "周安", mode: .chinese)])
         #expect(store.lookup("zhouan", mode: .chinese).map(\.text) == ["周安"])
     }
 
@@ -182,14 +182,67 @@ struct LearnedStoreTests {
         #expect(reopened.lookup("とうきょう", mode: .japanese).map(\.text) == ["東京"])
     }
 
-    @Test func importCountsOnlyNewWords() throws {
+    @Test func importCountsOnlyNewWords() async throws {
         let store = try makeStore()
         store.addUserWord(reading: "sugu", text: "速具", mode: .chinese)
-        let added = try store.importUserWords([
+        let added = try await store.importUserWords([
             ("sugu", "速具", .chinese), ("すぐ", "直ぐ", .japanese),
         ])
         #expect(added == 1)
         #expect(store.count == 2)
+    }
+
+    /// A rolled-back write leaves memory as SQLite has it: here another
+    /// process already stored one of the words.
+    @Test func failedWriteLeavesMemoryAsStored() throws {
+        let store = try makeStore()
+        let other = try makeStore()
+        other.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        let words = ["新词", "速贵"].map {
+            LearnedWord(id: 0, mode: .chinese, reading: "sugu", text: $0, kind: .user, count: 0, pinned: false, firstUsed: clock.now, lastUsed: clock.now)
+        }
+        #expect(throws: (any Error).self) { try store.merge(words) }
+        #expect(store.lookup("sugu", mode: .chinese).map(\.text) == ["速贵"])
+        store.addUserWord(reading: "kuai", text: "快", mode: .chinese)
+        #expect(Set(try makeStore().allWords().map(\.text)) == ["速贵", "快"])
+    }
+
+    /// A Sugu file the user imports brings back what Delete All removed.
+    @Test func restoringBringsBackDeletedWords() throws {
+        let store = try makeStore()
+        store.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        let backup = store.allWords()
+        clock.advance(hours: 1)
+        store.deleteAll()
+        #expect(try store.merge(backup) == 0)
+        #expect(try store.merge(backup, restoring: true) == 1)
+        #expect(store.allDeletions().isEmpty)
+        // As used now, so a deletion another Mac still carries keeps it.
+        #expect(store.allWords().first?.lastUsed == clock.now)
+    }
+
+    /// Other Macs' learned words that expiry would delete are not taken.
+    @Test func mergeSkipsWhatExpiryDeletes() throws {
+        let store = try makeStore()
+        store.expire(olderThan: 30)
+        let old = clock.now.addingTimeInterval(-40 * 86_400)
+        func word(_ text: String, _ kind: LearnedWord.Kind, pinned: Bool = false) -> LearnedWord {
+            LearnedWord(id: 0, mode: .chinese, reading: "ci", text: text, kind: kind, count: 1, pinned: pinned, firstUsed: old, lastUsed: old)
+        }
+        #expect(try store.merge([word("词", .learned), word("辞", .learned, pinned: true), word("此", .user)]) == 2)
+        #expect(Set(store.allWords().map(\.text)) == ["辞", "此"])
+        #expect(store.expiringCount(olderThan: 30) == 0)
+    }
+
+    /// An undone commit is remembered as deleted, for sync.
+    @Test func unlearningRemembersTheDeletion() throws {
+        let store = try makeStore()
+        let commit = Commit(text: "你好", reading: "nihao")
+        store.learn(commit, mode: .chinese)
+        store.unlearn(commit, mode: .chinese)
+        #expect(store.allDeletions().map(\.text) == ["你好"])
+        store.learn(commit, mode: .chinese)
+        #expect(store.allDeletions().isEmpty)
     }
 }
 

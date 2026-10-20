@@ -1,4 +1,5 @@
 import AppKit
+import SuguDictionaries
 import UniformTypeIdentifiers
 
 final class DictionariesPane: SettingsPane {
@@ -56,11 +57,15 @@ final class DictionariesPane: SettingsPane {
             guard response == .OK else { return }
             MainActor.assumeIsolated {
                 guard let self else { return }
-                do {
-                    let added = try self.model.importDictionaries(panel.urls)
-                    self.importResult.stringValue = String(localized: "Added \(added) words.")
-                } catch {
-                    self.presentError(message: String(localized: "The dictionary could not be read."))
+                Task {
+                    do {
+                        let added = try await self.model.importDictionaries(panel.urls)
+                        self.importResult.stringValue = String(localized: "Added \(added) words.")
+                    } catch DictionaryImporter.Error.tooLarge {
+                        self.presentError(message: String(localized: "The dictionary has too many words to import."))
+                    } catch {
+                        self.presentError(message: String(localized: "The dictionary could not be read."))
+                    }
                 }
             }
         }

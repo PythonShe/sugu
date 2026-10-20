@@ -6,7 +6,8 @@ import SuguLearning
 /// Drive, a shared disk). Each Mac writes only its own file and reads the
 /// others', so two Macs never write the same file. Files carry deletions as
 /// well as words, so a word deleted on one Mac goes on every Mac and is not
-/// brought back by another Mac's older copy.
+/// brought back by another Mac's older copy. Every pull reads whole files:
+/// the store decides what to take (`LearnedStore.merge`).
 ///
 /// File access runs off the main actor and is coordinated, because a
 /// cloud folder can block while it downloads; only merging into the store
@@ -18,16 +19,12 @@ public final class SyncFolder {
     public let folder: URL
     /// Identifies this Mac's file. Random, not derived from hardware.
     public let deviceID: String
-    /// Newest use already taken from each other Mac's file, so words
-    /// deleted here are not brought back by an older copy.
-    public private(set) var watermarks: [String: Date]
     private let store: LearnedStore
 
-    public init(folder: URL, deviceID: String, store: LearnedStore, watermarks: [String: Date] = [:]) {
+    public init(folder: URL, deviceID: String, store: LearnedStore) {
         self.folder = folder
         self.deviceID = deviceID
         self.store = store
-        self.watermarks = watermarks
     }
 
     private var ownName: String { "\(deviceID).\(Self.fileExtension)" }
@@ -55,8 +52,8 @@ public final class SyncFolder {
         public var unreadable: [String]
     }
 
-    /// Merges what other Macs wrote since the last pull. Returns how many
-    /// words were added or deleted.
+    /// Merges what other Macs wrote. Returns how many words were added or
+    /// deleted.
     @discardableResult
     public func pull(includeLearned: Bool) async throws -> Int {
         try merge(await read(), includeLearned: includeLearned)
@@ -76,15 +73,12 @@ public final class SyncFolder {
     @discardableResult
     public func merge(_ snapshot: Snapshot, includeLearned: Bool) throws -> Int {
         var changed = 0
-        for (name, data) in snapshot.files {
+        for (_, data) in snapshot.files {
             let contents = SuguDictionaryFile.decodeContents(data)
             let words = contents.words.filter { includeLearned || $0.kind == .user }
             let deletions = contents.deletions.filter { includeLearned || $0.kind == .user }
             changed += try store.applyDeletions(deletions)
-            changed += try store.merge(words, since: watermarks[name])
-            if let newest = words.map(\.lastUsed).max() {
-                watermarks[name] = max(watermarks[name] ?? newest, newest)
-            }
+            changed += try store.merge(words)
         }
         return changed
     }

@@ -33,6 +33,9 @@ public final class LearnedStore {
     /// Puts committed text in the form the language models read: Chinese
     /// in Simplified. Text is learned as it is without one.
     public var nGramText: ((String, InputMode) -> String)?
+    /// Learned words unused this many days are deleted, and not taken from
+    /// other Macs either; 0 keeps them. Set by `expire(olderThan:)`.
+    public private(set) var expiryDays = 0
 
     private struct IndexKey: Hashable {
         var mode: InputMode
@@ -237,7 +240,7 @@ public final class LearnedStore {
     public func learn(_ commit: Commit, mode: InputMode) {
         let now = clock()
         do {
-            try database.transaction {
+            try write {
                 for (reading, text) in Self.pairs(learnedFrom: commit) {
                     try recordUse(reading: reading, text: text, mode: mode, kind: .learned, at: now)
                 }
@@ -246,16 +249,17 @@ public final class LearnedStore {
             }
         } catch {
             Log.learning.error("Learning not saved: \(String(describing: error), privacy: .public)")
-            try? loadAll()
         }
         notify()
     }
 
     /// Takes back what `learn` recorded for a commit the user undid: one use
-    /// of each word, and the word itself when that was its only use.
+    /// of each word, and the word itself when that was its only use. A word
+    /// taken back is remembered as deleted, so a copy another Mac synced in
+    /// the meantime does not return it.
     public func unlearn(_ commit: Commit, mode: InputMode) {
         do {
-            try database.transaction {
+            try write {
                 for (rawReading, text) in Self.pairs(learnedFrom: commit) {
                     let reading = LearnedWord.normalize(rawReading, mode: mode)
                     guard let id = index[IndexKey(mode: mode, reading: reading)]?.first(where: { words[$0]?.text == text }),
@@ -264,6 +268,7 @@ public final class LearnedStore {
                     if word.count == 0, word.kind == .learned, !word.pinned {
                         try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
                         removeFromMemory(id)
+                        try remember(WordDeletion(mode: mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: clock()))
                     } else {
                         try database.run("UPDATE words SET count = ? WHERE id = ?", [.integer(Int64(word.count)), .integer(id)])
                         words[id] = word
@@ -274,7 +279,6 @@ public final class LearnedStore {
             }
         } catch {
             Log.learning.error("Unlearning not saved: \(String(describing: error), privacy: .public)")
-            try? loadAll()
         }
         notify()
     }
@@ -301,49 +305,65 @@ public final class LearnedStore {
         let reading = LearnedWord.normalize(enteredReading: reading, mode: mode)
         guard !reading.isEmpty, !text.isEmpty else { return false }
         do {
-            try database.transaction {
+            try write {
                 try recordUse(reading: reading, text: text, mode: mode, kind: .user, at: clock(), logEvent: false)
             }
             notify()
             return true
         } catch {
+            Log.learning.error("Word not added: \(String(describing: error), privacy: .public)")
             return false
         }
     }
 
-    /// Adds many user words in one transaction; returns how many were new.
-    public func importUserWords(_ entries: [(reading: String, text: String, mode: InputMode)]) throws -> Int {
+    /// Adds many user words; returns how many were new. They are written
+    /// in batches with a pause between them, so keys typed meanwhile in
+    /// other apps are not held up. A failed batch keeps those before it.
+    public func importUserWords(_ entries: [(reading: String, text: String, mode: InputMode)]) async throws -> Int {
         var added = 0
         let now = clock()
-        try database.transaction {
-            for entry in entries {
-                let reading = LearnedWord.normalize(enteredReading: entry.reading, mode: entry.mode)
-                guard !reading.isEmpty, !entry.text.isEmpty else { continue }
-                if index[IndexKey(mode: entry.mode, reading: reading)]?.contains(where: { words[$0]?.text == entry.text }) != true {
-                    added += 1
+        defer { notify() }
+        for start in stride(from: 0, to: entries.count, by: Self.importBatch) {
+            try write {
+                for entry in entries[start..<min(start + Self.importBatch, entries.count)] {
+                    let reading = LearnedWord.normalize(enteredReading: entry.reading, mode: entry.mode)
+                    guard !reading.isEmpty, !entry.text.isEmpty else { continue }
+                    if index[IndexKey(mode: entry.mode, reading: reading)]?.contains(where: { words[$0]?.text == entry.text }) != true {
+                        added += 1
+                    }
+                    try recordUse(reading: reading, text: entry.text, mode: entry.mode, kind: .user, at: now, logEvent: false)
                 }
-                try recordUse(reading: reading, text: entry.text, mode: entry.mode, kind: .user, at: now, logEvent: false)
             }
+            await Task.yield()
         }
-        notify()
         return added
     }
 
+    private static let importBatch = 2_000
+
     /// Merges words from Sugu's own file (another Mac, or a sync folder).
-    /// A word missing here is taken only when used after `since`, so a word
-    /// deleted here is not brought back by an older copy. A word already in
-    /// the store always merges and keeps
-    /// the higher count, the later use, and its pin if either side has one.
+    /// A word already in the store always merges and keeps the higher
+    /// count, the later use, and its pin if either side has one. A word
+    /// missing here is taken unless it was deleted here after its last use,
+    /// or is a learned word expiry would delete.
+    ///
+    /// `restoring` is for a file the user chose to import: its words are
+    /// taken even when deleted or expired here, as used now, so a deletion
+    /// another Mac still carries does not take them again.
     /// Returns how many words were new.
     @discardableResult
-    public func merge(_ incoming: [LearnedWord], since: Date? = nil) throws -> Int {
+    public func merge(_ incoming: [LearnedWord], restoring: Bool = false) throws -> Int {
         var added = 0
-        try database.transaction {
-            for word in incoming {
+        let now = clock()
+        let expiryCutoff = expiryDays > 0 ? now.addingTimeInterval(-Double(expiryDays) * 86_400) : nil
+        try write {
+            for var word in incoming {
                 let reading = LearnedWord.normalize(word.reading, mode: word.mode)
                 guard !reading.isEmpty, !word.text.isEmpty else { continue }
                 let wordKey = WordKey(mode: word.mode, reading: reading, text: word.text)
-                if let deletion = deletions[wordKey] {
+                if restoring {
+                    try forgetDeletion(wordKey)
+                } else if let deletion = deletions[wordKey] {
                     // Deleted here after this copy was last used: stay deleted.
                     guard word.lastUsed > deletion.deletedAt else { continue }
                     try forgetDeletion(wordKey)
@@ -366,9 +386,11 @@ public final class LearnedStore {
                     )
                     words[id] = existing
                 } else {
-                    // A word missing here and not used since the last pull
-                    // was deleted here (or expired); it stays gone.
-                    if let since, word.lastUsed <= since { continue }
+                    if restoring {
+                        word.lastUsed = max(word.lastUsed, now)
+                    } else if let expiryCutoff, word.kind == .learned, !word.pinned, word.lastUsed < expiryCutoff {
+                        continue
+                    }
                     let id = try database.run(
                         "INSERT INTO words (mode, reading, text, kind, count, pinned, first_used, last_used) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                         [.text(word.mode.rawValue), .text(reading), .text(word.text), .integer(Int64(word.kind.rawValue)), .integer(Int64(word.count)),
@@ -392,7 +414,7 @@ public final class LearnedStore {
     @discardableResult
     public func applyDeletions(_ incoming: [WordDeletion]) throws -> Int {
         var removed = 0
-        try database.transaction {
+        try write {
             for deletion in incoming {
                 let reading = LearnedWord.normalize(deletion.reading, mode: deletion.mode)
                 let key = WordKey(mode: deletion.mode, reading: reading, text: deletion.text)
@@ -458,8 +480,13 @@ public final class LearnedStore {
 
     public func setPinned(_ pinned: Bool, id: Int64) {
         guard var word = words[id] else { return }
+        do {
+            try database.run("UPDATE words SET pinned = ? WHERE id = ?", [.integer(pinned ? 1 : 0), .integer(id)])
+        } catch {
+            Log.learning.error("Pin not saved: \(String(describing: error), privacy: .public)")
+            return
+        }
         word.pinned = pinned
-        _ = try? database.run("UPDATE words SET pinned = ? WHERE id = ?", [.integer(pinned ? 1 : 0), .integer(id)])
         words[id] = word
         notify()
     }
@@ -473,15 +500,19 @@ public final class LearnedStore {
     private func remove(ids: [Int64], propagate: Bool) {
         guard !ids.isEmpty else { return }
         let now = clock()
-        try? database.transaction {
-            for id in ids {
-                guard let word = words[id] else { continue }
-                try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
-                removeFromMemory(id)
-                if propagate {
-                    try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: now))
+        do {
+            try write {
+                for id in ids {
+                    guard let word = words[id] else { continue }
+                    try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
+                    removeFromMemory(id)
+                    if propagate {
+                        try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: now))
+                    }
                 }
             }
+        } catch {
+            Log.learning.error("Deletion not saved: \(String(describing: error), privacy: .public)")
         }
         notify()
     }
@@ -496,7 +527,7 @@ public final class LearnedStore {
             recent[row.int(0)] = Int(row.int(1))
         }
         do {
-            try database.transaction {
+            try write {
                 for (id, uses) in recent {
                     guard var word = words[id] else { continue }
                     word.count = max(0, word.count - uses)
@@ -514,17 +545,29 @@ public final class LearnedStore {
             }
         } catch {
             Log.learning.error("Forgetting not saved: \(String(describing: error), privacy: .public)")
-            try? loadAll()
         }
         notify()
     }
 
-    /// Deletes learned words unused for `days`. Pinned and user words stay.
+    /// How many words `expire(olderThan:)` would delete now.
+    public func expiringCount(olderThan days: Int) -> Int {
+        staleWords(olderThan: days).count
+    }
+
+    private func staleWords(olderThan days: Int) -> [Int64] {
+        guard days > 0 else { return [] }
+        let cutoff = clock().addingTimeInterval(-Double(days) * 86_400)
+        return words.values.filter { $0.kind == .learned && !$0.pinned && $0.lastUsed < cutoff }.map(\.id)
+    }
+
+    /// Deletes learned words unused for `days`, and from now on keeps them
+    /// from coming back from other Macs. Pinned and user words stay.
     @discardableResult
     public func expire(olderThan days: Int) -> Int {
+        expiryDays = max(0, days)
         guard days > 0 else { return 0 }
         let cutoff = clock().addingTimeInterval(-Double(days) * 86_400)
-        let stale = words.values.filter { $0.kind == .learned && !$0.pinned && $0.lastUsed < cutoff }.map(\.id)
+        let stale = staleWords(olderThan: days)
         // Expiry is local: another Mac may have used the word since.
         remove(ids: stale, propagate: false)
         do {
@@ -550,6 +593,18 @@ public final class LearnedStore {
     }
 
     // MARK: Memory index
+
+    /// Runs `body` in one transaction. Memory changes alongside the SQL, so
+    /// when the transaction fails, memory is read back from disk and never
+    /// keeps a row, or a row id, that SQLite rolled back.
+    private func write(_ body: () throws -> Void) throws {
+        do {
+            try database.transaction(body)
+        } catch {
+            try? loadAll()
+            throw error
+        }
+    }
 
     private func insertInMemory(_ word: LearnedWord) {
         words[word.id] = word

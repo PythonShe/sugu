@@ -25,7 +25,7 @@ public enum DictionaryFormat: String, Sendable, CaseIterable {
         if name.hasSuffix(".plist") { return .textReplacements }
         if name.hasSuffix(".dict.yaml") { return .rime }
         guard let data = try? Data(contentsOf: url, options: .mappedIfSafe),
-              let text = TextDecoding.string(from: data.prefix(4_096)) else { return nil }
+              let text = TextDecoding.string(from: data.prefix(4_096), prefix: data.count > 4_096) else { return nil }
         let lines = text.split(whereSeparator: \.isNewline).map(String.init)
         guard let first = lines.first(where: { !$0.isEmpty }) else { return nil }
         if first.hasPrefix(SuguDictionaryFile.header) { return .sugu }

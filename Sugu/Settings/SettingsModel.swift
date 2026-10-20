@@ -154,20 +154,37 @@ final class SettingsModel {
 
     // MARK: Dictionaries
 
-    /// Imports dictionary files; returns how many words were new.
-    func importDictionaries(_ urls: [URL]) throws -> Int {
+    /// Imports dictionary files; returns how many words were new. Files are
+    /// read off the main actor, which keeps serving keys in every app. A
+    /// Sugu file brings back its words even when they were deleted here.
+    func importDictionaries(_ urls: [URL]) async throws -> Int {
         guard let store = environment.store else { return 0 }
         var added = 0
         for url in urls {
             let accessing = url.startAccessingSecurityScopedResource()
             defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-            if DictionaryFormat.detect(url) == .sugu {
-                added += try store.merge(SuguDictionaryFile.decode(Data(contentsOf: url)))
-            } else {
-                added += try store.importUserWords(DictionaryImporter.read(url).map { ($0.reading, $0.text, $0.mode) })
+            let file = try await Task.detached(priority: .userInitiated) { () throws -> ImportedFile in
+                if DictionaryFormat.detect(url) == .sugu { return .sugu(SuguDictionaryFile.decode(try Data(contentsOf: url))) }
+                return .entries(try DictionaryImporter.read(url))
+            }.value
+            switch file {
+            case .sugu(let words):
+                added += try store.merge(words, restoring: true)
+            case .entries(let entries):
+                added += try await store.importUserWords(entries.map { ($0.reading, $0.text, $0.mode) })
             }
         }
         return added
+    }
+
+    private enum ImportedFile: Sendable {
+        case sugu([LearnedWord])
+        case entries([DictionaryEntry])
+    }
+
+    /// How many learned words a shorter expiry would delete now.
+    func wordsExpiring(olderThan days: Int) -> Int {
+        environment.store?.expiringCount(olderThan: days) ?? 0
     }
 
     func exportDictionary(includeLearned: Bool) -> Data {
@@ -175,11 +192,9 @@ final class SettingsModel {
         return SuguDictionaryFile.encode(words)
     }
 
+    /// Sync starts over in the new folder (`DictionarySync.preferencesDidChange`).
     func setSyncFolder(_ url: URL?) {
-        environment.sync?.reset()
         preferences.syncFolderPath = url?.path
-        if url != nil { environment.sync?.syncNow() }
-        reloadSync()
     }
 
     func syncNow() { environment.sync?.syncNow() }

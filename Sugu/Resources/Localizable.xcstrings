@@ -821,6 +821,30 @@
         }
       }
     },
+    "Delete": {
+      "comment": "Button that confirms deleting learned words.",
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "削除"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除"
+          }
+        }
+      }
+    },
     "Delete All": {
       "extractionState": "manual",
       "localizations": {
@@ -886,6 +910,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "要刪除所有已學習及自行加入的字詞，以及已學習的片語嗎？"
+          }
+        }
+      }
+    },
+    "Delete learned words not used in the last %lld days?": {
+      "comment": "Asked when a shorter Forget unused words setting would delete words at once. The number is 30 or more.",
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過去%lld日間使っていない学習した単語を削除しますか？"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要删除过去 %lld 天未使用的已学习词语吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要刪除過去 %lld 天未使用的已學習字詞嗎？"
           }
         }
       }
@@ -3443,6 +3491,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法讀取詞庫。"
+          }
+        }
+      }
+    },
+    "The dictionary has too many words to import.": {
+      "comment": "Shown when an imported dictionary file holds more words than Sugu takes.",
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "辞書の単語が多すぎるため読み込めません。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "词库中的词语过多，无法导入。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詞庫中的字詞過多，無法匯入。"
           }
         }
       }

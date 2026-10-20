@@ -38,6 +38,32 @@ private func utf16(_ text: String) -> Data {
         #expect(try DictionaryImporter.read(url).map(\.reading) == ["nihao", "shurufa"])
     }
 
+    /// GBK text also decodes as Shift_JIS, into half-width katakana.
+    @Test func sogouTextInGBK() throws {
+        let gbk = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)))
+        let data = try #require("'bei'jing 北京\n'shang'hai 上海\n".data(using: gbk))
+        #expect(String(data: data, encoding: .shiftJIS) != nil)
+        let url = try temporaryFile("sogou.txt", data)
+        #expect(DictionaryFormat.detect(url) == .sogouText)
+        #expect(try DictionaryImporter.read(url).map(\.text) == ["北京", "上海"])
+        #expect(TextDecoding.string(from: data) == "'bei'jing 北京\n'shang'hai 上海\n")
+    }
+
+    /// The first bytes, read to tell the format, may end inside a character.
+    @Test func formatIsToldFromAPrefixCutMidCharacter() throws {
+        var body = ""
+        while body.utf8.count < 5_000 { body += "あいうえお\t五十音\t名詞\r\n" }
+        for padding in 0..<4 {
+            let text = "!!ATOK_TANGO_TEXT_HEADER_1" + String(repeating: " ", count: padding) + "\r\n" + body
+            let data = try #require(text.data(using: .shiftJIS))
+            #expect(DictionaryFormat.detect(try temporaryFile("atok.txt", data)) == .atok)
+        }
+        let utf8 = Data(String(repeating: "東", count: 2_000).utf8)
+        #expect(TextDecoding.string(from: utf8.prefix(4_096), prefix: true) != nil)
+        // A whole file cut inside a character loses its last line.
+        #expect(TextDecoding.string(from: Data("北京\n上海".utf8).dropLast(1)) == "北京")
+    }
+
     @Test func rimeDictionary() throws {
         let yaml = "---\nname: test\nversion: \"1\"\n...\n速贵\tsu gui\t10\n# comment\n输入法\tshu ru fa\n"
         let url = try temporaryFile("test.dict.yaml", Data(yaml.utf8))
@@ -90,6 +116,18 @@ private final class ManualClock: @unchecked Sendable {
 @Suite struct SyncTests {
     private func store(_ clock: @escaping @Sendable () -> Date = Date.init) throws -> LearnedStore {
         try LearnedStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString)/learned.sqlite"), clock: clock)
+    }
+
+    /// A file cut short, as a partial copy on a network share, adds no
+    /// word from its last line.
+    @Test func incompleteLinesAreSkipped() throws {
+        let source = try store()
+        source.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        source.addUserWord(reading: "kuai", text: "快", mode: .chinese)
+        let data = SuguDictionaryFile.encode(source.allWords())
+        let cut = data.prefix(data.count - 30)
+        #expect(SuguDictionaryFile.decode(cut).count == 1)
+        #expect(SuguDictionaryFile.decode(Data("chinese\tsugu\t速贵\tuser\n".utf8)).isEmpty)
     }
 
     @Test func roundTripKeepsDetail() throws {

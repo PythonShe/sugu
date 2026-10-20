@@ -191,3 +191,17 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Soak harness: `sugu-bench --fuzz N --soak K`
 - [ ] Owner: keys, secrets and the Pages project (release plan §1–3)
 - [ ] Dry run, first release, one Sparkle update (release plan §4)
+
+## 22. Pre-release review (CodeRabbit + manual, D-091)
+- [x] Learned store: memory follows SQLite after a failed write (reload on rollback, no `try?` transactions)
+- [x] Sync: an export no longer pushes back the next pull; exports run one at a time
+- [x] Sync: no word-date watermarks; a merge refuses what expiry would remove, undo leaves a deletion
+- [x] Sync: device ID made again on a migrated Mac; a folder change from anywhere resets sync
+- [x] Import: restoring a Sugu export brings back deleted words; GBK not read as Shift_JIS; prefix cuts; strict sync lines; large imports off the main actor and capped
+- [x] Learning pane: confirm before a shorter expiry deletes words
+- [ ] Input: Esc after reconversion puts the selection back; `v` expressions keep their `v`; empty syllabary does not trap
+- [ ] Input: per-key cross-process calls cached; Caps Lock letters recorded; stale marked text not cleared; store opened off the first key
+- [ ] Release: re-sign Sparkle's nested code and check every signature; check the Sparkle public key against the signing key
+- [ ] Release: site deploy checks out main; publish runs one at a time; guards before uploads; status check counts untracked files; notary log kept
+- [ ] Updates: gentle reminders for a background app
+- [ ] Functions: 416 for bad ranges, 412 for failed preconditions, HEAD for /download/

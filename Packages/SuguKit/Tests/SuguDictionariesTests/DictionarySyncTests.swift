@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import SuguCore
-import SuguDictionaries
+@testable import SuguDictionaries
 import SuguLearning
 
 final class SyncTestClock: @unchecked Sendable {
@@ -18,11 +18,11 @@ final class SyncTestClock: @unchecked Sendable {
         try LearnedStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString)/learned.sqlite"))
     }
 
-    private func sync(_ store: LearnedStore, folder: URL? = nil) -> DictionarySync {
+    private func sync(_ store: LearnedStore, folder: URL? = nil, machine: String? = "this Mac") -> DictionarySync {
         let preferences = PreferencesStore(defaults: defaults)
         preferences.update { $0.syncFolderPath = (folder ?? self.folder).path }
         let clock = clock
-        return DictionarySync(store: store, preferences: preferences, defaults: defaults, exportDelay: .zero, now: { clock.now })
+        return DictionarySync(store: store, preferences: preferences, defaults: defaults, exportDelay: .zero, machine: machine, now: { clock.now })
     }
 
     private func files() throws -> [String] {
@@ -62,6 +62,7 @@ final class SyncTestClock: @unchecked Sendable {
         #expect(sync.pullIfDue() != nil)
     }
 
+    /// Writing alone is no sync: the next pull stays due.
     @Test func changesAreWrittenAfterAPause() async throws {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let mine = try store()
@@ -70,17 +71,29 @@ final class SyncTestClock: @unchecked Sendable {
         await sync.storeDidChange()?.value
         #expect(try files().count == 1)
         #expect(sync.lastError == nil)
+        #expect(sync.lastSync == nil)
+        #expect(sync.pullIfDue() != nil)
     }
 
-    @Test func aResetWhileWritingLeavesNoState() async throws {
+    @Test func aNewFolderWhileWritingLeavesNoState() async throws {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let sync = sync(try store())
+        let preferences = PreferencesStore(defaults: defaults)
+        preferences.update { $0.syncFolderPath = folder.appendingPathComponent("missing").path }
+        let sync = DictionarySync(store: try store(), preferences: preferences, defaults: defaults, exportDelay: .zero, machine: nil)
         let export = sync.storeDidChange()
         // The export is already on its way when the folder changes.
         await Task.yield()
-        sync.reset()
+        preferences.update { $0.syncFolderPath = folder.path }
+        sync.preferencesDidChange()
         await export?.value
-        #expect(sync.lastSync == nil)
         #expect(sync.lastError == nil)
+    }
+
+    /// Settings copied to a new Mac do not bring the old Mac's file name.
+    @Test func aMigratedMacNamesItsOwnFile() {
+        let mine = try! store()
+        let id = sync(mine).deviceID
+        #expect(sync(mine).deviceID == id)
+        #expect(sync(mine, machine: "another Mac").deviceID != id)
     }
 }

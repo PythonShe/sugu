@@ -42,32 +42,26 @@ public enum SuguDictionaryFile {
         decodeContents(data).words
     }
 
-    /// Words and deletions in the file.
+    /// Words and deletions in the file. A line without every field, as
+    /// the last line of a file cut short, is skipped.
     public static func decodeContents(_ data: Data) -> Contents {
         guard let lines = TextDecoding.lines(of: data) else { return Contents() }
         let dates = ISO8601DateFormatter()
-        let now = Date()
         var contents = Contents()
         for line in lines where !line.hasPrefix("#") {
             let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
-            guard fields.count >= 3, let mode = InputMode(rawValue: fields[0]), !fields[1].isEmpty, !fields[2].isEmpty else { continue }
-            func field(_ index: Int) -> String? { fields.indices.contains(index) ? fields[index] : nil }
-            let kindName = field(3) ?? ""
-            if kindName.hasPrefix(deletedPrefix) {
-                guard let deletedAt = field(7).flatMap(dates.date(from:)) else { continue }
-                contents.deletions.append(WordDeletion(
-                    mode: mode, reading: fields[1], text: fields[2],
-                    kind: kind(named: String(kindName.dropFirst(deletedPrefix.count))), deletedAt: deletedAt
-                ))
+            guard fields.count >= 8, let mode = InputMode(rawValue: fields[0]), !fields[1].isEmpty, !fields[2].isEmpty,
+                  let count = Int(fields[5]), let firstUsed = dates.date(from: fields[6]), let lastUsed = dates.date(from: fields[7])
+            else { continue }
+            if fields[3].hasPrefix(deletedPrefix) {
+                guard let kind = kind(named: String(fields[3].dropFirst(deletedPrefix.count))) else { continue }
+                contents.deletions.append(WordDeletion(mode: mode, reading: fields[1], text: fields[2], kind: kind, deletedAt: lastUsed))
                 continue
             }
+            guard let kind = kind(named: fields[3]) else { continue }
             contents.words.append(LearnedWord(
-                id: 0, mode: mode, reading: fields[1], text: fields[2],
-                kind: kind(named: kindName),
-                count: field(5).flatMap(Int.init) ?? 0,
-                pinned: field(4) == "1",
-                firstUsed: field(6).flatMap(dates.date(from:)) ?? now,
-                lastUsed: field(7).flatMap(dates.date(from:)) ?? now
+                id: 0, mode: mode, reading: fields[1], text: fields[2], kind: kind,
+                count: count, pinned: fields[4] == "1", firstUsed: firstUsed, lastUsed: lastUsed
             ))
         }
         return contents
@@ -77,8 +71,12 @@ public enum SuguDictionaryFile {
         kind == .user ? "user" : "learned"
     }
 
-    private static func kind(named name: String) -> LearnedWord.Kind {
-        name == "learned" ? .learned : .user
+    private static func kind(named name: String) -> LearnedWord.Kind? {
+        switch name {
+        case "user": .user
+        case "learned": .learned
+        default: nil
+        }
     }
 
     private static func sanitize(_ value: String) -> String {

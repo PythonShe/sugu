@@ -24,7 +24,17 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
             (String(localized: "After 180 Days"), 180),
             (String(localized: "After a Year"), 365),
             (String(localized: "Never"), 0),
-        ], get: { model.preferences.learnedWordExpiryDays }, set: { model.preferences.learnedWordExpiryDays = $0 })
+        ], get: { model.preferences.learnedWordExpiryDays }, set: { [weak self] days in
+            // A shorter time deletes words at once: ask first.
+            guard let self, model.wordsExpiring(olderThan: days) > 0 else {
+                model.preferences.learnedWordExpiryDays = days
+                return
+            }
+            form.refresh()
+            confirm(String(localized: "Delete learned words not used in the last \(days) days?"), action: String(localized: "Delete"), destructive: true) {
+                model.preferences.learnedWordExpiryDays = days
+            }
+        })
 
         form.gap()
         search.placeholderString = String(localized: "Search")

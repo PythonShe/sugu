@@ -106,6 +106,7 @@ final class AppEnvironment {
         let current = preferences.preferences
         engines.apply(current)
         coordinator.preferencesDidChange(current)
+        sync?.preferencesDidChange()
         if current.learnedWordExpiryDays != expiryDays { expireLearnedWords() }
     }
 
