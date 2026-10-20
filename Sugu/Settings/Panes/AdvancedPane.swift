@@ -15,6 +15,7 @@ final class AdvancedPane: SettingsPane {
 
         form.gap()
         form.button(String(localized: "Show in Finder"), label: String(localized: "Data folder:")) { model.showDataFolder() }
+        form.button(String(localized: "Export…"), label: String(localized: "Diagnostics:")) { [weak self] in self?.exportDiagnostics() }
 
         form.gap()
         let automatic = form.checkbox(String(localized: "Check for updates automatically"), label: String(localized: "Updates:"),
@@ -51,6 +52,30 @@ final class AdvancedPane: SettingsPane {
             MainActor.assumeIsolated {
                 do {
                     try data.write(to: url, options: .atomic)
+                } catch {
+                    self?.presentError(message: error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func exportDiagnostics() {
+        guard let window = view.window else { return }
+        let report: String
+        do {
+            report = try DiagnosticsReport.make(settings: model.exportSettings())
+        } catch {
+            presentError(message: error.localizedDescription)
+            return
+        }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = String(localized: "Sugu Diagnostics") + ".txt"
+        panel.allowedContentTypes = [.plainText]
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let url = panel.url else { return }
+            MainActor.assumeIsolated {
+                do {
+                    try report.write(to: url, atomically: true, encoding: .utf8)
                 } catch {
                     self?.presentError(message: error.localizedDescription)
                 }

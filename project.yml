@@ -62,6 +62,8 @@ targets:
     sources:
       - path: SuguTests
       - path: Sugu/Input/TextInputClient.swift
+      - path: Sugu/Diagnostics/DiagnosticsReport.swift
+      - path: Sugu/App/Bundle+Version.swift
     dependencies:
       - package: SuguKit
         product: SuguInput

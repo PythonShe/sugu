@@ -1,4 +1,6 @@
 import Foundation
+import os
+import SuguCore
 import SuguDownloads
 import SuguRime
 
@@ -132,6 +134,7 @@ public final class ModelLibrary {
                 set(item, installed ? .installed : .notInstalled)
                 if installed { engines.modelsDidChange() }
             } catch {
+                Log.downloads.error("\(String(describing: item), privacy: .public) failed: \(String(describing: error), privacy: .public)")
                 set(item, .failed(Self.failure(for: error)))
             }
             tasks[item] = nil

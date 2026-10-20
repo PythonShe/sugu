@@ -756,6 +756,29 @@
         }
       }
     },
+    "Diagnostics:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "診断情報："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "诊断信息："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "診斷資訊："
+          }
+        }
+      }
+    },
     "Dictionaries": {
       "extractionState": "manual",
       "localizations": {
@@ -2384,6 +2407,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "停止同步"
+          }
+        }
+      }
+    },
+    "Sugu Diagnostics": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugu 診断情報"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugu 诊断信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugu 診斷資訊"
           }
         }
       }

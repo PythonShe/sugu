@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SuguCore
 import SuguLearning
 
@@ -162,6 +163,7 @@ public final class DictionarySync {
 
     /// A folder that is gone or unreadable is retried at 5, 10, 20… minutes.
     private func failed(_ error: any Error) {
+        Log.sync.error("Sync failed: \(String(describing: error), privacy: .public)")
         failures += 1
         let delay = min(Self.pullInterval * pow(2, Double(failures - 1)), Self.maximumBackoff)
         nextPull = now().addingTimeInterval(delay)

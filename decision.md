@@ -373,3 +373,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Show Data Folder) and a fresh store opens. Other failures — locked, not
   yet readable before the first unlock, disk full — are not corruption and
   never move the file.
+
+## D-030 · Diagnostics in the unified log, exported by the user (2026-10-20)
+- Sugu logged nothing, so "it stopped working" left the user and the
+  maintainer with nothing to go on. `SuguCore.Log` gives one `Logger` per
+  area (app, engines, input, learning, sync, downloads) under the app's
+  bundle identifier. Logged: launch, engine readiness and timings, failed
+  deployments and their retry, secure input turning on and off, a damaged
+  or unavailable store, sync and download failures. Never logged:
+  readings, candidates, learned words, or document text.
+- Settings › Advanced › Diagnostics › Export… saves a text file with the
+  version, macOS version, the settings file, and this run's Sugu log
+  entries (`OSLogStore`, current process). It is made only on that click
+  and saved where the user picks; Sugu sends nothing (ADR 0003, zero
+  telemetry).

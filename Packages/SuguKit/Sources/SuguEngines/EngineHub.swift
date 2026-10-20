@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SuguAzooKey
 import SuguCore
 import SuguInput
@@ -111,7 +112,9 @@ public final class EngineHub: EngineSource {
             return engine
         case .japanese:
             if let japanese { return japanese }
+            let started = ContinuousClock.now
             let engine = AzooKeyEngine(configuration: japaneseConfiguration)
+            Log.engines.notice("Japanese ready in \(ContinuousClock.now - started, privacy: .public)")
             japanese = engine
             if let store { engine.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) }) }
             return engine
@@ -177,9 +180,11 @@ public final class EngineHub: EngineSource {
         // behind is what fails.
         let rebuild = retry?.schema == schema
         preparing = Task {
+            let started = ContinuousClock.now
             do {
                 if rebuild { runtime.discardBuild() }
                 try await runtime.prepare(schema, version: version)
+                Log.engines.notice("Chinese ready in \(ContinuousClock.now - started, privacy: .public)\(rebuild ? " after a rebuild" : "", privacy: .public)")
                 chineseError = nil
                 retry = nil
                 // Opening the session reads the user dictionary; done here,
@@ -192,6 +197,7 @@ public final class EngineHub: EngineSource {
                 chineseError = error
                 let wait = retry.flatMap { $0.schema == schema ? min($0.wait * 2, .seconds(600)) : nil } ?? .seconds(5)
                 retry = (schema, ContinuousClock.now + wait, wait)
+                Log.engines.error("Chinese deployment failed, retrying after \(wait, privacy: .public): \(String(describing: error), privacy: .public)")
             }
             preparing = nil
             // Settings may have changed while deploying.

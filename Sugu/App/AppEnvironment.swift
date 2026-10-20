@@ -1,4 +1,5 @@
 import AppKit
+import os
 import SuguCore
 import SuguDictionaries
 import SuguEngines
@@ -27,7 +28,13 @@ final class AppEnvironment {
     private init() {
         let preferences = self.preferences.preferences
         let syllables = Lexicon.load(Lexicon.syllablesFile, in: locations.bundledLexicon)
-        store = try? LearnedStore(url: locations.learnedStore, syllabary: PinyinSyllabary(syllables))
+        do {
+            store = try LearnedStore(url: locations.learnedStore, syllabary: PinyinSyllabary(syllables))
+        } catch {
+            store = nil
+            Log.learning.fault("Learned store unavailable: \(String(describing: error), privacy: .public)")
+        }
+        Log.app.notice("Sugu \(Bundle.main.shortVersion, privacy: .public) started")
         engines = EngineHub(
             locations: locations.engines,
             preferences: preferences,

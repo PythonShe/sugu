@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Unified-log diagnostics and Export Diagnostics in Advanced (D-030); the
+  `SuguTests` bundle checks the report reads the log back.
 - A damaged learned store is set aside and a fresh one opened (D-029).
 - Control keys inside a composition (D-028): Emacs editing keys, ⌃N/⌃P,
   ⌃G, ⌃M, Kotoeri's ⌃J ⌃K ⌃; ⌃L ⌃:, and ⌃[ as Escape. 129 package tests.

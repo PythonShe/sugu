@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SuguCore
 
 /// Sugu's single store of learned and user words, over both engines.
@@ -50,6 +51,7 @@ public final class LearnedStore {
         } catch let error as SQLiteDatabase.Error where error.isCorruption {
             // A damaged store would end learning for good; it is kept
             // beside a fresh one rather than deleted.
+            Log.learning.error("Learned store damaged, set aside: \(error.description, privacy: .public)")
             try Self.setAside(url, at: clock())
             database = try Self.open(url)
         }

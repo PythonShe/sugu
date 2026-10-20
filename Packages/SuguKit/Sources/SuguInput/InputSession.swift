@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SuguCore
 import SuguLearning
 
@@ -44,7 +45,11 @@ public final class InputSession {
     /// Secure input (password fields): everything passes through, nothing
     /// is read or learned.
     public var isSecureInput = false {
-        didSet { if isSecureInput, !isEmpty { cancelComposition() } }
+        didSet {
+            guard isSecureInput != oldValue else { return }
+            Log.input.notice("Secure input \(self.isSecureInput ? "on" : "off", privacy: .public)")
+            if isSecureInput, !isEmpty { cancelComposition() }
+        }
     }
     /// Called after every change to `display` or `mode`.
     public var onChange: ((InputSession) -> Void)?
