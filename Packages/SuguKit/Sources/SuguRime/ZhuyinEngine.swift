@@ -183,7 +183,9 @@ public final class ZhuyinEngine: CompositionEngine {
         if let word = fixed.first(where: { $0.range.lowerBound < cut && cut < $0.range.upperBound }) { cut = word.range.upperBound }
         guard cut <= caret else { return }
         let head = 0..<cut
-        let commit = self.commit(of: head)
+        // librime's guess, not yet the user's; only chosen words teach.
+        var commit = self.commit(of: head)
+        commit.mayBeWord = false
         overflow = overflow.map { Commit(text: $0.text + commit.text, reading: $0.reading + commit.reading, clauses: $0.clauses + commit.clauses, mayBeWord: false) } ?? commit
         leftContext += commit.text
         syllables.removeSubrange(head)
@@ -300,8 +302,13 @@ public final class ZhuyinEngine: CompositionEngine {
             clear()
             return Commit(text: text, reading: text)
         }
-        let commit = commit(of: syllables.indices)
+        var commit = commit(of: syllables.indices)
         lastCommit = (commit.reading, syllables, literals, fixed)
+        // Ending the pending syllable may have let go of the start.
+        if let head = takeOverflow() {
+            commit = Commit(text: head.text + commit.text, reading: head.reading + commit.reading, clauses: head.clauses + commit.clauses, mayBeWord: false)
+            lastCommit = nil
+        }
         clear()
         return commit
     }

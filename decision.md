@@ -1214,6 +1214,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   (Space still opens the window there); past 20 syllables the start is
   committed, not splitting a chosen word, and taught like any commit,
   since librime reconverts all of an unchosen run on each syllable.
+  The start teaches only its chosen words, being librime's guess, and a
+  start let go of as Return ends the last syllable goes with the commit.
   Choosing Zhuyin brings a Simplified character setting to Traditional
   (Taiwan); any other setting stays.
 - Punctuation (Shift-comma and the rest the punctuator maps) and letters

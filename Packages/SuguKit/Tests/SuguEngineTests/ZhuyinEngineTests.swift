@@ -98,6 +98,7 @@ extension RimeEngineTests {
         engine.insert(Self.nihao)
         let head = try #require(engine.takeOverflow())
         #expect(head.reading == "ma1ma1")
+        #expect(!head.mayBeWord)
         #expect(head.text.count == 2)
         #expect(engine.takeOverflow() == nil)
         #expect(engine.state.reading.hasSuffix("ni3hao3"))
@@ -135,6 +136,16 @@ extension RimeEngineTests {
         engine.deleteBackward()
         #expect(engine.state.markedText == "妈")
         engine.clear()
+    }
+
+    /// The start let go of as the last syllable ends goes with the commit.
+    @Test func zhuyinCommitKeepsTheStartLetGoOfLast() async throws {
+        let engine = try await zhuyin()
+        engine.insert(String(repeating: "a8 ", count: ZhuyinEngine.longestSentence) + "a8")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text.count == ZhuyinEngine.longestSentence + 1)
+        #expect(commit.reading == String(repeating: "ma1", count: ZhuyinEngine.longestSentence + 1))
+        #expect(engine.takeOverflow() == nil)
     }
 
     @Test func zhuyinRestoresItsReading() async throws {
