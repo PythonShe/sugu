@@ -27,6 +27,8 @@ public final class AzooKeyEngine: CompositionEngine {
     private struct FixedClause {
         var text: String
         var reading: String
+        /// The keys typed for this clause, for F9/F10.
+        var typed: String
         /// The composition before this clause was fixed, to step back to.
         var before: ComposingText
     }
@@ -243,7 +245,7 @@ public final class AzooKeyEngine: CompositionEngine {
 
     public func commitRaw() -> Commit? {
         if !converting { finishRomaji() }
-        let reading = fixed.first?.before.convertTarget ?? composing.convertTarget
+        let reading = fullReading
         guard !reading.isEmpty else { return nil }
         clear()
         return Commit(text: reading, reading: reading)
@@ -286,7 +288,8 @@ public final class AzooKeyEngine: CompositionEngine {
         let before = composing
         composing.prefixComplete(composingCount: candidate.composingCount)
         let reading = String(before.convertTarget.dropLast(composing.convertTarget.count))
-        fixed.append(FixedClause(text: candidate.text, reading: reading, before: before))
+        let typed = Self.typed(before.input.dropLast(composing.input.count))
+        fixed.append(FixedClause(text: candidate.text, reading: reading, typed: typed, before: before))
     }
 
     /// Typing during conversion commits nothing; it keeps the fixed clauses
@@ -385,14 +388,24 @@ public final class AzooKeyEngine: CompositionEngine {
             candidates: focusCandidates.enumerated().map { candidate($1, index: $0) },
             highlightedIndex: highlighted,
             phase: .converting,
-            reading: (fixed.first?.before ?? composing).convertTarget,
+            reading: fullReading,
             typed: typedText
         )
     }
 
+    /// The whole composition's kana: fixed clauses and what is still being
+    /// typed or converted.
+    private var fullReading: String {
+        fixed.map(\.reading).joined() + composing.convertTarget
+    }
+
     /// Romaji (or kana keys) as typed, for F9/F10.
     private var typedText: String {
-        (fixed.first?.before ?? composing).input.map { element -> String in
+        fixed.map(\.typed).joined() + Self.typed(composing.input[...])
+    }
+
+    private static func typed(_ input: ArraySlice<ComposingText.InputElement>) -> String {
+        input.map { element -> String in
             if case .character(let c) = element.piece { return String(c) }
             return ""
         }.joined()
@@ -438,7 +451,7 @@ public final class AzooKeyEngine: CompositionEngine {
             candidates: predictions.enumerated().map { candidate($1, index: $0) },
             highlightedIndex: nil,
             phase: .composing,
-            reading: (fixed.first?.before ?? composing).convertTarget,
+            reading: fullReading,
             typed: typedText
         )
     }

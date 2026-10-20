@@ -360,4 +360,77 @@ struct InputSessionTests {
         #expect(session.handle(Key.keypadEnter))
         #expect(client.document == "nihao")
     }
+
+    @Test func chinesePagesTurnWithPagingKeys() throws {
+        chinese.table["shijie"] = ["世界", "事界", "视界", "市街", "誓戒", "时节", "使节"]
+        let session = makeSession { $0.candidatesPerPage = 3 }
+        type("shijie", into: session)
+        let first = try #require(session.display.candidates)
+        #expect(first.page == 0 && first.hasNextPage && first.highlightedIndex == 0)
+        _ = session.handle(Key.char("="))
+        let second = try #require(session.display.candidates)
+        #expect(second.page == 1 && second.hasPreviousPage && second.highlightedIndex == 0)
+        #expect(second.candidates != first.candidates)
+        _ = session.handle(Key.pageUp)
+        #expect(session.display.candidates?.page == 0)
+        _ = session.handle(Key.pageDown)
+        _ = session.handle(Key.char("-"))
+        #expect(session.display.candidates?.page == 0)
+        _ = session.handle(Key.pageDown)
+        // Digits pick from the page on screen.
+        _ = session.handle(Key.char("2"))
+        #expect(client.document == second.candidates[1].text)
+    }
+
+    @Test func chineseTabAndArrowsMoveTheHighlight() throws {
+        let session = makeSession()
+        type("nihao", into: session)
+        _ = session.handle(Key.tab)
+        #expect(session.display.candidates?.highlightedIndex == 1)
+        _ = session.handle(Key.shiftTab)
+        #expect(session.display.candidates?.highlightedIndex == 0)
+        _ = session.handle(Key.down)
+        #expect(session.display.candidates?.highlightedIndex == 1)
+        let chosen = try #require(session.display.candidates?.candidates[1].text)
+        _ = session.handle(Key.space)
+        #expect(client.document == chosen)
+    }
+
+    @Test func japaneseArrowsStepIntoPredictions() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        #expect(session.display.candidates?.highlightedIndex == nil)
+        _ = session.handle(Key.down)
+        #expect(session.display.candidates?.highlightedIndex == 0)
+        #expect(client.markedText == "日本語")
+        _ = session.handle(Key.up)
+        #expect(session.display.candidates?.highlightedIndex == 0)
+        _ = session.handle(Key.enter)
+        #expect(client.document == "日本語")
+    }
+
+    @Test func japaneseEscapeStepsBackOutOfConversion() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        #expect(client.markedText == "日本語")
+        _ = session.handle(Key.escape)
+        #expect(client.markedText == "nihongo")
+        _ = session.handle(Key.escape)
+        #expect(client.marked.isEmpty)
+        #expect(client.document.isEmpty)
+    }
+
+    @Test func japaneseBackspaceLeavesConversionBeforeDeleting() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.backspace)
+        #expect(client.markedText == "nihongo")
+        _ = session.handle(Key.backspace)
+        #expect(client.markedText == "nihong")
+    }
 }

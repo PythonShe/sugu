@@ -69,14 +69,83 @@ struct RimeEngineTests {
 
 @MainActor
 @Suite struct AzooKeyEngineTests {
-    @Test func firstDisplayIsBestSentence() throws {
+    func makeEngine() throws -> AzooKeyEngine {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
-        let engine = AzooKeyEngine(configuration: .init(workingDirectory: work))
+        return AzooKeyEngine(configuration: .init(workingDirectory: work))
+    }
+
+    func focused(_ engine: AzooKeyEngine) -> String? {
+        engine.state.segments.first { $0.role == .focused }?.text
+    }
+
+    @Test func firstDisplayIsBestSentence() throws {
+        let engine = try makeEngine()
         engine.insert("kyouhaiitenkidesune")
         #expect(engine.state.segments.map(\.text).joined() == "きょうはいいてんきですね")
         _ = engine.convert()
         #expect(engine.state.segments.map(\.text).joined() == "今日はいい天気ですね")
         #expect(engine.state.segments.first?.role == .focused)
+    }
+
+    @Test func commitsCarryEachClauseWithItsReading() throws {
+        let engine = try makeEngine()
+        engine.insert("watashihagakuseidesu")
+        _ = engine.convert()
+        #expect(focused(engine) == "私は")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text == "私は学生です")
+        #expect(commit.reading == "わたしはがくせいです")
+        #expect(commit.clauses.first == .init(reading: "わたしは", text: "私は"))
+        #expect(commit.clauses.map(\.reading).joined() == commit.reading)
+        #expect(commit.clauses.map(\.text).joined() == commit.text)
+        #expect(engine.state.isEmpty)
+    }
+
+    @Test func focusMovesBetweenClauses() throws {
+        let engine = try makeEngine()
+        engine.insert("watashihagakuseidesu")
+        _ = engine.convert()
+        engine.moveFocus(forward: true)
+        #expect(engine.state.segments.first?.role == .converted)
+        #expect(engine.state.segments.first?.text == "私は")
+        #expect(focused(engine) != nil && focused(engine) != "私は")
+        engine.moveFocus(forward: false)
+        #expect(focused(engine) == "私は")
+    }
+
+    @Test func resizingTheFocusKeepsTheReading() throws {
+        let engine = try makeEngine()
+        engine.insert("watashihagakuseidesu")
+        _ = engine.convert()
+        engine.resizeFocus(by: -1)
+        let shorter = try #require(focused(engine))
+        #expect(shorter != "私は")
+        #expect(engine.state.segments.map(\.text).joined().hasPrefix(shorter))
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.reading == "わたしはがくせいです")
+        #expect(commit.clauses.map(\.reading).joined() == commit.reading)
+    }
+
+    @Test func typingDuringConversionKeepsTheFocusedClause() throws {
+        let engine = try makeEngine()
+        engine.insert("watashiha")
+        _ = engine.convert()
+        #expect(focused(engine) == "私は")
+        engine.insert("ne")
+        #expect(engine.state.phase == .composing)
+        #expect(engine.state.segments.first?.text == "私は")
+        #expect(engine.state.reading == "わたしはね")
+        #expect(engine.state.typedText == "watashihane")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text == "私はね")
+        #expect(commit.reading == "わたしはね")
+    }
+
+    @Test func restoredReadingsConvertAgain() throws {
+        let engine = try makeEngine()
+        engine.restore(reading: "わたしはがくせいです")
+        #expect(engine.state.phase == .converting)
+        #expect(engine.state.segments.map(\.text).joined() == "私は学生です")
     }
 }

@@ -162,6 +162,11 @@ enum Key {
     static let backspace = KeyInput(keyCode: VirtualKey.delete, characters: "\u{7F}")
     static let undo = KeyInput(keyCode: VirtualKey.delete, characters: "\u{7F}", modifiers: [.control])
     static let down = KeyInput(keyCode: VirtualKey.down, characters: "\u{F701}")
+    static let up = KeyInput(keyCode: VirtualKey.up, characters: "\u{F700}")
+    static let tab = KeyInput(keyCode: VirtualKey.tab, characters: "\t")
+    static let shiftTab = KeyInput(keyCode: VirtualKey.tab, characters: "\t", modifiers: [.shift])
+    static let pageDown = KeyInput(keyCode: VirtualKey.pageDown, characters: "\u{F72D}")
+    static let pageUp = KeyInput(keyCode: VirtualKey.pageUp, characters: "\u{F72C}")
     static let f7 = KeyInput(keyCode: VirtualKey.f7, characters: "\u{F70A}")
     static let commandC = KeyInput(keyCode: 8, characters: "c", modifiers: [.command])
 }
