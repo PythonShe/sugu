@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Zhuyin groundwork: syllables, the standard layout, and toned codes
+  that librime reads from the same dictionary (D-073).
 - Release readiness: no share-alike data in the app, growing build
   numbers for Sparkle, store and librime failure handling, uninstall
   steps (D-072).

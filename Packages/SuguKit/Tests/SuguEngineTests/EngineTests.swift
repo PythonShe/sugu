@@ -61,6 +61,17 @@ struct RimeEngineTests {
         #expect(try await first("woaibeijingtiananmen") == "我爱北京天安门")
     }
 
+    /// The Zhuyin schema reads pinyin with each syllable's tone, and the
+    /// tone picks among homophones.
+    @Test func tonedCodes() async throws {
+        let zhuyin = RimeSchema(keyboard: .zhuyin)
+        #expect(try await first("ni3hao3", schema: zhuyin) == "你好")
+        #expect(try await first("shi4", schema: zhuyin) == "是")
+        #expect(try await first("shi2", schema: zhuyin) == "时")
+        #expect(try await first("ma1ma5", schema: zhuyin) == "妈妈")
+        #expect(try await first("lv4se4", schema: zhuyin) == "绿色")
+    }
+
     /// A user schema must survive deployment; librime trashes user copies
     /// that are older than a shared copy.
     @Test func doublePinyinSchemaIsApplied() async throws {

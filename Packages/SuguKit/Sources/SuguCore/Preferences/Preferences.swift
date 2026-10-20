@@ -17,6 +17,7 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var documentVocabulary = false
 
     // MARK: Chinese
+    public var chineseKeyboard: ChineseKeyboard = .pinyin
     public var pinyinScheme: PinyinScheme = .fullPinyin
     public var chineseScript: ChineseScript = .simplified
     public var fuzzyPinyin: Set<FuzzyPinyin> = []
@@ -92,6 +93,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.pauseGatedWindow, into: &pauseGatedWindow)
         load(.leftContextRanking, into: &leftContextRanking)
         load(.documentVocabulary, into: &documentVocabulary)
+        load(.chineseKeyboard, into: &chineseKeyboard)
         load(.pinyinScheme, into: &pinyinScheme)
         load(.chineseScript, into: &chineseScript)
         load(.fuzzyPinyin, into: &fuzzyPinyin)
@@ -202,6 +204,13 @@ public enum ChineseScript: String, Codable, Sendable, CaseIterable {
 
 /// Pinyin spelling schemes. Double-pinyin layouts map each syllable to two
 /// keys; their spelling rules come from the bundled schema data.
+/// How Chinese is typed: pinyin letters, or Zhuyin symbols on the
+/// standard layout.
+public enum ChineseKeyboard: String, Codable, Sendable, CaseIterable {
+    case pinyin
+    case zhuyin
+}
+
 public enum PinyinScheme: String, Codable, Sendable, CaseIterable {
     case fullPinyin
     case xiaohe

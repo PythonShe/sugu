@@ -134,3 +134,11 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Learned store waits on a lock; librime deployment verified (D-072)
 - [ ] Confirm the source of wanxiang's English word list — owner
 - [ ] One Sparkle update between two notarized builds — needs the release keys
+
+## 16. Zhuyin (D-073)
+- [x] Syllables, the standard layout, and tone codes for librime (D-073)
+- [ ] Zhuyin engine: syllables, caret, fixed spans over librime's sentence
+- [ ] Session keys: tones, Space, selection at the caret, editing
+- [ ] Settings keyboard choice, mode indicator, strings
+- [ ] Learning with Bopomofo readings, reconversion, bench and fuzz
+- [ ] Taiwanese readings and forms — check on device

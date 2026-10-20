@@ -18,12 +18,17 @@ public struct RimeSchema: Sendable, Equatable {
     /// script filter runs, so the Simplified model serves every script.
     public static let grammarLanguage = "wanxiang-lts-zh-hans"
 
+    /// Zhuyin reads syllables as pinyin with their tone (`ni3`), which
+    /// Sugu's Zhuyin engine types; the scheme and fuzzy pinyin then apply
+    /// to pinyin only.
+    public var keyboard: ChineseKeyboard
     public var scheme: PinyinScheme
     public var fuzzy: Set<FuzzyPinyin>
     public var useGrammar: Bool
     public var dictionary: ChineseDictionary
 
-    public init(scheme: PinyinScheme = .fullPinyin, fuzzy: Set<FuzzyPinyin> = [], useGrammar: Bool = false, dictionary: ChineseDictionary = .wanxiang) {
+    public init(keyboard: ChineseKeyboard = .pinyin, scheme: PinyinScheme = .fullPinyin, fuzzy: Set<FuzzyPinyin> = [], useGrammar: Bool = false, dictionary: ChineseDictionary = .wanxiang) {
+        self.keyboard = keyboard
         self.scheme = scheme
         self.fuzzy = fuzzy
         self.useGrammar = useGrammar
@@ -75,6 +80,7 @@ public struct RimeSchema: Sendable, Equatable {
     /// fuzzy rules act on whole syllables, then the scheme maps syllables to
     /// keys. Scheme rules come from wanxiang's `lite` algebra (CC-BY-4.0).
     var algebraPatches: [String] {
+        guard keyboard == .pinyin else { return ["sugu_algebra:/tones"] }
         var patches = ["sugu_algebra:/toneless"]
         patches += FuzzyPinyin.allCases.filter(fuzzy.contains).map { "wanxiang_algebra:/\($0.algebraSection)" }
         patches.append("wanxiang_algebra:/lite/\(scheme.algebraSection)")
@@ -116,7 +122,7 @@ public struct RimeSchema: Sendable, Equatable {
         lines += [
             "    - uniquifier",
             "speller:",
-            "  alphabet: zyxwvutsrqponmlkjihgfedcba",
+            "  alphabet: zyxwvutsrqponmlkjihgfedcba\(keyboard == .zhuyin ? "12345" : "")",
             "  delimiter: \" '\"",
             "  algebra:",
             "    __patch:",

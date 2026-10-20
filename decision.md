@@ -1140,3 +1140,29 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Left for the owner: the source of rime-wanxiang's English word list
   (shipped as `english-words.txt` under wanxiang's CC-BY-4.0); and one real
   Sparkle update from a notarized build, which needs the release keys.
+
+## D-073 · Zhuyin (Bopomofo) input (2026-10-20)
+- Zhuyin is a Chinese keyboard beside pinyin (`chineseKeyboard`), on the
+  standard (大千) layout, with librime and the same wanxiang dictionary.
+  Pinyin stays the default.
+- The dictionary is read with tones: a `tones` section of
+  `sugu_algebra` rewrites each tone-marked reading as pinyin and the
+  tone's digit (`nǐ` → `ni3`, an unmarked syllable → `de5`), and the
+  Zhuyin schema adds 1–5 to the alphabet. Sugu turns each Zhuyin
+  syllable into that code itself, from its own table (`Zhuyin`), so
+  librime never sees Bopomofo. Every syllable of the wanxiang tables
+  (1,456 in `zi`, 1,589 with the phrase tables) maps to the code the
+  rules write. Scheme and fuzzy pinyin apply to pinyin only.
+- Typing follows the Taiwanese input methods rather than pinyin's live
+  editing: symbols fill slots of the current syllable, a tone key (Space,
+  6, 3, 4, 7) ends it, and the whole sentence stays converted in the
+  field, with a candidate window opened on one position at a time. librime
+  cannot hold a fixed choice at one position while converting the rest,
+  so a Zhuyin engine keeps the syllables, the caret and the fixed spans,
+  and asks librime for each unfixed run's sentence and for the words at
+  the caret.
+- Phases: syllables, layout and tone codes (this entry); the engine;
+  the session's keys; Settings and the mode indicator; learning, bench
+  and fuzz; then the owner's device checks — wanxiang's readings are
+  mainland ones, so Taiwanese readings (垃圾 ㄌㄜˋ ㄙㄜˋ) and the s2tw
+  forms need a native check before Zhuyin is offered.
