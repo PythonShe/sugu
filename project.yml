@@ -23,6 +23,9 @@ targets:
   Sugu:
     type: application
     platform: macOS
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
     sources:
       - path: Sugu
       - path: Data/Rime
@@ -49,7 +52,6 @@ targets:
         SWIFT_OBJC_INTEROP_MODE: objcxx
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: "-"
         INSTALL_PATH: /Library/Input Methods
         COMBINE_HIDPI_IMAGES: YES
         # Set by scripts/release.sh; without it the updater stays off.

@@ -26,6 +26,7 @@ build/
 /Data/
 /dist/
 /.build-dev/
+/Config/Local.xcconfig
 
 # XcodeGen output; only SwiftPM's resolved pins are kept
 /Sugu.xcodeproj/*

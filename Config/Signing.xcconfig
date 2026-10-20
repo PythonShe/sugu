@@ -1,0 +1,5 @@
+// Ad hoc signing by default. An untracked Config/Local.xcconfig can sign
+// with a development team, e.g. to carry the Private Cloud Compute
+// entitlement (see Config/Local.xcconfig.example).
+CODE_SIGN_IDENTITY = -
+#include? "Local.xcconfig"
