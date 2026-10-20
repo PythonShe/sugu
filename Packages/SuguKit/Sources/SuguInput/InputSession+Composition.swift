@@ -187,6 +187,7 @@ extension InputSession {
 
     func commitText(_ text: String, reading: String, learn: Bool, record: Commit? = nil, undoable: Bool = false) {
         let engine = active
+        let typed = engine.map { $0.state.isEmpty ? composedTyped : $0.state.typedText } ?? ""
         endSuggestions()
         active?.clear()
         active = nil
@@ -201,6 +202,8 @@ extension InputSession {
         let record = record ?? Commit(text: text, reading: reading)
         let learned = learn && self.learn(record)
         self.undoable = undoable ? engine.map { PendingUndo(text: text, commit: record, engine: $0, mode: mode, learned: learned) } : nil
+        let typedAsRomaji = mode == .japanese && !typed.isEmpty && typed != text && typed.unicodeScalars.allSatisfy { (0x21...0x7E).contains($0.value) }
+        retypable = typedAsRomaji ? Retypable(text: text, romaji: typed, commit: record, learned: learned, isRomaji: false) : nil
         publish()
     }
 
@@ -223,6 +226,30 @@ extension InputSession {
         }
         if active?.traits.learnsCommits == true { _ = learn(head) }
         undoable = nil
+        retypable = nil
+    }
+
+    /// 英数 pressed twice retypes the Japanese just committed as the romaji
+    /// typed for it, and かな twice turns that back, as in Apple's Japanese
+    /// input. Replaces only what is still left of the caret.
+    /// Returns whether there was a commit to retype.
+    public func retypeLastCommit(asRomaji: Bool) -> Bool {
+        guard let retypable, retypable.isRomaji != asRomaji, isEmpty, canReadField, let client else { return false }
+        let shown = retypable.isRomaji ? retypable.romaji : retypable.text
+        let replacement = retypable.isRomaji ? retypable.text : retypable.romaji
+        guard client.textBeforeCaret(limit: shown.count) == shown,
+              client.deleteBeforeCaret(count: shown.count) else { return false }
+        client.commit(replacement)
+        lastTyped = replacement.last
+        // The Japanese was not meant; neither was what it taught.
+        if retypable.learned, let store {
+            if asRomaji { store.unlearn(retypable.commit, mode: .japanese) } else { store.learn(retypable.commit, mode: .japanese) }
+            engines.learnedWordsDidChange()
+        }
+        var next = retypable
+        next.isRomaji = asRomaji
+        self.retypable = next
+        return true
     }
 
     /// Restores the last commit as a composition with its candidates open.
@@ -311,6 +338,17 @@ extension InputSession {
 }
 
 /// The commit ⌃⌫ can take back.
+/// A Japanese commit and the romaji typed for it, either of which the
+/// field shows.
+struct Retypable {
+    var text: String
+    var romaji: String
+    var commit: Commit
+    var learned: Bool
+    /// The field shows the romaji.
+    var isRomaji: Bool
+}
+
 struct PendingUndo {
     /// What was inserted into the field.
     var text: String

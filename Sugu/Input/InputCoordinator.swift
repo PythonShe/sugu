@@ -116,6 +116,11 @@ final class InputCoordinator {
     }
 
     private func keyDown(_ event: NSEvent) -> Bool {
+        if event.keyCode == VirtualKey.eisu || event.keyCode == VirtualKey.kana, let lastKey, lastKey.keyCode == event.keyCode,
+           event.timestamp - lastKey.timestamp <= ShiftTapDetector.maximumDuration,
+           session.retypeLastCommit(asRomaji: event.keyCode == VirtualKey.eisu) {
+            return true
+        }
         let key = KeyTranslator.keyInput(from: event)
         if capsLockSelectsEnglish, session.mode == .english, key.modifiers.contains(.capsLock),
            key.modifiers.isDisjoint(with: [.command, .control, .option]), let character = key.printable, character.isLetter {

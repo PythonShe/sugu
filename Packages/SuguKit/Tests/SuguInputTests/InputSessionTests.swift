@@ -430,6 +430,50 @@ struct InputSessionTests {
         #expect(japanese.state.phase == .converting)
     }
 
+    /// 英数 twice retypes the Japanese just committed as its romaji, taking
+    /// back what it taught; かな twice turns it back.
+    @Test func eisuTwiceRetypesTheCommitAsRomaji() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.enter)
+        #expect(client.document == "日本語")
+        _ = session.handle(KeyInput(keyCode: VirtualKey.eisu, characters: ""))
+        #expect(session.mode == .english)
+        #expect(session.retypeLastCommit(asRomaji: true))
+        #expect(client.document == "nihongo")
+        #expect(store.lookup("nihongo", mode: .japanese).isEmpty)
+        #expect(!session.retypeLastCommit(asRomaji: true))
+        _ = session.handle(KeyInput(keyCode: VirtualKey.kana, characters: ""))
+        #expect(session.retypeLastCommit(asRomaji: false))
+        #expect(client.document == "日本語")
+        #expect(session.mode == .japanese)
+    }
+
+    @Test func retypeOnlyRightAfterTheCommit() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.enter)
+        _ = session.handle(Key.char("!"))
+        _ = session.handle(KeyInput(keyCode: VirtualKey.eisu, characters: ""))
+        #expect(!session.retypeLastCommit(asRomaji: true))
+    }
+
+    /// A composition 英数 commits is retyped too.
+    @Test func eisuTwiceRetypesWhatItCommitted() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.eisu, characters: ""))
+        #expect(client.document == "日本語")
+        #expect(session.retypeLastCommit(asRomaji: true))
+        #expect(client.document == "nihongo")
+    }
+
     /// かな in Japanese with text selected reconverts it.
     @Test func kanaKeyReconvertsTheSelection() {
         let session = makeSession()

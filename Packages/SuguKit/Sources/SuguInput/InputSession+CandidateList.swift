@@ -44,6 +44,7 @@ extension InputSession {
             return
         }
         let state = engine.state
+        composedTyped = state.typedText
         list.candidates = assembled(state)
         scheduleSuggestions()
         if state.phase == .converting {

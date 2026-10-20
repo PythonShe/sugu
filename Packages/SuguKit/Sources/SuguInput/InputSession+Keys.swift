@@ -19,6 +19,9 @@ extension InputSession {
         // Undo applies only to the commit just made; any other key ends it.
         let pendingUndo = undoable
         undoable = nil
+        // 英数 and かな keep the commit they may retype.
+        let pendingRetype = retypable
+        retypable = nil
         if isUndoKey, isEmpty {
             undoable = pendingUndo
             return undoLastCommit()
@@ -28,9 +31,11 @@ extension InputSession {
         case VirtualKey.kana where preferences.enabledModes.contains(.japanese):
             // かな again, in Japanese with text selected, reconverts it, as
             // in Apple's Japanese input.
+            retypable = pendingRetype
             if mode == .japanese, isEmpty { reconvertSelection() } else { setMode(.japanese) }
             return true
         case VirtualKey.eisu:
+            retypable = pendingRetype
             setMode(.english); return true
         default:
             break

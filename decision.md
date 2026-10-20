@@ -1321,3 +1321,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
   classes AzooKey tags (D-021's proper nouns, now by kind). The engine
   gives the kind; the window controller writes the localized mark, where
   no reading hint is shown. Organizations and mixed names are not marked.
+- 英数 pressed twice within half a second retypes the Japanese just
+  committed as the romaji typed for it, and かな twice right after turns
+  it back, as in Apple's Japanese input: for text typed in the wrong
+  mode. The first press switches mode as always. Any other key in
+  between ends it, and it replaces only text still left of the caret in
+  fields Sugu may read, as ⌃⌫ does. The romaji takes back what the
+  Japanese taught; turning back teaches it again. Kana input has no
+  romaji to retype.

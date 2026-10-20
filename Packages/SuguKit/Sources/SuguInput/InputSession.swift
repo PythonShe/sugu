@@ -76,12 +76,20 @@ public final class InputSession {
     /// The engine composing right now (a language engine or the `v`
     /// expression engine).
     var active: (any CompositionEngine)? {
-        didSet { if active == nil { forgotten = [] } }
+        didSet {
+            if active == nil {
+                forgotten = []
+                composedTyped = ""
+            }
+        }
     }
     var list = CandidateList()
     /// Candidates forgotten during this composition, kept out of the list
     /// though an engine still has them until it reads its words again.
     var forgotten: Set<String> = []
+    /// The keys typed for this composition as last shown, which outlives
+    /// the engine's state when it commits.
+    var composedTyped = ""
     /// Japanese shows the candidate window from the second conversion key.
     var showsConversionWindow = false
     /// Text a function key (F6–F10) turned the composition into.
@@ -94,6 +102,9 @@ public final class InputSession {
     var vocabulary = ""
     /// The commit ⌃⌫ can take back.
     var undoable: PendingUndo?
+    /// The Japanese commit 英数 twice retypes as its romaji, or the romaji
+    /// かな twice turns back.
+    var retypable: Retypable?
     /// The character just before the caret when Sugu knows it: the last it
     /// committed or let through. Some hosts report the field late, so this
     /// is trusted over reading it; nil once the caret may have moved.
@@ -165,6 +176,7 @@ public final class InputSession {
         self.client = client
         punctuator.reset()
         undoable = nil
+        retypable = nil
         lastTyped = nil
         vocabulary = readVocabulary()
         let bundleID = client.bundleIdentifier
