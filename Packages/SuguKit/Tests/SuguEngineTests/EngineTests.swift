@@ -217,6 +217,28 @@ struct RimeEngineTests {
         #expect(commit.reading == "わたしはがくせいです")
     }
 
+    /// Needs a model: `SUGU_ZENZAI_MODEL=/path/to/zenz.gguf swift test`.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUGU_ZENZAI_MODEL"] != nil))
+    func turningZenzaiOffReleasesTheModelBetweenCompositions() async throws {
+        let model = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUGU_ZENZAI_MODEL"]))
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
+        var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
+        let engine = AzooKeyEngine(configuration: configuration)
+        engine.adopt(try #require(await AzooKeyEngine.loadZenzai(model, workingDirectory: work)))
+        configuration.zenzaiModel = model
+        engine.update(configuration)
+        #expect(engine.holdsZenzai)
+        engine.insert("watashi")
+        configuration.zenzaiModel = nil
+        engine.update(configuration)
+        #expect(engine.holdsZenzai)
+        engine.clear()
+        #expect(!engine.holdsZenzai)
+        engine.insert("watashihagakuseidesu")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined() == "私は学生です")
+    }
+
     @Test func restoredReadingsConvertAgain() throws {
         let engine = try makeEngine()
         engine.restore(reading: "わたしはがくせいです")

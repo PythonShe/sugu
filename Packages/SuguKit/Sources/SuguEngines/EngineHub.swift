@@ -316,6 +316,11 @@ public final class EngineHub: EngineSource {
         if let japanese, previous.kanaInput != preferences.kanaInput || previous.japanesePredictions != preferences.japanesePredictions
             || previous.liveConversion != preferences.liveConversion
             || previous.typoCorrection != preferences.typoCorrection || previous.zenzaiEnabled != preferences.zenzaiEnabled {
+            if !preferences.zenzaiEnabled {
+                // The engine frees the model; turning it back on loads afresh.
+                zenzaiLoaded = nil
+                zenzaiGeneration += 1
+            }
             japanese.update(japaneseConfiguration)
             loadZenzai()
         }

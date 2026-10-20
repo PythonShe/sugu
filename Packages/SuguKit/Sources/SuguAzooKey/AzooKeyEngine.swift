@@ -37,6 +37,8 @@ public final class AzooKeyEngine: CompositionEngine {
     }
 
     private var converter: KanaKanjiConverter
+    /// The Zenzai model the converter has loaded, if any.
+    private var loadedZenzai: URL?
     private var configuration: Configuration
     private var userWords: [DicdataElement] = []
     private var composing = ComposingText()
@@ -73,6 +75,7 @@ public final class AzooKeyEngine: CompositionEngine {
 
     public func update(_ configuration: Configuration) {
         self.configuration = configuration
+        releaseZenzaiIfUnused()
     }
 
     /// Words from Sugu's learned store and user dictionary, given to the
@@ -120,8 +123,21 @@ public final class AzooKeyEngine: CompositionEngine {
     public func adopt(_ loaded: ZenzaiConverter) {
         precondition(state.isEmpty, "a converter is swapped only between compositions")
         converter = loaded.converter
+        loadedZenzai = loaded.model
         converter.importDynamicUserDictionary(userWords)
     }
+
+    /// Swaps a converter holding a Zenzai model that is no longer used for a
+    /// plain one, freeing the model's memory; waits for the composition to end.
+    private func releaseZenzaiIfUnused() {
+        guard loadedZenzai != nil, loadedZenzai != configuration.zenzaiModel, state.isEmpty else { return }
+        converter = KanaKanjiConverter.withDefaultDictionary()
+        loadedZenzai = nil
+        converter.importDynamicUserDictionary(userWords)
+    }
+
+    /// Whether the converter holds a Zenzai model (for tests).
+    public var holdsZenzai: Bool { loadedZenzai != nil }
 
     private var inputStyle: InputStyle { configuration.kanaInput ? .direct : .roman2kana }
 
@@ -332,6 +348,7 @@ public final class AzooKeyEngine: CompositionEngine {
         liveText = nil
         converter.stopComposition()
         state = .empty
+        releaseZenzaiIfUnused()
     }
 
     /// Ends romaji input at the caret, as a separator would: a pending
@@ -519,6 +536,7 @@ public final class AzooKeyEngine: CompositionEngine {
         if composing.isEmpty && fixed.isEmpty {
             predictions = []
             state = .empty
+            releaseZenzaiIfUnused()
             return
         }
         if configuration.predictions, !composing.isEmpty {

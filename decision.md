@@ -591,3 +591,12 @@ any call made without the owner present. Each entry: what, why, reversibility.
   the team; `--probe-language-model` checks both models offscreen with
   fixed text. First run on this Mac: entitlement present, both models
   report not ready (`modelNotReady`, `systemNotReady`).
+
+## D-044 · Turning Zenzai off frees the model (2026-10-20)
+- The Japanese engine remembers which Zenzai model its converter loaded.
+  When the configuration no longer names it (Zenzai turned off, model
+  removed), the engine swaps in a plain converter and re-imports the user
+  words — at once if nothing is being composed, otherwise when the
+  composition ends. The hub forgets the loaded model on disable, so turning
+  it back on loads it again off the main thread (D-032).
+- Tested against a real model only when `SUGU_ZENZAI_MODEL` names one.
