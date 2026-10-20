@@ -38,6 +38,7 @@ fetch mozc-LICENSE "https://raw.githubusercontent.com/google/mozc/$MOZC_REF/LICE
 fetch cldr-LICENSE "https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_REF/LICENSE" "$CLDR_LICENSE_SHA256"
 fetch llama.cpp-LICENSE "https://raw.githubusercontent.com/azooKey/llama.cpp/$LLAMA_CPP_REF/LICENSE" "$LLAMA_CPP_LICENSE_SHA256"
 fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle/$SPARKLE_VERSION/LICENSE" "$SPARKLE_LICENSE_SHA256"
+fetch cc-by-sa-4.0.txt "https://creativecommons.org/licenses/by-sa/4.0/legalcode.txt" "$CC_BY_SA_4_SHA256"
 
 version() {
   python3 -I -c 'import json, sys
@@ -80,6 +81,8 @@ entry "AzooKeyKanaKanjiConverter $(version azookeykanakanjiconverter)" "https://
 entry "azooKey dictionary data" "https://github.com/ensan-hcl/azooKey_dictionary_storage" "Apache-2.0" "$AZOOKEY_DATA/azooKey_dictionary_storage/LICENSE"
 entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/mozc" "BSD-3-Clause" "$CACHE/mozc-LICENSE"
 entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" "$CACHE/cldr-LICENSE"
+entry "azooKey tokenizer data: ku-nlp/gpt2-small-japanese-char tokenizer (with AzooKeyKanaKanjiConverter)" \
+  "https://huggingface.co/ku-nlp/gpt2-small-japanese-char" "CC-BY-SA-4.0" "$CACHE/cc-by-sa-4.0.txt"
 entry "llama.cpp $LLAMA_CPP_REF (azooKey build, for Zenzai)" "https://github.com/azooKey/llama.cpp" "MIT" "$CACHE/llama.cpp-LICENSE"
 entry "Sparkle $SPARKLE_VERSION" "https://sparkle-project.org" "MIT (bsdiff and other parts: BSD-style, below)" "$CACHE/sparkle-LICENSE"
 entry "SwiftyMarisa $(version swiftymarisa)" "https://github.com/ensan-hcl/SwiftyMarisa" \
