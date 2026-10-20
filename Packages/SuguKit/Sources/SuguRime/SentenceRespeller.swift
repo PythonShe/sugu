@@ -161,6 +161,9 @@ public final class SentenceRespeller {
     }
     private var longestUserWord = 0
 
+    /// Characters of the text before a sentence that the model conditions on.
+    public var contextLength: Int { model.order - 1 }
+
     public init(model: CharacterLanguageModel, words: PinyinWords) {
         self.model = model
         self.words = words
@@ -179,7 +182,7 @@ public final class SentenceRespeller {
         let characters = Array(text)
         guard let pieces = readings.lazy.compactMap({ self.segment(characters, $0) }).first else { return nil }
         let kept = userWordCharacters(in: characters)
-        let history = String(history.suffix(model.order - 1))
+        let history = String(history.suffix(contextLength))
         var result = pieces
         var index = 0
         while index < result.count {

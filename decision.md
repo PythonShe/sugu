@@ -772,9 +772,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   咸, 老师, where the model has no evidence.
 - The respelled sentence is a candidate ahead of librime's, which keep
   their order one index down; choosing it commits it and clears
-  librime's composition. Not after a partial selection, and not for
-  Traditional or Japanese kanji forms, which the model and list do not
-  cover.
+  librime's composition. Not after a partial selection; other scripts
+  follow in D-054.
 - The Chinese model is now built from Tatoeba's Mandarin sentences
   converted to Simplified with OpenCC, the bench sentences left out.
 - Memory: as strings the list took 45 MB; it is read in one streaming
@@ -783,3 +782,14 @@ any call made without the owner present. Each entry: what, why, reversibility.
   the bench 91 → 104 MB, resident 198 MB of which most is clean mapped
   dictionary and model pages; keystroke p50 0.2 → 0.7 ms, p99 3.9 → 4.0
   ms.
+
+## D-054 · Respelling in Traditional and Japanese forms (2026-10-20)
+- librime writes the sentence through its OpenCC filter, and the model
+  and word list are Simplified. The sentence is converted to Simplified
+  with the tables the filters use, respelled, and converted back; only
+  the characters the respelling changed take the converted form, so the
+  rest keeps librime's (喫 stays 喫 where a round trip writes 吃). When
+  a conversion changes the length, the sentence is left as it is.
+- Learned words are compared in Simplified too, whatever script they
+  were committed in.
+

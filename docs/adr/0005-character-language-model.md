@@ -68,7 +68,9 @@ does it.
    (4 in natural log probability, with the list's own word probabilities
    at weight 0.3). The respelled sentence is shown first and librime's
    own follows it; learned words and text that spells one keep their
-   spelling. Simplified script only, as the model and list are. Top-1
+   spelling. The model and list are Simplified: a sentence in Traditional
+   or Japanese forms is respelled in Simplified and only the characters
+   that changed are converted back. Top-1
    went from 91% to 97% on 150 sentences and learned words from 83% to
    92%, with no sentence broken; on 50 sentences written before the
    method was tried on them, 44 to 49.
@@ -78,8 +80,6 @@ does it.
 - A personal model from what the user commits, kept in the learned store
   with the same gates as learned words, blended with the bundled one; it
   can also feed Zenzai's personalization.
-- Chinese: respelling for Traditional script, through the converter
-  librime's output already passes.
 
 ## Considered options
 

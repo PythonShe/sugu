@@ -109,7 +109,7 @@ struct RimeEngineTests {
         #expect(plain != "我们一起去吃晚饭吧", "librime alone already writes 晚饭; pick another sentence")
         engine.clear()
 
-        engine.respelling = (SentenceRespeller(model: model, words: words), decoder)
+        engine.respelling = .init(respeller: SentenceRespeller(model: model, words: words), decoder: decoder) { _ in nil }
         engine.insert("womenyiqiquchiwanfanba")
         #expect(engine.state.candidates.prefix(2).map(\.text) == ["我们一起去吃晚饭吧", plain])
         #expect(engine.state.highlightedIndex == 0)
@@ -125,6 +125,22 @@ struct RimeEngineTests {
         #expect(commit.text == "我们一起去吃晚饭吧")
         #expect(commit.reading == "womenyiqiquchiwanfanba")
         #expect(engine.state.isEmpty)
+    }
+
+    /// A Traditional sentence is respelled in Simplified; the characters
+    /// that changed are converted back and the rest keep librime's forms.
+    @Test func respellingKeepsTheScript() async throws {
+        try await Shared.runtime.prepare(RimeSchema(), version: "test")
+        let lexicon = dataDirectory.appendingPathComponent("Lexicon")
+        let openCC = dataDirectory.appendingPathComponent("Rime/opencc")
+        let decoder = try #require(PinyinDecoder(schema: RimeSchema(), syllables: Lexicon.load(Lexicon.syllablesFile, in: lexicon), sharedData: dataDirectory.appendingPathComponent("Rime")))
+        let words = try PinyinWords(contentsOf: lexicon.appendingPathComponent(Lexicon.pinyinWordsFile))
+        let model = try languageModel(["我们一起去吃晚饭吧。", "晚饭吃什么？", "今天的晚饭很好吃。"])
+        let engine = RimeEngine(runtime: Shared.runtime, script: .traditional)
+        defer { engine.clear() }
+        engine.respelling = .init(respeller: SentenceRespeller(model: model, words: words), decoder: decoder) { ScriptConverter.toScript($0, openCC: openCC) }
+        engine.insert("womenyiqiquchiwanfanba")
+        #expect(engine.state.candidates.prefix(2).map(\.text) == ["我們一起去喫晚飯吧", "我們一起去喫完飯吧"])
     }
 
     @Test func scriptConverterNormalizesThroughSimplified() throws {

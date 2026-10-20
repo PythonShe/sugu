@@ -126,7 +126,7 @@ public final class EngineHub: EngineSource {
             if let chinese { return chinese }
             let engine = RimeEngine(runtime: runtime, script: chineseScript)
             if let chineseRespelling, chineseRespelling.schema == runtime.schema {
-                engine.respelling = (chineseRespelling.respeller, chineseRespelling.decoder)
+                engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: chineseRespelling.decoder) { [weak self] in self?.converter(for: $0) }
             }
             chinese = engine
             chineseWordsNeedReload = false
@@ -253,7 +253,7 @@ public final class EngineHub: EngineSource {
             }.value
             guard let (model, words) = loaded else { return }
             respeller = SentenceRespeller(model: model, words: words)
-            if let store { respeller.userWords = Set(store.allWords(mode: .chinese).map(\.text)) }
+            if let store { respeller.userWords = simplifiedTexts(of: store.allWords(mode: .chinese)) }
         }
         let cachedDecoder = decoders.flatMap { $0.schema == schema ? $0.scheme : nil }
         let decoder = if let cachedDecoder { cachedDecoder } else {
@@ -261,6 +261,13 @@ public final class EngineHub: EngineSource {
         }
         guard let decoder else { chineseRespelling = nil; return }
         chineseRespelling = (schema, respeller, decoder)
+    }
+
+    /// Learned words in Simplified, the respeller's script, whatever
+    /// script they were committed in.
+    private func simplifiedTexts(of words: [LearnedWord]) -> Set<String> {
+        let converter = converter(for: .simplified)
+        return Set(words.map { converter?.convert($0.text) ?? $0.text })
     }
 
     public func isFailing(_ mode: InputMode) -> Bool {
@@ -297,7 +304,7 @@ public final class EngineHub: EngineSource {
             let locations = locations
             let cached = decoders.flatMap { $0.schema == schema ? ($0.schema, $0.scheme, $0.fullPinyin) : nil }
             let learned = store.allWords(mode: .chinese)
-            chineseRespelling?.respeller.userWords = Set(learned.map(\.text))
+            chineseRespelling?.respeller.userWords = simplifiedTexts(of: learned)
             // Writes land in order: an older table never replaces a newer one.
             let previous = chineseWordsWrite
             let write = Task.detached(priority: .utility) { () -> ChineseWordsWrite in
