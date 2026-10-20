@@ -3,6 +3,13 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Pre-release review (D-091), CodeRabbit plus manual reading: fixed the
+  learned store after failed writes, sync watermarks and pull timing,
+  restores after Delete All, GBK imports, Esc after reconversion, Sparkle's
+  nested signatures and the update key check, publish guards, the site's
+  range and precondition answers, and redeploys mid-composition. All
+  package tests, the app build, the site check and build, and the draw
+  measurement (with the glass panel) pass.
 - Localization reviewed by native-speaker passes (D-090): 80 app strings
   and the home page revised in ja, zh-Hans and zh-Hant; Private Cloud
   Compute is named as Apple's in every language; the two "Never"s split.

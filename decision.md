@@ -1608,3 +1608,79 @@ any call made without the owner present. Each entry: what, why, reversibility.
   (shown as Never) translate differently in every language.
 - Decimal separators follow the Mac's region, not its language, as
   `ByteCountFormatter` does; not a translation issue.
+
+## D-091 · Pre-release review: what changed and what was left (2026-10-20)
+Four reviews before the release pipeline (input path, engines, learning
+and sync, updates and release); CodeRabbit ran on two before its
+allowance ran out, the rest was read by hand. Everything below was
+checked against the code before it was changed.
+- **Learned store.** Memory changes alongside the SQL, so every write runs
+  through `write`, which reloads from disk when a transaction fails; no
+  `try?` around transactions. A rollback no longer leaves rows, or reused
+  row ids, in memory only.
+- **Sync without watermarks.** Watermarks on word dates dropped words that
+  arrived with old dates (an imported backup, a third Mac's words). The
+  store decides instead: a word missing here is taken unless a deletion
+  here is newer than its last use or expiry would delete it
+  (`expiryDays`, set by `expire`). Undo (`unlearn`) now leaves a deletion
+  too. Every pull reads whole files; merging unchanged words costs no
+  writes.
+- **Sync state.** An export alone no longer counts as a sync (it pushed
+  the next pull back on every commit); exports run one after another; a
+  folder change from anywhere (Settings, an imported settings file)
+  resets sync through `DictionarySync.preferencesDidChange`. The device ID
+  is made again when the settings arrive on another Mac: a hash of the
+  hardware UUID is kept beside it in this Mac's preferences, never in the
+  folder.
+- **Imports.** A Sugu file the user imports restores its words even when
+  deleted here, as used now so another Mac's deletion does not take them
+  again. Legacy encodings follow the format's language (GB18030 first for
+  Sogou and RIME, Shift_JIS for ATOK and Google), and without one
+  Shift_JIS is refused when it reads as half-width katakana, as GBK does.
+  Prefixes cut inside a character are retried shorter; a whole file cut
+  inside one loses its last line. Sync lines need all eight fields. Files
+  are read off the main actor, written in batches of 2,000, and capped at
+  100,000 entries. A shorter "Forget unused words" asks before deleting.
+- **Input.** Esc after reconverting puts the selection back (the marked
+  text had replaced it). The `v` of an expression stays first. A field's
+  bundle ID is read once per client. The secure-input holder is still
+  looked up on every key while secure input is on (measured 0.09 ms):
+  the holder can change within a field. Clearing marked text the host
+  already dropped, over a selection, is skipped.
+- **Not changed, with reasons.** The store opens with up to two 0.3 s
+  retries during launch, before IMK delivers keys, so it delays launch
+  rather than a keystroke. The Liquid Glass view lays its content out
+  with constraints; the draw measurement now includes the panel
+  (p99 4.6 ms in Debug), and hosting the content beside the glass saved
+  0.3 ms at p99, not worth leaving Apple's `contentView`. The five
+  `secondsSinceLastEventType` calls cost 5 µs together. Zenzai's
+  converter reads AzooKey's dictionary files rather than the memory copy:
+  sharing the main thread's store across the load would race, and
+  Zenzai's own inference costs far more than the lookups. librime
+  reporting a failed `start_maintenance` with nothing to maintain leaves
+  the previous build, which still works.
+- **Engines.** A Chinese redeploy (a setting, a finished download) waits
+  for the Chinese composition to end. A librime session id from an
+  earlier deployment is never used (`RimeRuntime.deployments`). Zenzai
+  reloads only for its own model. Downloads report progress once per
+  percent, check free space, replace in one step, and rime-ice swaps its
+  whole folder in with the manifest written last. The grammar model comes
+  from `sugu.zheng-she.com/models/…-<sha>.gram`, falling back to upstream,
+  whose `LTS` file is republished under one name.
+- **Release.** Sparkle's helpers are re-signed with Developer ID after the
+  archive (its XPC services removed: Sugu is not sandboxed) and every
+  nested signature is checked; the archive's EdDSA signature is checked
+  against the app's own `SUPublicEDKey` (`scripts/check-ed-signature.swift`,
+  tested against `sign_update`); Sparkle's tools are verified on every
+  run, not cached; untracked files block a local release; notarization
+  output is kept on failure. Publishing runs every guard before the first
+  upload, trusts a 404 only when the bucket agrees, and runs one tag at a
+  time. The site deploys `main` even when a release calls it. Actions are
+  pinned to commits. Packages are not version checked, so a package
+  installs its own version.
+- **Updates.** A scheduled check never puts its window behind, or in
+  front of, the app being typed in: the input menu shows Update
+  Available… until the user asks.
+- **Site functions.** Preconditions and single ranges are read by the
+  function: 304, 412 and 416 each where they belong, HEAD included;
+  several ranges get the whole file. `/download/` answers HEAD.
