@@ -508,8 +508,8 @@ extension InputSession {
         case VirtualKey.f6: text = mode == .japanese ? WidthConversion.hiragana(kana) : nil
         case VirtualKey.f7: text = mode == .japanese ? WidthConversion.katakana(kana) : nil
         case VirtualKey.f8: text = mode == .japanese ? WidthConversion.halfWidthKatakana(kana) : nil
-        case VirtualKey.f9: text = WidthConversion.fullWidth(typed)
-        case VirtualKey.f10: text = typed
+        case VirtualKey.f9: text = latinForm(of: typed, after: transformed, width: WidthConversion.fullWidth)
+        case VirtualKey.f10: text = latinForm(of: typed, after: transformed) { $0 }
         default: return nil
         }
         // F6–F8 (and ⌃J ⌃K ⌃;) have no form in Chinese, nor F9 and F10
@@ -519,6 +519,20 @@ extension InputSession {
         list.highlight = nil
         publish()
         return true
+    }
+}
+
+extension InputSession {
+    /// The letters as typed, then, as the same key comes again, in capitals,
+    /// capitalized and in lower case, as Apple's, Google's and Microsoft's
+    /// input methods cycle F9 and F10.
+    fileprivate func latinForm(of typed: String, after shown: String?, width: (String) -> String) -> String {
+        var forms: [String] = []
+        for form in [typed.lowercased(), typed.uppercased(), typed.prefix(1).uppercased() + typed.dropFirst().lowercased()] where !forms.contains(form) {
+            forms.append(form)
+        }
+        guard let shown, let index = forms.firstIndex(where: { width($0) == shown }) ?? (shown == width(typed) ? 0 : nil) else { return width(typed) }
+        return width(forms[(index + 1) % forms.count])
     }
 }
 

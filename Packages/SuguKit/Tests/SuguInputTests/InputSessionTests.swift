@@ -309,6 +309,23 @@ struct InputSessionTests {
         #expect(client.document == "ｎｉｈｏｎｇｏ")
     }
 
+    /// F10 again cycles capitals, a capital first and lower case; F9 too.
+    @Test func repeatedFunctionKeysCycleCase() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        let f10 = KeyInput(keyCode: VirtualKey.f10, characters: "\u{F70D}")
+        var shown: [String] = []
+        for _ in 0..<4 {
+            _ = session.handle(f10)
+            shown.append(client.markedText)
+        }
+        #expect(shown == ["nihongo", "NIHONGO", "Nihongo", "nihongo"])
+        _ = session.handle(KeyInput(keyCode: VirtualKey.f9, characters: "\u{F70C}"))
+        _ = session.handle(KeyInput(keyCode: VirtualKey.f9, characters: "\u{F70C}"))
+        #expect(client.markedText == "ＮＩＨＯＮＧＯ")
+    }
+
     /// In Chinese, an F9/F10 form gives way when the composition is edited,
     /// and Esc goes back to the candidates rather than dropping it all.
     @Test func chineseFormsGiveWayToEditing() {

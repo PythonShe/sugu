@@ -159,7 +159,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 ## 18. Japanese habits (advisor pass 9, D-075)
 - [x] Shift-Space types the other width (D-075)
 - [x] Kana input's 、。 follow the punctuation style (D-075)
-- [ ] Repeated F9/F10 cycle case: abc → ABC → Abc
+- [x] Repeated F9/F10 cycle case: abc → ABC → Abc (D-075)
 - [ ] ⌃⇧R reconverts; ⌃I ⌃O resize the clause
 - [ ] Punctuation typed while converting commits with the conversion
 - [ ] Symbols by their Japanese names (やじるし →)

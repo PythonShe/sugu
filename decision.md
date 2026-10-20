@@ -1295,3 +1295,7 @@ any call made without the owner present. Each entry: what, why, reversibility.
   unchanged.
 - In kana input the ね and る keys' 、。 follow the punctuation style, as
   the period and comma keys of romaji do.
+- F9 and F10 (⌃L ⌃:) pressed again cycle the letters' case: as typed,
+  capitals, a capital first, lower case, as Apple's, Google's and
+  Microsoft's input methods do. Another key, or the other of the two,
+  starts from the letters as typed.
