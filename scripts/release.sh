@@ -1,18 +1,30 @@
 #!/bin/bash
 # Builds a release: a Developer ID–signed, notarized installer package and a
-# notarized, EdDSA-signed archive with its appcast entry for Sparkle. Output
-# goes to dist/. Nothing is uploaded: the package and archive go to the
-# GitHub release v<version>, then scripts/publish-appcast.sh publishes the
-# appcast.
+# notarized, EdDSA-signed archive for Sparkle, with release.json describing
+# the archive and the signed appcast. Output goes to dist/. Nothing is
+# uploaded: the package and archive go to the GitHub release v<version>,
+# then scripts/publish-appcast.sh publishes the appcast. The release
+# workflow runs this on CI; it runs the same way locally.
 #
 # Needs, in the environment:
 #   TEAM_ID                     Apple developer team
 #   DEVELOPER_ID_APPLICATION    e.g. "Developer ID Application: Name (TEAMID)"
 #   DEVELOPER_ID_INSTALLER      e.g. "Developer ID Installer: Name (TEAMID)"
-#   NOTARY_PROFILE              a `xcrun notarytool store-credentials` profile
 #   SPARKLE_PUBLIC_ED_KEY       public key from Sparkle's generate_keys
-#   SPARKLE_PRIVATE_KEY_FILE    optional; otherwise sign_update reads the keychain
-#   DEVELOPER_ID_PROFILE        optional; name of an installed Developer ID
+# and notarization credentials, either
+#   NOTARY_PROFILE              a `xcrun notarytool store-credentials` profile
+# or an App Store Connect API key:
+#   APPLE_API_KEY               path to the .p8
+#   APPLE_API_KEY_ID, APPLE_API_ISSUER
+# Optional:
+#   RELEASE_VERSION             the version being released (from the tag);
+#                               the build must carry it
+#   KEYCHAIN                    keychain holding the signing identities;
+#                               otherwise the search list
+#   SPARKLE_PRIVATE_KEY_FILE    otherwise sign_update reads the keychain
+#   RELEASE_NOTES_DIR           the notes for the appcast, one Markdown file
+#                               per language (scripts/appcast.py)
+#   DEVELOPER_ID_PROFILE        name of an installed Developer ID
 #                               provisioning profile with Private Cloud Compute
 #                               (ADR 0004). Without it the build carries no
 #                               entitlement and uses the on-device model only.
@@ -22,9 +34,23 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 . "$ROOT/scripts/versions.sh"
 cd "$ROOT"
 
-for name in TEAM_ID DEVELOPER_ID_APPLICATION DEVELOPER_ID_INSTALLER NOTARY_PROFILE SPARKLE_PUBLIC_ED_KEY; do
+for name in TEAM_ID DEVELOPER_ID_APPLICATION DEVELOPER_ID_INSTALLER SPARKLE_PUBLIC_ED_KEY; do
   [[ -n "${!name:-}" ]] || { echo "$name is not set" >&2; exit 2; }
 done
+if [[ -n "${NOTARY_PROFILE:-}" ]]; then
+  NOTARY_AUTH=(--keychain-profile "$NOTARY_PROFILE")
+elif [[ -n "${APPLE_API_KEY:-}" && -n "${APPLE_API_KEY_ID:-}" && -n "${APPLE_API_ISSUER:-}" ]]; then
+  NOTARY_AUTH=(--key "$APPLE_API_KEY" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER")
+else
+  echo "set NOTARY_PROFILE, or APPLE_API_KEY, APPLE_API_KEY_ID and APPLE_API_ISSUER" >&2; exit 2
+fi
+SIGN_FLAGS="--timestamp"
+PRODUCT_SIGN=(--sign "$DEVELOPER_ID_INSTALLER" --timestamp)
+if [[ -n "${KEYCHAIN:-}" ]]; then
+  [[ "$KEYCHAIN" != *" "* ]] || { echo "KEYCHAIN must be a path without spaces" >&2; exit 2; }
+  SIGN_FLAGS+=" --keychain $KEYCHAIN"
+  PRODUCT_SIGN+=(--keychain "$KEYCHAIN")
+fi
 
 # A release is built from committed sources, and its build number (what
 # Sparkle compares) grows with every commit.
@@ -56,11 +82,16 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$WORK/Sugu.xcarchive" archive -quiet \
   CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_IDENTITY="$DEVELOPER_ID_APPLICATION" \
   SUGU_ENTITLEMENTS="$ENTITLEMENTS" SUGU_PROFILE="${DEVELOPER_ID_PROFILE:-}" \
-  OTHER_CODE_SIGN_FLAGS="--timestamp" SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY" \
+  OTHER_CODE_SIGN_FLAGS="$SIGN_FLAGS" SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY" \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
 APP="$WORK/Sugu.xcarchive/Products/Library/Input Methods/Sugu.app"
 codesign --verify --deep --strict "$APP"
+SIGNATURE_INFO="$(codesign -dvv "$APP" 2>&1)"
+grep -q "Authority=Developer ID Application" <<<"$SIGNATURE_INFO" \
+  || { echo "the app is not signed with Developer ID" >&2; exit 1; }
+grep -Eq "^(CodeDirectory|Flags).*runtime" <<<"$SIGNATURE_INFO" \
+  || { echo "the app is missing the hardened runtime" >&2; exit 1; }
 if [[ -n "$ENTITLEMENTS" ]]; then
   codesign -d --entitlements :- "$APP" 2>/dev/null | grep -q "com.apple.developer.private-cloud-compute" \
     || { echo "the Private Cloud Compute entitlement is missing" >&2; exit 1; }
@@ -68,11 +99,22 @@ fi
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")"
 MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")"
+if [[ -n "${RELEASE_VERSION:-}" && "$RELEASE_VERSION" != "$VERSION" ]]; then
+  echo "the build is $VERSION but the release is $RELEASE_VERSION: set MARKETING_VERSION in project.yml" >&2; exit 1
+fi
+
+# Gatekeeper must accept what users download.
+gatekeeper() {
+  local output
+  output="$(spctl -a -vvv -t "$1" "$2" 2>&1 || true)"
+  echo "$output"
+  grep -q "accepted" <<<"$output" || { echo "Gatekeeper rejected $(basename "$2")" >&2; exit 1; }
+}
 
 # notarytool exits 0 for a rejected submission too; only "Accepted" passes.
 notarize() {
   local output
-  output="$(xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" --wait)"
+  output="$(xcrun notarytool submit "$1" "${NOTARY_AUTH[@]}" --wait --timeout 30m)"
   echo "$output"
   grep -q "status: Accepted" <<<"$output" || { echo "notarization of $(basename "$1") was not accepted" >&2; exit 1; }
 }
@@ -81,6 +123,8 @@ notarize() {
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$WORK/notarize.zip"
 notarize "$WORK/notarize.zip"
 xcrun stapler staple "$APP"
+xcrun stapler validate "$APP"
+gatekeeper exec "$APP"
 ZIP="$DIST/Sugu-$VERSION.zip"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 
@@ -95,30 +139,30 @@ pkgbuild --root "$STAGE" --component-plist "$WORK/components.plist" \
   --install-location "/Library/Input Methods" --scripts "$ROOT/scripts/pkg" \
   --identifier com.zheng-she.inputmethod.Sugu.pkg --version "$VERSION" "$WORK/Sugu-component.pkg"
 PKG="$DIST/Sugu-$VERSION.pkg"
-productbuild --package "$WORK/Sugu-component.pkg" --sign "$DEVELOPER_ID_INSTALLER" --timestamp "$PKG"
+productbuild --package "$WORK/Sugu-component.pkg" "${PRODUCT_SIGN[@]}" "$PKG"
 notarize "$PKG"
 xcrun stapler staple "$PKG"
+xcrun stapler validate "$PKG"
+gatekeeper install "$PKG"
 
-# Appcast with the new version; Sparkle needs only the latest item.
+# The archive's EdDSA signature, then the appcast, signed: the app accepts
+# only a signed feed, so the appcast is final here.
 SIGN_ARGS=()
 [[ -n "${SPARKLE_PRIVATE_KEY_FILE:-}" ]] && SIGN_ARGS=(--ed-key-file "$SPARKLE_PRIVATE_KEY_FILE")
-SIGNATURE="$("$TOOLS/bin/sign_update" ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} "$ZIP")"
-cat >"$DIST/appcast.xml" <<XML
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>Sugu</title>
-    <item>
-      <title>$VERSION</title>
-      <pubDate>$(LC_ALL=C date -u "+%a, %d %b %Y %H:%M:%S +0000")</pubDate>
-      <sparkle:version>$BUILD</sparkle:version>
-      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>$MIN_OS</sparkle:minimumSystemVersion>
-      <enclosure url="https://github.com/PythonShe/sugu/releases/download/v$VERSION/Sugu-$VERSION.zip" $SIGNATURE type="application/octet-stream"/>
-    </item>
-  </channel>
-</rss>
-XML
+ED_SIGNATURE="$("$TOOLS/bin/sign_update" ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} -p "$ZIP")"
+cat >"$DIST/release.json" <<JSON
+{
+  "version": "$VERSION",
+  "build": "$BUILD",
+  "minimumSystemVersion": "$MIN_OS",
+  "url": "https://github.com/PythonShe/sugu/releases/download/v$VERSION/$(basename "$ZIP")",
+  "length": $(stat -f %z "$ZIP"),
+  "edSignature": "$ED_SIGNATURE"
+}
+JSON
+python3 -I "$ROOT/scripts/appcast.py" "$DIST/release.json" "$DIST/appcast.xml" ${RELEASE_NOTES_DIR:+"$RELEASE_NOTES_DIR"}
+"$TOOLS/bin/sign_update" ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} "$DIST/appcast.xml"
+"$TOOLS/bin/sign_update" ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} --verify "$DIST/appcast.xml"
 
 rm -rf "${WORK:?}"
-echo "dist: $(basename "$PKG"), $(basename "$ZIP"), appcast.xml"
+echo "dist: $(basename "$PKG"), $(basename "$ZIP"), release.json, appcast.xml"

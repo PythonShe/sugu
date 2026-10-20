@@ -54,6 +54,10 @@
 	<true/>
 	<key>SUAllowsAutomaticUpdates</key>
 	<false/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
+	<key>SURequireSignedFeed</key>
+	<true/>
 	<key>tsInputMethodIconFileKey</key>
 	<string>InputSourceIcon.pdf</string>
 	<key>tsInputMethodCharacterRepertoireKey</key>
