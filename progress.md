@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- librime reads a 10-candidate page instead of 100, and the candidate
+  count returns to 30 with new input (D-078): Chinese keystroke p50
+  0.48 → 0.37 ms, p99 4.18 → 3.76 ms, accuracy unchanged.
 - Sugu's own windows (D-077): Settings reopen on the last pane, the app
   chooser is a sheet, the mode label scales and outlines with Increase
   Contrast, one term per setting, import results in place, ⌘M, a
