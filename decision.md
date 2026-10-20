@@ -184,3 +184,23 @@ any call made without the owner present. Each entry: what, why, reversibility.
   private repositories. Adding `push`/`pull_request` triggers turns it on
   for every change. Native dependencies and data are cached by the hash of
   the scripts and versions that produce them.
+
+## D-020 · Distribution and updates (2026-10-20)
+- `scripts/release.sh` builds the release from the owner's credentials:
+  Developer ID–signed app, a notarized, stapled `.pkg` that installs into
+  `/Library/Input Methods` (component not relocatable), and a notarized
+  `.zip` signed with Sparkle's EdDSA key plus `appcast.xml`, all in `dist/`.
+  Nothing is uploaded; the appcast and archive go to the GitHub release that
+  `SUFeedURL` points at.
+- The package's postinstall stops a running Sugu and runs
+  `Sugu --register` as the console user, which registers and enables the
+  input source (`TISRegisterInputSource`/`TISEnableInputSource`).
+- Sparkle 2.10.0 lives in the `SuguUpdates` package target, so Xcode and
+  SwiftPM resolve one dependency graph and agree on `Package.resolved`.
+  The public key is a build setting set only by the release script; builds
+  without it never start the updater. System profiling is off in
+  Info.plist and in the delegate. Automatic checks default on (update checks
+  are allowed traffic, ADR 0002 d12), automatic installs off; both are in
+  Advanced settings.
+- `scripts/install-dev.sh` installs a build into `~/Library/Input Methods`
+  for development; it is never run by automation here.

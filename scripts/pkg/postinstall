@@ -1,0 +1,14 @@
+#!/bin/bash
+# Runs as root after the package installs Sugu.app into /Library/Input Methods.
+# Stops a running copy so the next keystroke loads the new version, then
+# registers and enables the input source for the user at the console.
+APP="/Library/Input Methods/Sugu.app"
+
+/usr/bin/pkill -x Sugu || true
+
+user="$(/usr/bin/stat -f %Su /dev/console)"
+if [[ -n "$user" && "$user" != "root" && "$user" != "loginwindow" ]]; then
+  uid="$(/usr/bin/id -u "$user")"
+  /bin/launchctl asuser "$uid" /usr/bin/sudo -u "$user" "$APP/Contents/MacOS/Sugu" --register || true
+fi
+exit 0

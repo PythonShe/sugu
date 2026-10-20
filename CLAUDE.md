@@ -86,6 +86,7 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu \
   are gitignored and recorded here: `.vendor/` (third-party sources and
   build trees), `Frameworks/` (`librime.xcframework` from
   `scripts/build-librime.sh`), `Data/` (compiled dictionaries from
-  `scripts/build-data.sh`), and `Sugu.xcodeproj/` except its SwiftPM
-  `Package.resolved`. `Packages/SuguKit/Package.resolved` is tracked.
+  `scripts/build-data.sh`), `dist/` (release output of
+  `scripts/release.sh`), `.build-dev/` (builds of `scripts/install-dev.sh`),
+  and `Sugu.xcodeproj/` except its SwiftPM `Package.resolved`. `Packages/SuguKit/Package.resolved` is tracked.
 - Pinned third-party versions live in `scripts/versions.sh`.

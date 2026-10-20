@@ -24,6 +24,8 @@ build/
 /.vendor/
 /Frameworks/
 /Data/
+/dist/
+/.build-dev/
 
 # XcodeGen output; only SwiftPM's resolved pins are kept
 /Sugu.xcodeproj/*
