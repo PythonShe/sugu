@@ -4,7 +4,8 @@ import SuguCore
 // sugu-bench: accuracy and latency of the whole input pipeline on the test
 // sets in Bench/. Run in release:
 //   swift run -c release sugu-bench --data ../../Data --bench ../../Bench [--json out.json] [--check] [--zenzai model.gguf] [--grammar model.gram] [--no-language-model]
-// Variants: --no-predictions, --no-typo-correction, --live-conversion, --fuzzy-pinyin.
+// Variants: --no-predictions, --no-typo-correction, --live-conversion, --fuzzy-pinyin,
+// --kana-input, --scheme <PinyinScheme>, --script <ChineseScript>.
 // --check exits non-zero when a budget in AGENTS.md is exceeded.
 let arguments = Array(CommandLine.arguments.dropFirst())
 
@@ -27,6 +28,9 @@ let configure: (inout Preferences) -> Void = { preferences in
     if arguments.contains("--no-typo-correction") { preferences.typoCorrection = false }
     if arguments.contains("--live-conversion") { preferences.liveConversion = true }
     if arguments.contains("--fuzzy-pinyin") { preferences.fuzzyPinyin = Set(FuzzyPinyin.allCases) }
+    if arguments.contains("--kana-input") { preferences.kanaInput = true }
+    if let scheme = option("--scheme").flatMap(PinyinScheme.init(rawValue:)) { preferences.pinyinScheme = scheme }
+    if let script = option("--script").flatMap(ChineseScript.init(rawValue:)) { preferences.chineseScript = script }
 }
 if let count = option("--fuzz").flatMap(Int.init) {
     let seed = option("--seed").flatMap(UInt64.init) ?? 1

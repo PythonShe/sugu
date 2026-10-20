@@ -56,8 +56,9 @@ enum Fuzz {
 
         var failures: [Failure] = []
         for mode in [InputMode.chinese, .japanese] {
-            session.setMode(mode)
             for number in sessions {
+                // Sessions can switch languages; each starts in its own.
+                session.setMode(mode)
                 // Where a trap stopped the run.
                 FileHandle.standardError.write(Data("fuzz \(mode) \(number)\n".utf8))
                 var random = SplitMix(seed: seed &+ UInt64(number) &* 0x9E37_79B9)
@@ -66,11 +67,18 @@ enum Fuzz {
                 field.reset()
                 do {
                     for _ in 0..<random.next(below: 60) + 5 {
-                        let (name, key) = randomKey(&random, mode: mode)
+                        let (name, action) = randomAction(&random, mode: mode)
                         keys.append(name)
                         if trace { FileHandle.standardError.write(Data("  \(name) → \(session.display.segments.map(\.text).joined())\n".utf8)) }
                         let wasComposing = !session.display.segments.isEmpty
                         let committed = field.committed
+                        let key: KeyInput
+                        switch action {
+                        case .key(let pressed): key = pressed
+                        case .shiftTap: session.shiftTapped(); try check(session, field, fail); continue
+                        case .switchLanguage: session.switchCJKMode(); try check(session, field, fail); continue
+                        case .click: session.caretMayHaveMoved(); try check(session, field, fail); continue
+                        }
                         if !session.handle(key) { field.typeUnhandled(key) }
                         try check(session, field, fail)
                         if key.keyCode == VirtualKey.returnKey, key.modifiers.isEmpty, wasComposing {
@@ -111,27 +119,49 @@ enum Fuzz {
     private static let japaneseSyllables = "a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n nn ga gi gu ge go za ji zu ze zo da de do ba bi bu be bo pa pi pu pe po kya kyu kyo sha shu sho cha chu cho ryo tt kk xtu -".split(separator: " ")
     private static let pinyinSyllables = "a o e ai ei ao ou an en ang eng er ba bo bai bei bao ban ben bang beng bi bie biao bian bin bing bu ca ce cai cao can cang ci cu cha che chi chu chuan da de dai dao dan dang deng di dian ding du dui duo fa fo fei fan fen fang feng fu ga ge gai gao gan gen gang gong gu gua guo ha he hai hao han hen hang hong hu hua huo ji jia jie jian jin jing ju jue ka ke kai kan kang kong ku kuai la le lai lao lan lang li lian liang lin ling lu lv lve ma me mai mao man men mang mi mian ming mu na ne nai nan nen ni nian nin nu nv pa po pai pao pan pen pi pian pin ping pu qi qia qian qin qing qu quan ran ren ri rou ru sa se san sen si su shi shang shen sheng shu ta te tai tan tang ti tian ting tu tong wa wo wai wan wen wang wu xi xia xian xin xing xu xue ya ye yao yan yin ying yong yu yuan za ze zai zan zi zu zhi zhang zhe zheng zhong zhu '".split(separator: " ")
 
-    /// A key a person might press while composing, with its name for the
+    enum Action {
+        case key(KeyInput)
+        /// Shift pressed and released alone: English and back.
+        case shiftTap
+        /// Chinese ↔ Japanese.
+        case switchLanguage
+        /// The caret moved by a click.
+        case click
+    }
+
+    /// What a person might do while composing, with its name for the
     /// failure report.
+    private static func randomAction(_ random: inout SplitMix, mode: InputMode) -> (String, Action) {
+        switch random.next(below: 1000) {
+        case 0..<10: return ("⇧tap", .shiftTap)
+        case 10..<15: return ("⌃␣", .switchLanguage)
+        case 15..<20: return ("click", .click)
+        default:
+            let (name, key) = randomKey(&random, mode: mode)
+            return (name, .key(key))
+        }
+    }
+
+    /// A key a person might press while composing.
     private static func randomKey(_ random: inout SplitMix, mode: InputMode) -> (String, KeyInput) {
         func special(_ name: String, _ keyCode: UInt16, _ modifiers: KeyModifiers = []) -> (String, KeyInput) {
             (name, KeyInput(keyCode: keyCode, characters: "", modifiers: modifiers))
+        }
+        func printable(_ character: Character, shift: Bool = false) -> (String, KeyInput) {
+            let typed = shift ? Character(character.uppercased()) : character
+            return (String(typed), KeyInput(keyCode: keyCodes[character] ?? 0, characters: String(typed), charactersIgnoringModifiers: String(character), modifiers: shift ? .shift : []))
         }
         switch random.next(below: 100) {
         case 0..<55:
             let syllables = mode == .japanese ? japaneseSyllables : pinyinSyllables
             let syllable = String(syllables[random.next(below: syllables.count)])
             // One key of it; the rest follow as the next keys would.
-            let character = syllable[syllable.index(syllable.startIndex, offsetBy: random.next(below: syllable.count))]
-            return (String(character), KeyInput(keyCode: character == "," ? 0x2B : 0, characters: String(character)))
+            return printable(syllable[syllable.index(syllable.startIndex, offsetBy: random.next(below: syllable.count))])
         case 55..<60:
-            let letter = Character(UnicodeScalar(UInt8(97 + random.next(below: 26))))
-            return (String(letter), KeyInput(keyCode: 0, characters: String(letter)))
+            return printable(Character(UnicodeScalar(UInt8(97 + random.next(below: 26)))), shift: random.next(below: 4) == 0)
         case 60..<68: return ("␣", KeyInput(keyCode: VirtualKey.space, characters: " "))
         case 68..<74: return ("⌫", KeyInput(keyCode: VirtualKey.delete, characters: "\u{7f}"))
-        case 74..<78:
-            let digit = String(1 + random.next(below: 9))
-            return (digit, KeyInput(keyCode: 0, characters: digit))
+        case 74..<78: return printable(Character(String(1 + random.next(below: 9))))
         case 78..<81: return special("←", VirtualKey.left)
         case 81..<84: return special("→", VirtualKey.right)
         case 84..<86: return special("⇧←", VirtualKey.left, .shift)
@@ -143,10 +173,23 @@ enum Fuzz {
         case 93..<96: return ("⎋", KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
         case 96..<98: return ("⏎", KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
         default:
-            let punctuation = String(Array(",.?!")[random.next(below: 4)])
-            return (punctuation, KeyInput(keyCode: punctuation == "," ? 0x2B : 0, characters: punctuation))
+            let punctuation = Array(",.?!-[]")[random.next(below: 7)]
+            switch punctuation {
+            case "?": return printable("/", shift: true)
+            case "!": return printable("1", shift: true)
+            default: return printable(punctuation)
+            }
         }
     }
+
+    /// macOS virtual key codes of the ANSI layout, which kana input reads.
+    private static let keyCodes: [Character: UInt16] = [
+        "a": 0x00, "s": 0x01, "d": 0x02, "f": 0x03, "h": 0x04, "g": 0x05, "z": 0x06, "x": 0x07, "c": 0x08, "v": 0x09,
+        "b": 0x0B, "q": 0x0C, "w": 0x0D, "e": 0x0E, "r": 0x0F, "y": 0x10, "t": 0x11, "1": 0x12, "2": 0x13, "3": 0x14,
+        "4": 0x15, "6": 0x16, "5": 0x17, "9": 0x19, "7": 0x1A, "-": 0x1B, "8": 0x1C, "0": 0x1D, "]": 0x1E, "o": 0x1F,
+        "u": 0x20, "[": 0x21, "i": 0x22, "p": 0x23, "l": 0x25, "j": 0x26, "'": 0x27, "k": 0x28, ";": 0x29, ",": 0x2B,
+        "/": 0x2C, "n": 0x2D, "m": 0x2E, ".": 0x2F,
+    ]
 }
 
 /// A field that keeps what was committed, which is also the text before
