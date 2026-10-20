@@ -44,6 +44,8 @@ final class FakeClient: InputClient {
 final class FakeEngine: CompositionEngine {
     var table: [String: [String]]
     var converts: Bool
+    /// Candidates the engine tags as names.
+    var properNouns: Set<String> = []
     /// Readings whose first candidate covers only their start, as librime
     /// selects a phrase for the first syllables and keeps composing.
     var partial: [String: (consumed: Int, text: String)] = [:]
@@ -111,7 +113,7 @@ final class FakeEngine: CompositionEngine {
         state = CompositionState(
             segments: [CompositionSegment(shown, role: converting ? .focused : .input)],
             caret: shown.count,
-            candidates: words.enumerated().map { Candidate(text: $1, source: .engine(index: $0)) },
+            candidates: words.enumerated().map { Candidate(text: $1, source: .engine(index: $0), isProperNoun: properNouns.contains($1)) },
             highlightedIndex: converting ? highlighted : nil,
             phase: converting ? .converting : .composing,
             reading: input
@@ -125,6 +127,11 @@ final class FakeProvider: EngineProvider {
     var learnedChanges = 0
     func engine(for mode: InputMode) -> (any CompositionEngine)? { engines[mode] }
     func learnedWordsDidChange() { learnedChanges += 1 }
+    var script = ChineseScript.simplified
+    /// Script conversions by text, standing in for OpenCC.
+    var conversions: [String: String] = [:]
+    func setChineseScript(_ script: ChineseScript) { self.script = script }
+    func chineseText(_ text: String) -> String? { conversions[text] }
 }
 
 @MainActor

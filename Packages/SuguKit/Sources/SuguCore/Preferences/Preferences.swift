@@ -186,9 +186,12 @@ public struct AppRule: Codable, Sendable, Equatable {
     public var defaultMode: InputMode?
     /// Esc commits or cancels the composition, then switches to English.
     public var escapeSwitchesToEnglish = false
+    /// Chinese characters in this app; nil uses the global choice.
+    public var chineseScript: ChineseScript?
 
-    public init(defaultMode: InputMode? = nil, escapeSwitchesToEnglish: Bool = false) {
+    public init(defaultMode: InputMode? = nil, escapeSwitchesToEnglish: Bool = false, chineseScript: ChineseScript? = nil) {
         self.defaultMode = defaultMode
         self.escapeSwitchesToEnglish = escapeSwitchesToEnglish
+        self.chineseScript = chineseScript
     }
 }

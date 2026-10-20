@@ -10,6 +10,12 @@ public protocol EngineProvider: AnyObject {
     /// Called after the learned store changed through a commit, so engines
     /// that take user words (AzooKey) can refresh them.
     func learnedWordsDidChange()
+    /// The Chinese characters to produce: the global choice or the focused
+    /// app's.
+    func setChineseScript(_ script: ChineseScript)
+    /// Chinese text in the script in use, for candidates that do not come
+    /// from librime; nil when it cannot be converted.
+    func chineseText(_ text: String) -> String?
 }
 
 /// Remembers the last mode per app across launches.
@@ -95,6 +101,12 @@ public final class InputSession {
         if !preferences.enabledModes.contains(mode) {
             setMode(preferences.enabledModes.first ?? .english)
         }
+        provider.setChineseScript(chineseScript)
+    }
+
+    /// The focused app's Chinese script, or the global one.
+    private var chineseScript: ChineseScript {
+        preferences.rule(for: client?.bundleIdentifier).chineseScript ?? preferences.chineseScript
     }
 
     // MARK: Clients
@@ -107,6 +119,7 @@ public final class InputSession {
         undoable = nil
         let bundleID = client.bundleIdentifier
         let rule = preferences.rule(for: bundleID)
+        provider.setChineseScript(chineseScript)
         if let mode = rule.defaultMode {
             setMode(mode, remember: false)
         } else if preferences.rememberModePerApp, let bundleID, let remembered = modeMemory?.mode(for: bundleID) {
@@ -303,7 +316,11 @@ public final class InputSession {
             if transformed != nil { transformed = nil; publish() } else if converting { engine.cancelConversion(); refresh() } else { cancelComposition() }
             return true
         case VirtualKey.returnKey, VirtualKey.keypadEnter:
-            if transformed != nil || (highlight != nil && !converting) { commitHighlighted() } else { commit(engine.commitConverted()) }
+            if transformed != nil || (highlight != nil && (!converting || highlightsOwnCandidate)) {
+                commitHighlighted()
+            } else {
+                commit(engine.commitConverted())
+            }
             return true
         case VirtualKey.space:
             transformed = nil
@@ -433,7 +450,7 @@ public final class InputSession {
             if let rest = active, !rest.state.isEmpty {
                 commit(rest.commitConverted() ?? rest.commitRaw())
             }
-        } else if highlight != nil, engine.state.phase != .converting {
+        } else if highlight != nil, engine.state.phase != .converting || highlightsOwnCandidate {
             // A highlighted suggestion is what the field shows.
             commitHighlighted()
         } else {
@@ -450,6 +467,13 @@ public final class InputSession {
         highlight = nil
         client?.setMarkedText([], caret: 0)
         publish()
+    }
+
+    /// Whether the highlight is on one of Sugu's candidates (learned,
+    /// computed, a Chinese form) rather than the engine's.
+    private var highlightsOwnCandidate: Bool {
+        guard let highlight, candidates.indices.contains(highlight) else { return false }
+        return candidates[highlight].engineIndex == nil
     }
 
     /// Commits the highlighted candidate, or the composition when no
@@ -494,7 +518,7 @@ public final class InputSession {
                 highlight = nil
                 refresh()
             }
-        case .learned:
+        case .learned, .chineseForm:
             let reading = engine.state.reading
             engine.clear()
             commit(Commit(text: candidate.text, reading: reading, clauses: [.init(reading: reading, text: candidate.text)]))
@@ -647,7 +671,9 @@ public final class InputSession {
             mode: active is ExpressionEngine ? .english : mode,
             state: state,
             context: preferences.leftContextRanking ? context : "",
-            pageSize: pageSize
+            pageSize: pageSize,
+            chineseText: { [provider] in provider.chineseText($0) },
+            offersChineseForms: preferences.enabledModes.contains(.chinese)
         ))
     }
 
@@ -663,8 +689,10 @@ public final class InputSession {
             } else {
                 segments = state.segments
                 caret = state.caret
-                // Show a highlighted suggestion inline while it is chosen.
-                if state.phase == .composing, mode == .japanese, let highlight, candidates.indices.contains(highlight) {
+                // Show a highlighted suggestion inline while it is chosen, and
+                // Sugu's own candidates, which replace the whole reading.
+                if mode == .japanese, let highlight, candidates.indices.contains(highlight),
+                   state.phase == .composing || candidates[highlight].engineIndex == nil {
                     segments = [CompositionSegment(candidates[highlight].text, role: .focused)]
                     caret = candidates[highlight].text.count
                 }

@@ -10,17 +10,22 @@ public struct Candidate: Sendable, Hashable {
         case computed
         /// The typed letters as Latin text.
         case latin
+        /// The Chinese form of a Japanese name (東京 → 东京).
+        case chineseForm
     }
 
     public var text: String
     /// Secondary text shown next to the candidate (reading hint, comment).
     public var annotation: String?
     public var source: Source
+    /// A place, person or organization name, as the engine tagged it.
+    public var isProperNoun: Bool
 
-    public init(text: String, annotation: String? = nil, source: Source) {
+    public init(text: String, annotation: String? = nil, source: Source, isProperNoun: Bool = false) {
         self.text = text
         self.annotation = annotation
         self.source = source
+        self.isProperNoun = isProperNoun
     }
 
     public var engineIndex: Int? {

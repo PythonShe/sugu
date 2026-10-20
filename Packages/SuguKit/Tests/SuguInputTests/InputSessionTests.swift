@@ -9,7 +9,7 @@ struct InputSessionTests {
     let provider = FakeProvider()
     let client = FakeClient()
     let chinese = FakeEngine(table: ["nihao": ["你好", "拟好"], "shijie": ["世界"], "github": ["给他不"], "riqi": ["日期"], "nihaoshijie": ["你好世界"]])
-    let japanese = FakeEngine(table: ["nihongo": ["日本語", "二本語"]], converts: true)
+    let japanese = FakeEngine(table: ["nihongo": ["日本語", "二本語"], "toukyou": ["東京", "東共"]], converts: true)
     let store: LearnedStore
 
     init() throws {
@@ -252,5 +252,36 @@ struct InputSessionTests {
         _ = session.handle(Key.escape)
         type("nihongo", into: session)
         #expect(session.display.candidates?.candidates.contains { $0.source == .latin } != true)
+    }
+
+    @Test func appsCanChooseTheirChineseScript() {
+        let session = makeSession { $0.appRules["com.example.editor"] = AppRule(chineseScript: .traditional) }
+        #expect(provider.script == .traditional)
+        session.attach(FakeClient(bundleIdentifier: "com.example.other"))
+        #expect(provider.script == .simplified)
+    }
+
+    @Test func learnedWordsFollowTheScriptInUse() {
+        store.learn(Commit(text: "東京", reading: "shijie"), mode: .chinese)
+        provider.conversions["東京"] = "东京"
+        let session = makeSession()
+        type("shijie", into: session)
+        #expect(session.display.candidates?.candidates.first?.text == "东京")
+    }
+
+    @Test func japaneseNamesOfferTheirChineseForm() {
+        japanese.properNouns = ["東京"]
+        provider.conversions["東京"] = "东京"
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("toukyou", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.space)
+        let texts = session.display.candidates?.candidates.map(\.text) ?? []
+        #expect(texts.prefix(3) == ["東京", "东京", "東共"])
+        // The second Space highlighted the next candidate.
+        #expect(client.markedText == "东京")
+        _ = session.handle(Key.enter)
+        #expect(client.document == "东京")
     }
 }

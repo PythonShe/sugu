@@ -61,12 +61,15 @@ public final class EngineHub: EngineProvider {
     /// installed data change it, so a broken deploy does not repeat on
     /// every keystroke.
     private var failedSchema: RimeSchema?
+    private var chineseScript: ChineseScript
+    private var scriptConverter: (script: ChineseScript, converter: ScriptConverter?)?
 
     public init(locations: Locations, preferences: Preferences, store: LearnedStore?, version: String) {
         self.locations = locations
         self.preferences = preferences
         self.store = store
         self.version = version
+        self.chineseScript = preferences.chineseScript
         self.runtime = RimeRuntime(directories: .init(shared: locations.rimeShared, user: locations.rimeUser))
     }
 
@@ -77,7 +80,7 @@ public final class EngineHub: EngineProvider {
         case .chinese:
             guard runtime.isReady else { warmUp(.chinese); return nil }
             if let chinese { return chinese }
-            let engine = RimeEngine(runtime: runtime, script: preferences.chineseScript)
+            let engine = RimeEngine(runtime: runtime, script: chineseScript)
             chinese = engine
             return engine
         case .japanese:
@@ -101,6 +104,20 @@ public final class EngineHub: EngineProvider {
             guard let japanese, let store else { return }
             japanese.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) })
         }
+    }
+
+    public func setChineseScript(_ script: ChineseScript) {
+        guard script != chineseScript else { return }
+        chineseScript = script
+        chinese?.setScript(script)
+    }
+
+    public func chineseText(_ text: String) -> String? {
+        if scriptConverter?.script != chineseScript {
+            let openCC = locations.rimeShared.appendingPathComponent("opencc")
+            scriptConverter = (chineseScript, ScriptConverter.toScript(chineseScript, openCC: openCC))
+        }
+        return scriptConverter?.converter?.convert(text)
     }
 
     // MARK: Lifecycle
@@ -134,9 +151,6 @@ public final class EngineHub: EngineProvider {
     public func apply(_ preferences: Preferences) {
         let previous = self.preferences
         self.preferences = preferences
-        if previous.chineseScript != preferences.chineseScript {
-            chinese?.setScript(preferences.chineseScript)
-        }
         if schema != runtime.schema, runtime.isReady || preparing != nil {
             chinese = nil
             warmUp(.chinese)

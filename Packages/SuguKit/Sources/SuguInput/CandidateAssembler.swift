@@ -18,6 +18,10 @@ struct CandidateAssembler {
         var context: String
         /// Rows per page, so the Latin candidate stays on the first page.
         var pageSize: Int
+        /// Chinese text in the script in use (see `EngineProvider`).
+        var chineseText: (String) -> String? = { _ in nil }
+        /// Whether Japanese names also offer their Chinese form.
+        var offersChineseForms = false
     }
 
     func assemble(_ input: Input) -> [Candidate] {
@@ -31,10 +35,20 @@ struct CandidateAssembler {
         let wholeReading = !state.segments.contains { $0.role == .converted } && !state.reading.isEmpty
         guard wholeReading else { return engine }
 
-        let learned = (store?.lookup(state.reading, mode: input.mode) ?? []).map {
+        var learned = (store?.lookup(state.reading, mode: input.mode) ?? []).map {
             Candidate(text: $0.text, source: .learned)
         }
-        let computedCandidates = computed.candidates(for: state.reading, mode: input.mode)
+        var computedCandidates = computed.candidates(for: state.reading, mode: input.mode)
+        if input.mode == .chinese {
+            // librime converts its own candidates; Sugu's follow the same script.
+            func converted(_ candidate: Candidate) -> Candidate {
+                var candidate = candidate
+                candidate.text = input.chineseText(candidate.text) ?? candidate.text
+                return candidate
+            }
+            learned = learned.map(converted)
+            computedCandidates = computedCandidates.map(converted)
+        }
         var latinFirst: Candidate?
         var latinLast: Candidate?
         if input.mode == .chinese, let latin, state.phase == .composing {
@@ -62,6 +76,22 @@ struct CandidateAssembler {
             if seen.insert(latinLast.text).inserted {
                 result.insert(latinLast, at: min(result.count, max(1, input.pageSize - 1)))
             }
+        }
+        if input.mode == .japanese, input.offersChineseForms {
+            result = withChineseForms(result, pageSize: input.pageSize, chineseText: input.chineseText, seen: &seen)
+        }
+        return result
+    }
+
+    /// Puts the Chinese form of each name on the first page right after it
+    /// (東京 → 东京), for writing about Japan in Chinese.
+    private func withChineseForms(_ candidates: [Candidate], pageSize: Int, chineseText: (String) -> String?, seen: inout Set<String>) -> [Candidate] {
+        var result: [Candidate] = []
+        for (index, candidate) in candidates.enumerated() {
+            result.append(candidate)
+            guard index < pageSize, candidate.isProperNoun, let form = chineseText(candidate.text),
+                  form != candidate.text, seen.insert(form).inserted else { continue }
+            result.append(Candidate(text: form, annotation: candidate.annotation, source: .chineseForm))
         }
         return result
     }

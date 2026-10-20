@@ -381,7 +381,7 @@ public final class AzooKeyEngine: CompositionEngine {
         state = CompositionState(
             segments: segments,
             caret: caret,
-            candidates: focusCandidates.enumerated().map { Candidate(text: $1.text, annotation: readingHint($1), source: .engine(index: $0)) },
+            candidates: focusCandidates.enumerated().map { candidate($1, index: $0) },
             highlightedIndex: highlighted,
             phase: .converting,
             reading: (fixed.first?.before ?? composing).convertTarget,
@@ -399,6 +399,18 @@ public final class AzooKeyEngine: CompositionEngine {
 
     /// The candidate's reading in hiragana, shown as a reading hint when it
     /// differs from the text.
+    private func candidate(_ candidate: KanaKanjiConverterModule.Candidate, index: Int) -> SuguCore.Candidate {
+        SuguCore.Candidate(
+            text: candidate.text, annotation: readingHint(candidate), source: .engine(index: index),
+            isProperNoun: !candidate.data.isEmpty && candidate.data.allSatisfy { Self.properNounClasses.contains($0.lcid) }
+        )
+    }
+
+    /// Word classes of names: places, people, organizations.
+    private static let properNounClasses: Set<Int> = Set(
+        [CIDData.固有名詞, .人名一般, .人名姓, .人名名, .固有名詞組織, .地名一般].map(\.cid)
+    )
+
     private func readingHint(_ candidate: KanaKanjiConverterModule.Candidate) -> String? {
         let reading = WidthConversion.hiragana(candidate.data.map(\.ruby).joined())
         return reading == candidate.text || reading.isEmpty ? nil : reading
@@ -422,7 +434,7 @@ public final class AzooKeyEngine: CompositionEngine {
         state = CompositionState(
             segments: segments,
             caret: fixedLength + composing.convertTargetCursorPosition,
-            candidates: predictions.enumerated().map { Candidate(text: $1.text, annotation: readingHint($1), source: .engine(index: $0)) },
+            candidates: predictions.enumerated().map { candidate($1, index: $0) },
             highlightedIndex: nil,
             phase: .composing,
             reading: (fixed.first?.before ?? composing).convertTarget,
