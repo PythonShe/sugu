@@ -301,8 +301,10 @@ public final class RimeEngine: CompositionEngine {
     private func respell(_ sentence: String) -> String? {
         guard let respelling else { return nil }
         // Readings that type all the input as one syllable per character;
-        // none when the candidate covers only part of it.
-        let readings = respelling.decoder.syllables(typedAs: currentInput(), count: sentence.count)
+        // none when the candidate covers only part of it. Fuzzy pinyin can
+        // mean that librime read a derived spelling (zong for zhong), so
+        // those follow the readings as typed.
+        let readings = respelling.decoder.syllables(typedAs: currentInput(), count: sentence.count, limit: 16, fewestDerivedOnly: false)
         guard !readings.isEmpty else { return nil }
         let context = String(leftContext.suffix(respelling.respeller.contextLength))
         guard script != .simplified else {

@@ -37,38 +37,40 @@ public struct PinyinDecoder: Sendable {
     }
 
     /// Syllable sequences that type `keys` as exactly `count` syllables,
-    /// those needing the fewest derived spellings first, at most `limit`.
-    /// An apostrophe is a boundary no syllable crosses.
-    public func syllables(typedAs keys: String, count: Int, limit: Int = 4) -> [[String]] {
+    /// those needing the fewest derived spellings first, at most `limit`;
+    /// only those, unless `fewestDerivedOnly` is false. An apostrophe is a
+    /// boundary no syllable crosses.
+    public func syllables(typedAs keys: String, count: Int, limit: Int = 4, fewestDerivedOnly: Bool = true) -> [[String]] {
         let keys = Array(keys)
         guard count > 0, keys.count >= count else { return [] }
-        // best[position][remaining]: fewest derived spellings to type
-        // keys[position...] as `remaining` syllables, and those sequences.
-        var memo: [Int: (cost: Int, sequences: [[String]])] = [:]
-        func solve(_ position: Int, _ remaining: Int) -> (cost: Int, sequences: [[String]]) {
-            if position == keys.count { return remaining == 0 ? (0, [[]]) : (.max, []) }
+        // The `limit` sequences needing the fewest derived spellings to type
+        // keys[position...] as `remaining` syllables, cheapest first.
+        var memo: [Int: [(cost: Int, syllables: [String])]] = [:]
+        func solve(_ position: Int, _ remaining: Int) -> [(cost: Int, syllables: [String])] {
+            if position == keys.count { return remaining == 0 ? [(0, [])] : [] }
             if keys[position] == "'" { return solve(position + 1, remaining) }
-            if remaining == 0 { return (.max, []) }
+            if remaining == 0 { return [] }
             let key = position * (count + 1) + remaining
             if let known = memo[key] { return known }
-            var best: (cost: Int, sequences: [[String]]) = (.max, [])
+            var found: [(cost: Int, syllables: [String])] = []
             for end in (position + 1)...min(keys.count, position + longestSpelling) {
                 guard let options = readings[String(keys[position..<end])] else { continue }
                 let rest = solve(end, remaining - 1)
-                guard rest.cost != .max else { continue }
                 for option in options {
-                    let cost = rest.cost + (option.isDerived ? 1 : 0)
-                    guard cost <= best.cost else { continue }
-                    if cost < best.cost { best = (cost, []) }
-                    for sequence in rest.sequences where best.sequences.count < limit {
-                        let candidate = [option.syllable] + sequence
-                        if !best.sequences.contains(candidate) { best.sequences.append(candidate) }
+                    for sequence in rest {
+                        let candidate = [option.syllable] + sequence.syllables
+                        guard !found.contains(where: { $0.syllables == candidate }) else { continue }
+                        found.append((sequence.cost + (option.isDerived ? 1 : 0), candidate))
                     }
                 }
             }
+            // Stable, so equal costs keep the order they were found in.
+            let best = Array(found.enumerated().sorted { ($0.element.cost, $0.offset) < ($1.element.cost, $1.offset) }.map(\.element).prefix(limit))
             memo[key] = best
             return best
         }
-        return solve(0, count).sequences
+        let sequences = solve(0, count)
+        let fewest = sequences.first?.cost
+        return sequences.filter { !fewestDerivedOnly || $0.cost == fewest }.map(\.syllables)
     }
 }

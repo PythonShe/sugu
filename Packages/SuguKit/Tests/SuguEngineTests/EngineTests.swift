@@ -127,6 +127,22 @@ struct RimeEngineTests {
         #expect(engine.state.isEmpty)
     }
 
+    /// With fuzzy pinyin, librime may read what was typed as a derived
+    /// spelling (zi for zhi); the respelling follows it.
+    @Test func respellingFollowsFuzzyPinyin() async throws {
+        let schema = RimeSchema(fuzzy: [.zZh, .cCh, .sSh])
+        try await Shared.runtime.prepare(schema, version: "test")
+        let lexicon = dataDirectory.appendingPathComponent("Lexicon")
+        let decoder = try #require(PinyinDecoder(schema: schema, syllables: Lexicon.load(Lexicon.syllablesFile, in: lexicon), sharedData: dataDirectory.appendingPathComponent("Rime")))
+        let words = try PinyinWords(contentsOf: lexicon.appendingPathComponent(Lexicon.pinyinWordsFile))
+        let model = try languageModel(["我们一起去吃晚饭吧。", "晚饭吃什么？", "今天的晚饭很好吃。"])
+        let engine = RimeEngine(runtime: Shared.runtime)
+        defer { engine.clear() }
+        engine.respelling = .init(respeller: SentenceRespeller(model: model, words: words), decoder: decoder) { _ in nil }
+        engine.insert("womenyiqiquciwanfanba")
+        #expect(engine.state.candidates.first?.text == "我们一起去吃晚饭吧")
+    }
+
     /// A Traditional sentence is respelled in Simplified; the characters
     /// that changed are converted back and the rest keep librime's forms.
     @Test func respellingKeepsTheScript() async throws {

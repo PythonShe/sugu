@@ -813,3 +813,23 @@ any call made without the owner present. Each entry: what, why, reversibility.
   resident memory. Order 5 with pruning stays. Chinese is 97% in all
   five.
 
+## D-056 · Respelling with fuzzy pinyin, and an engine made mid-load (2026-10-20)
+- The key decoder gave the respeller only the readings that need the
+  fewest derived spellings: with fuzzy pinyin, zi typed for 吃's chi is
+  read as zi only, the sentence does not split into listed words, and
+  nothing is respelled. Readings needing more derived spellings now
+  follow, cheapest first, up to 16; learned-word tables keep the fewest
+  only, so zangsan still stays zang san there.
+- `sugu-bench --fuzzy-pinyin` turns every fuzzy rule on. Chinese top-1
+  82% without the model, 85% with it. librime alone has a keystroke p99
+  of 11 ms with all ten rules on: the budget is for the default
+  configuration, and nobody needs all ten, but it is worth knowing.
+- A Chinese engine created between librime becoming ready and the model
+  finishing its load ran without respelling until the next restart; the
+  load now attaches it to that engine.
+- Checked and left: a respelled commit is learned as any librime
+  sentence is (the whole commit, when short enough; librime does not
+  learn on its own, D-003). Live conversion keeps the refiner on each
+  keystroke: keystroke p99 4.6 ms, and the shown sentence stays the one
+  Space would give.
+

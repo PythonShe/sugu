@@ -4,6 +4,7 @@ import SuguCore
 // sugu-bench: accuracy and latency of the whole input pipeline on the test
 // sets in Bench/. Run in release:
 //   swift run -c release sugu-bench --data ../../Data --bench ../../Bench [--json out.json] [--check] [--zenzai model.gguf] [--grammar model.gram] [--no-language-model]
+// Variants: --no-predictions, --no-typo-correction, --live-conversion, --fuzzy-pinyin.
 // --check exits non-zero when a budget in AGENTS.md is exceeded.
 let arguments = Array(CommandLine.arguments.dropFirst())
 
@@ -25,6 +26,7 @@ let report = try await Bench.run(data: URL(fileURLWithPath: data), bench: URL(fi
     if arguments.contains("--no-predictions") { preferences.japanesePredictions = false }
     if arguments.contains("--no-typo-correction") { preferences.typoCorrection = false }
     if arguments.contains("--live-conversion") { preferences.liveConversion = true }
+    if arguments.contains("--fuzzy-pinyin") { preferences.fuzzyPinyin = Set(FuzzyPinyin.allCases) }
 }
 print(report.summary)
 if let json = option("--json") {

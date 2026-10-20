@@ -125,9 +125,7 @@ public final class EngineHub: EngineSource {
             guard runtime.isReady else { warmUp(.chinese); return nil }
             if let chinese { return chinese }
             let engine = RimeEngine(runtime: runtime, script: chineseScript)
-            if let chineseRespelling, chineseRespelling.schema == runtime.schema {
-                engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: chineseRespelling.decoder) { [weak self] in self?.converter(for: $0) }
-            }
+            attachRespelling(to: engine)
             chinese = engine
             chineseWordsNeedReload = false
             return engine
@@ -261,6 +259,13 @@ public final class EngineHub: EngineSource {
         }
         guard let decoder else { chineseRespelling = nil; return }
         chineseRespelling = (schema, respeller, decoder)
+        // An engine made while this loaded, once librime was ready.
+        if let chinese { attachRespelling(to: chinese) }
+    }
+
+    private func attachRespelling(to engine: RimeEngine) {
+        guard let chineseRespelling, chineseRespelling.schema == runtime.schema else { return }
+        engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: chineseRespelling.decoder) { [weak self] in self?.converter(for: $0) }
     }
 
     /// Learned words in Simplified, the respeller's script, whatever

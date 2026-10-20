@@ -40,6 +40,9 @@ struct PinyinDecoderTests {
     @Test func fuzzyPinyinPrefersWhatWasTyped() throws {
         let decoder = try decoder(RimeSchema(fuzzy: [.zZh]))
         #expect(decoder.syllables(typedAs: "zangsan", count: 2) == [["zang", "san"]])
+        let all = decoder.syllables(typedAs: "zangsan", count: 2, fewestDerivedOnly: false)
+        #expect(all.first == ["zang", "san"])
+        #expect(all.contains(["zhang", "san"]))
     }
 
     @Test func userDictionaryTable() throws {
