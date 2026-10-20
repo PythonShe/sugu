@@ -262,7 +262,16 @@ public final class AzooKeyEngine: CompositionEngine {
         }
         converting = false
         focusLength = nil
+        endConversionLattice()
         refreshComposing()
+    }
+
+    /// The converter reuses its lattice for input changed at its end. After
+    /// conversion asked for a clause, the whole input again would grow that
+    /// clause's lattice back, which AzooKeyKanaKanjiConverter can leave
+    /// inconsistent and trap on at the next request; typing starts afresh.
+    private func endConversionLattice() {
+        converter.stopComposition()
     }
 
     public func highlight(_ index: Int) {
@@ -390,6 +399,7 @@ public final class AzooKeyEngine: CompositionEngine {
     /// and the focused candidate as converted text and resumes input after
     /// them, as the system Japanese input method does.
     private func commitFixedPrefixForTyping() {
+        endConversionLattice()
         if let candidate = focusCandidates[safe: highlighted] {
             var remainder = composing
             remainder.prefixComplete(composingCount: candidate.composingCount)

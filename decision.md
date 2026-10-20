@@ -701,3 +701,21 @@ any call made without the owner present. Each entry: what, why, reversibility.
   grammar model", and `build-grammar` is gone.
 - Lesson kept for later tuning: fit on one half of the bench, confirm on
   the other.
+
+## D-051 · Live conversion trapped after Esc from a conversion (2026-10-20)
+- With live conversion on, `sugu-bench --live-conversion` ended on a trap
+  in three runs of four, on Esc after converting さかなをつりにいきます: an
+  index out of range in AzooKey's `kana2lattice_no_change`. Which sentence
+  traps depends on the process's hash seed, so the committed build did it
+  too.
+- Cause: conversion asks the converter for the first clause (さかなを), so its
+  cached lattice shrinks to that clause; Esc asks for the whole input
+  again, which AzooKey grows back from the clause's lattice, and the
+  request after it (the same input, for live conversion) reuses a lattice
+  whose nodes no longer match their scores. Backspace and retyping, which
+  change one kana at a time, never trapped.
+- Fix: the lattice is dropped when a conversion ends (Esc, or typing on
+  after it), so typing converts afresh from there. Converting clauses on a
+  second, always-fresh converter also worked, but changed results (a fresh
+  conversion is not the incremental one: a learned name came out as レン)
+  and cost 3 ms more per Space.

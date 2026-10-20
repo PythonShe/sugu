@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Live conversion trapped on Esc after converting, in three runs of four
+  of the bench; the converter's lattice is now dropped when a conversion
+  ends (D-051).
 - Bench doubled (101 Japanese, 100 Chinese). The Japanese model holds
   (78% → 85%); the bundled Chinese grammar did not (92% → 91%) and is
   withdrawn (D-050). The larger bench touches more mapped dictionary

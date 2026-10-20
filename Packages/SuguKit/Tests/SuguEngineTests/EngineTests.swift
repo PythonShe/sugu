@@ -262,6 +262,19 @@ struct RimeEngineTests {
         #expect(engine.state.segments.first { $0.role == .focused }?.text == "雨が")
     }
 
+    @Test func cancellingAConversionThenTypingKeepsConverting() throws {
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
+        var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
+        configuration.liveConversion = true
+        let engine = AzooKeyEngine(configuration: configuration)
+        for character in "sakanawoturiniikimasu" { engine.insert(String(character)) }
+        #expect(engine.convert())
+        engine.cancelConversion()
+        #expect(engine.state.segments.map(\.text).joined() == "魚を釣りに行きます")
+        engine.insert("k")
+        #expect(engine.state.segments.map(\.text).joined().hasPrefix("魚を釣りに行きます"))
+    }
+
     @Test func restoredReadingsConvertAgain() throws {
         let engine = try makeEngine()
         engine.restore(reading: "わたしはがくせいです")
