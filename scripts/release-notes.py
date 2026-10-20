@@ -1,5 +1,5 @@
-"""Turns a release's notes into one Markdown file per language, plus the
-GitHub release body.
+"""Turns a release's notes into one Markdown file per language, plus all of
+them in one page for the release workflow's summary.
 
     python3 -I scripts/release-notes.py split <model-output> <notes-dir>
     python3 -I scripts/release-notes.py fallback <notes-dir>
@@ -8,8 +8,8 @@ GitHub release body.
 language under its own `<!-- lang -->` marker line, starting with its
 overview heading. It exits 1, writing nothing, when the output is not in
 that shape. `fallback` writes the notes for a release with nothing to say.
-Both write en.md, ja.md, zh-Hans.md and zh-Hant.md (scripts/appcast.py),
-and body.md.
+Both write en.md, ja.md, zh-Hans.md and zh-Hant.md (scripts/appcast.py,
+scripts/publish-release.sh), and body.md.
 """
 
 import re

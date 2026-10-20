@@ -2,13 +2,14 @@ name: Release
 
 # Builds, signs, notarizes and publishes a Sugu release.
 #
-#   prepare ── notes (release-notes.yml) ── build (macos-26) ── publish (GitHub release) ── feed (R2)
+#   prepare ── notes (release-notes.yml) ── build (macos-26) ── publish (R2)
 #
 # A pushed vX.Y.Z tag releases it; project.yml's MARKETING_VERSION must
-# match. Dispatched by hand without a tag and with publishing off, it is a
-# dry run of the current branch: everything up to notarization, nothing
-# published. The notes come before the build because the build signs them
-# into the appcast; the feed goes up only after the archive it points at.
+# match. Releases go to sugu.zheng-she.com, not GitHub (ADR 0006).
+# Dispatched by hand without a tag and with publishing off, it is a dry run
+# of the current branch: everything up to notarization, nothing published.
+# The notes come before the build because the build signs them into the
+# appcast.
 
 on:
   push:
@@ -21,7 +22,7 @@ on:
         type: string
         default: ""
       publish:
-        description: "Publish the GitHub release and the update feed"
+        description: "Publish the release to sugu.zheng-she.com"
         required: true
         type: boolean
         default: false
@@ -239,35 +240,6 @@ jobs:
     needs: [prepare, build]
     if: needs.prepare.outputs.publish == 'true'
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - name: Download the release
-        uses: actions/download-artifact@v8
-        with:
-          name: release
-          path: dist
-
-      - name: Publish the GitHub release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.prepare.outputs.tag }}
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: |
-          set -euo pipefail
-          FILES=("dist/Sugu-$VERSION.pkg" "dist/Sugu-$VERSION.zip")
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "${FILES[@]}" --clobber --repo "$GITHUB_REPOSITORY"
-            gh release edit "$TAG" --notes-file dist/notes/body.md --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create "$TAG" "${FILES[@]}" --verify-tag --title "Sugu $VERSION" \
-              --notes-file dist/notes/body.md --repo "$GITHUB_REPOSITORY"
-          fi
-
-  feed:
-    needs: [prepare, publish]
-    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -280,9 +252,9 @@ jobs:
           name: release
           path: dist
 
-      - name: Publish the update feed
+      - name: Publish to sugu.zheng-she.com
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: scripts/publish-appcast.sh
+        run: scripts/publish-release.sh

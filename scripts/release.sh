@@ -2,9 +2,9 @@
 # Builds a release: a Developer ID–signed, notarized installer package and a
 # notarized, EdDSA-signed archive for Sparkle, with release.json describing
 # the archive and the signed appcast. Output goes to dist/. Nothing is
-# uploaded: the package and archive go to the GitHub release v<version>,
-# then scripts/publish-appcast.sh publishes the appcast. The release
-# workflow runs this on CI; it runs the same way locally.
+# uploaded: scripts/publish-release.sh publishes it all to
+# sugu.zheng-she.com (ADR 0006). The release workflow runs this on CI; it
+# runs the same way locally.
 #
 # Needs, in the environment:
 #   TEAM_ID                     Apple developer team
@@ -161,7 +161,7 @@ cat >"$DIST/release.json" <<JSON
   "version": "$VERSION",
   "build": "$BUILD",
   "minimumSystemVersion": "$MIN_OS",
-  "url": "https://github.com/PythonShe/sugu/releases/download/v$VERSION/$(basename "$ZIP")",
+  "url": "https://sugu.zheng-she.com/releases/$VERSION/$(basename "$ZIP")",
   "length": $(stat -f %z "$ZIP"),
   "edSignature": "$ED_SIGNATURE"
 }
