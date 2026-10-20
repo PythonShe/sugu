@@ -397,6 +397,16 @@ struct RimeEngineTests {
         #expect(engine.state.segments.map(\.text).joined() == "彼女はピアノを弾きます")
     }
 
+    /// A word joined to its particle may also be written in kana when the
+    /// model prefers it: the same word, so only the model decides.
+    @Test(.enabled(if: hasData)) func aWordJoinedToItsParticleMayBeWrittenInKana() throws {
+        let engine = try makeEngine()
+        engine.languageModel = try CharacterLanguageModel(contentsOf: dataDirectory.appendingPathComponent("LM/ja.lm"))
+        engine.insert("yukigatakusanfutteimasu")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined() == "雪がたくさん降っています")
+    }
+
     /// A conversion that is one clause takes the language model's order
     /// too, conditioned on the text before it.
     @Test(.enabled(if: hasData)) func aSingleClauseIsRankedAfterTheTextBeforeIt() throws {

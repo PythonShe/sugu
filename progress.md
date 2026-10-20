@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- A Japanese word joined to its particle may be respelled in kana when
+  the model prefers it (D-067): top-1 92%.
 - Reconvert Selection works on any Chinese text, not only learned words
   (D-066).
 - Chinese words offer the emoji they name, from CLDR (D-065).

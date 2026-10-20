@@ -44,7 +44,9 @@ final class HomophoneRefiner {
         guard !sentence.data.isEmpty, sentence.data.map(\.word).joined() == sentence.text else { return sentence }
         var words: [DicdataElement] = []
         // Whether each word stands in for one of another class, which it is
-        // only compared with spellings of its own classes.
+        // only compared with spellings of its own classes, and with its
+        // reading in kana: the same word, priced the same, so the model
+        // alone decides (沢山 or たくさん).
         var standIns: [Bool] = []
         for element in sentence.data {
             let parts = split(element) ?? (elements: [element], standIn: false)
@@ -70,7 +72,12 @@ final class HomophoneRefiner {
             let next = index + 1 < words.count ? words[index + 1].lcid : CIDData.EOS.cid
             let base = cost(of: [word], between: previous, and: next)
             var choice: (elements: [DicdataElement], value: PValue, score: Float)?
-            for spelling in spellings(of: word.ruby) where spelling.map(\.word).joined() != word.word {
+            var candidates = spellings(of: word.ruby)
+            if standIns[index] {
+                let kana = WidthConversion.hiragana(word.ruby)
+                candidates.append([DicdataElement(word: kana, ruby: word.ruby, lcid: word.lcid, rcid: word.rcid, mid: word.mid, value: word.value())])
+            }
+            for spelling in candidates where spelling.map(\.word).joined() != word.word {
                 if standIns[index], spelling[0].lcid != word.lcid || spelling[spelling.count - 1].rcid != word.rcid { continue }
                 var trial = words
                 trial.replaceSubrange(index...index, with: spelling)

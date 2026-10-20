@@ -1013,3 +1013,18 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Text with a character in no listed word (Latin, punctuation) is left
   alone, as before. From the advisor survey (pass 4).
 
+## D-067 · A word joined to its particle may be written in kana (2026-10-20)
+- 雪がたくさん降っています came out 雪が沢山: AzooKey wrote が沢山 as one
+  element ending in an adverb class (1281); the refiner splits it into が
+  and the noun 沢山 standing in (1285), which D-055 compares only with
+  spellings of its own classes, and たくさん is listed as another (1314).
+  The model prefers the kana by 9.7.
+- A stand-in is now also compared with its reading in kana, priced as the
+  stand-in itself (its classes and cost): the same word written
+  otherwise, so the model alone decides. Allowing the dictionary's kana
+  entry with its own classes instead brought back D-055's regression (青空
+  製薬につとめています), since a stand-in's borrowed class prices it
+  badly against anything properly classed.
+- Japanese 91% → 92%, characters 98.7% → 99.1%; learned words 100%,
+  context pairs 71%; the same with live conversion.
+
