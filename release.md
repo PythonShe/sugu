@@ -31,8 +31,8 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 
 ## 1. Keys and accounts (owner)
 
-- [ ] **Developer ID Application certificate:** `.p12` with a password.
-- [ ] **Developer ID Installer certificate:** `.p12` with a password.
+- [x] **Developer ID Installer certificate:** in the login keychain (G2, 2026-10-20 to 2027-11-19; renew before then and update the secret). Export as `.p12` with a password.
+- [x] **Developer ID Application certificate:** in the login keychain (G2, to 2031-02-10).
 - [ ] **App Store Connect API key** (Developer role): the `.p8`, key ID, issuer ID.
 - [ ] **Optional: Developer ID provisioning profile** for `com.zheng-she.inputmethod.Sugu` with Private Cloud Compute (D-045). Without it, release builds use the on-device model only.
 - [ ] **Sparkle keys:** `generate_keys`, then `generate_keys -x sparkle.key` (private) and `generate_keys -p` (public). Back up the private key offline: losing it strands every install on its version, and it also signs the feed.
