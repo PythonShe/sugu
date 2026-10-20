@@ -8,6 +8,10 @@ if let index = CommandLine.arguments.firstIndex(of: "--snapshot-settings"), inde
 }
 #endif
 
+if CommandLine.arguments.contains("--register") {
+    exit(InputSourceRegistration.registerAndEnable() ? 0 : 1)
+}
+
 // IMK connects the system to this server by the connection name in
 // Info.plist; it must exist before the run loop starts.
 let connectionName = Bundle.main.object(forInfoDictionaryKey: "InputMethodConnectionName") as? String ?? "Sugu_Connection"
