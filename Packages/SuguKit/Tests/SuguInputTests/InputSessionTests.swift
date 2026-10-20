@@ -331,6 +331,48 @@ struct InputSessionTests {
         #expect(client.document == "你好世界！")
     }
 
+    @Test func aReadingTypedAgainBeforeThePauseIsStillAsked() async throws {
+        let session = makeSession { $0.languageModel = .onDevice; $0.modelForConversion = true }
+        let assistant = FakeAssistant()
+        assistant.suggestions = CompositionSuggestions(conversions: ["你好世界！"])
+        session.assistant = assistant
+        type("nihaoshijie", into: session)
+        for _ in 0..<4 { _ = session.handle(Key.backspace) }
+        type("ijie", into: session)
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(assistant.requests.count == 1)
+        #expect(session.display.candidates?.candidates.map(\.text).contains("你好世界！") == true)
+    }
+
+    @Test func modelCandidatesEndWithTheirComposition() async throws {
+        let session = makeSession { $0.languageModel = .onDevice; $0.modelForConversion = true }
+        let assistant = FakeAssistant()
+        assistant.suggestions = CompositionSuggestions(conversions: ["你好世界！"])
+        session.assistant = assistant
+        type("nihaoshijie", into: session)
+        try await Task.sleep(for: .milliseconds(700))
+        session.commitComposition()
+        // The same reading elsewhere is asked again, with its own context.
+        type("nihaoshijie", into: session)
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(assistant.requests.count == 2)
+        // Turned off, the model's candidates go at once.
+        session.preferences.languageModel = .off
+        _ = session.handle(Key.backspace)
+        type("e", into: session)
+        #expect(session.display.candidates?.candidates.map(\.text).contains("你好世界！") == false)
+    }
+
+    @Test func aRequestWaitingForThePauseIsDroppedWhenFocusMoves() async throws {
+        let session = makeSession { $0.languageModel = .privateCloudCompute; $0.modelForConversion = true }
+        let assistant = FakeAssistant()
+        session.assistant = assistant
+        type("nihaoshijie", into: session)
+        session.attach(FakeClient(bundleIdentifier: "com.1password.1password"))
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(assistant.requests.isEmpty)
+    }
+
     @Test func passwordManagersNeverReachTheModel() async throws {
         let password = FakeClient(bundleIdentifier: "com.1password.1password")
         let session = makeSession { $0.languageModel = .privateCloudCompute; $0.modelForConversion = true }

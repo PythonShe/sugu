@@ -614,3 +614,14 @@ any call made without the owner present. Each entry: what, why, reversibility.
   as `CODE_SIGN_ENTITLEMENTS` on the command line they also reached the
   Swift package targets and failed the build. Command-line values override
   a developer's `Config/Local.xcconfig`.
+
+## D-046 · Model suggestions belong to their composition (2026-10-20)
+- Review of D-043. A request waiting out the pause is asked again before
+  it is sent — field, settings and composition — so focus moving to a
+  password field or a no-learn app within the pause sends nothing.
+- Suggestions and pending requests end with the composition, on focus
+  change and on any settings change; model candidates are merged only
+  while the level and the field allow them. A reading typed away and back
+  before the pause is still asked once.
+- Model errors are logged by kind only: a refusal's description can quote
+  the prompt.

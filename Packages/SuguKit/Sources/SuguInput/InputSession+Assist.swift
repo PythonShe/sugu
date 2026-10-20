@@ -57,8 +57,7 @@ extension InputSession {
     /// reading.
     func scheduleSuggestions() {
         guard let request = suggestionRequest() else {
-            suggestionTask?.cancel()
-            suggestionTask = nil
+            cancelSuggestionRequest()
             return
         }
         guard suggestions?.reading != request.reading, pendingSuggestion != request.reading else { return }
@@ -66,14 +65,29 @@ extension InputSession {
         pendingSuggestion = request.reading
         suggestionTask = Task { [weak self] in
             try? await Task.sleep(for: Self.suggestionPause)
-            guard !Task.isCancelled, let assistant = self?.assistant else { return }
+            // Asked again after the pause: the field, the settings and the
+            // composition may all have changed.
+            guard !Task.isCancelled, let self, let assistant, suggestionRequest() == request else { return }
             let result = await assistant.suggestions(for: request)
-            guard !Task.isCancelled, let self else { return }
-            self.pendingSuggestion = nil
-            guard self.active?.state.reading == request.reading, !result.isEmpty else { return }
-            self.suggestions = (request.reading, request.translations, result)
-            self.refreshKeepingHighlight()
+            guard !Task.isCancelled else { return }
+            pendingSuggestion = nil
+            guard active?.state.reading == request.reading, !result.isEmpty else { return }
+            suggestions = (request.reading, request.translations, result)
+            refreshKeepingHighlight()
         }
+    }
+
+    private func cancelSuggestionRequest() {
+        suggestionTask?.cancel()
+        suggestionTask = nil
+        pendingSuggestion = nil
+    }
+
+    /// Drops requests and results when the composition ends, the field
+    /// changes or the settings do; a result belongs to its context.
+    func endSuggestions() {
+        cancelSuggestionRequest()
+        suggestions = nil
     }
 
     private func suggestionRequest() -> CompositionRequest? {
@@ -104,7 +118,7 @@ extension InputSession {
     /// The model's candidates for this reading, placed after the engine's
     /// best (ADR 0004, decision 4), without repeating what is listed.
     func mergingSuggestions(into candidates: [Candidate], reading: String) -> [Candidate] {
-        guard let suggestions, suggestions.reading == reading, !candidates.isEmpty else { return candidates }
+        guard let suggestions, suggestions.reading == reading, !candidates.isEmpty, modelEnabled, modelMaySeeField else { return candidates }
         var seen = Set(candidates.map(\.text))
         var added: [Candidate] = []
         func add(_ text: String, learns: Bool) {

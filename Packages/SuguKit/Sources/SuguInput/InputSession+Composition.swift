@@ -60,6 +60,7 @@ extension InputSession {
     }
 
     public func cancelComposition() {
+        endSuggestions()
         active?.clear()
         active = nil
         transformed = nil
@@ -164,6 +165,7 @@ extension InputSession {
 
     func commitText(_ text: String, reading: String, learn: Bool, record: Commit? = nil, undoable: Bool = false) {
         let engine = active
+        endSuggestions()
         active?.clear()
         active = nil
         transformed = nil

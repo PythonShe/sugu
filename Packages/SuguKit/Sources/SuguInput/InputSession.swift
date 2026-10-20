@@ -120,6 +120,7 @@ public final class InputSession {
     public var isEmpty: Bool { active?.state.isEmpty ?? true }
 
     private func applyPreferences() {
+        endSuggestions()
         punctuator.width = preferences.punctuationWidth
         list.pageSize = max(1, min(10, preferences.candidatesPerPage))
         if var latin = assembler.latin {
@@ -170,6 +171,7 @@ public final class InputSession {
     public func detach(_ client: any InputClient) {
         guard self.client === client else { return }
         if !isEmpty { commitComposition() }
+        endSuggestions()
         self.client = nil
         vocabulary = ""
     }

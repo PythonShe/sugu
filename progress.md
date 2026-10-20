@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Review of the language-model batch (D-046): requests re-checked after the
+  pause, suggestions end with their composition, errors logged by kind.
+  CI passes (keystroke p99 4.15 ms on a loaded machine).
 - Release script signs in the Private Cloud Compute entitlement when given
   a Developer ID profile (D-045); a release build without one carries none.
 - Unchanged marked text is not sent to the app again, and the composition's
