@@ -127,3 +127,10 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Chinese F9/F10 forms: Esc, editing; unbound keys pass; Tab converts; かな reconverts (D-071)
 - [x] Candidate window keeps its anchor per field; screen choice and clamping (D-071)
 - [ ] VoiceOver announcements from the candidate panel — check on device
+
+## 15. Release readiness (advisor pass 7)
+- [x] Unused CC BY-SA tokenizer removed from the app; CI guards notices and share-alike data (D-072)
+- [x] Build numbers for Sparkle, clean-tree and notarization checks, preinstall stop, uninstall steps (D-072)
+- [x] Learned store waits on a lock; librime deployment verified (D-072)
+- [ ] Confirm the source of wanxiang's English word list — owner
+- [ ] One Sparkle update between two notarized builds — needs the release keys

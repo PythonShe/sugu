@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Release readiness: no share-alike data in the app, growing build
+  numbers for Sparkle, store and librime failure handling, uninstall
+  steps (D-072).
 - Typing-path fixes from the sixth advisor pass: no lost composition on a
   replaced field, Chinese F9/F10 forms, unbound keys, Tab and かな, the
   candidate window's anchor (D-071).

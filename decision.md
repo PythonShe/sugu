@@ -1116,3 +1116,27 @@ any call made without the owner present. Each entry: what, why, reversibility.
   than commits, since the field that just took focus is usually the
   password field; a capital letter in a Chinese composition still commits
   and types the capital, as D-041 keeps Latin capitals with the app.
+
+## D-072 · Release readiness (advisor pass 7) (2026-10-20)
+- AzooKey's `EfficientNGram` target copies a tokenizer under CC BY-SA 4.0
+  into the app (D-047 attributed it). It is read only for Zenzai
+  personalization, which Sugu never turns on, so a build phase removes it
+  from the app, the notice goes, and CI fails if share-alike text appears
+  in the app's resources. Zenzai personalization (todo) would need it
+  back, and with it this question.
+- Releases carry a build number that grows with each commit (`git
+  rev-list --count HEAD`), since Sparkle compares `CFBundleVersion`, which
+  was fixed at 1; a release needs a clean tree, and a notarization that is
+  not "Accepted" stops it. The package stops a running Sugu before
+  installing as well as after. The README says how to uninstall.
+- A learned store locked by another process waits up to 200 ms per
+  statement instead of failing, and opening it is tried three times; a
+  failure still leaves typing working without learning, as before.
+- A librime deployment counts as done only when the compiled schema
+  exists, and a session whose schema does not select fails, so a disk-full
+  or unwritable build reaches the retry and Status row of D-027 instead of
+  showing letters with no candidates.
+- CI also checks that every pinned package has a notice.
+- Left for the owner: the source of rime-wanxiang's English word list
+  (shipped as `english-words.txt` under wanxiang's CC-BY-4.0); and one real
+  Sparkle update from a notarized build, which needs the release keys.
