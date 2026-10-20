@@ -48,8 +48,9 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
   window. The candidate window is drawn with Core Text and `CALayer`, with no
   Auto Layout on the keystroke path.
 - Every user-facing string is a key in the String Catalog
-  (`Localizable.xcstrings`) from the first commit; lookups stay at
-  view-controller level.
+  (`Localizable.xcstrings`) from the first commit; lookups stay in the
+  app's UI code (view controllers, menus, shared controls), and packages
+  return semantic kinds.
 - Dark mode and VoiceOver accessibility work from the first commit;
   newer-OS APIs are availability-gated with a fallback.
 
