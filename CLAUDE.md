@@ -14,7 +14,7 @@ build log in `progress.md`; domain language in `CONTEXT.md`.
 | Shell | Swift + AppKit + InputMethodKit (IMKServer / IMKInputController) | one input source, installed in `/Library/Input Methods` |
 | Project | XcodeGen + SwiftPM | `project.yml` is the source of truth; `Sugu.xcodeproj` is generated and gitignored |
 | Chinese engine | librime (BSD-3-Clause) + rime-wanxiang data (CC-BY-4.0) | C API; built by script into a static `.xcframework` |
-| Japanese engine | AzooKeyKanaKanjiConverter (MIT) | SwiftPM, in-process; Zenzai traits off |
+| Japanese engine | AzooKeyKanaKanjiConverter (MIT) | SwiftPM, in-process; Zenzai trait compiled in, used only once the user downloads a model |
 | Updates | Sparkle | system-profile reporting off |
 
 Verify third-party licenses from COPYING files in a clone before shipping a
@@ -36,7 +36,9 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
   engine types stay behind that boundary.
 - Learned words live in Sugu's own store behind one interface over both
   engines; text read from the document is never persisted.
-- Engines load lazily on first use of their mode.
+- Engines are created when their mode is entered or a field gains focus,
+  ahead of the first key; librime deploys in the background while typed
+  keys wait.
 
 ## 2. App Code Conventions
 
@@ -92,5 +94,7 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
   `scripts/build-librime.sh`), `Data/` (compiled dictionaries and
   language models from `scripts/build-data.sh`), `dist/` (release output of
   `scripts/release.sh`), `.build-dev/` (builds of `scripts/install-dev.sh`),
-  and `Sugu.xcodeproj/` except its SwiftPM `Package.resolved`. `Packages/SuguKit/Package.resolved` is tracked.
+  `Config/Local.xcconfig` (local signing overrides, from
+  `Local.xcconfig.example`), and `Sugu.xcodeproj/` except its SwiftPM
+  `Package.resolved`. `Packages/SuguKit/Package.resolved` is tracked.
 - Pinned third-party versions live in `scripts/versions.sh`.
