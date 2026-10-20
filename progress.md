@@ -8,6 +8,11 @@ Running log of what was built, verified, and what is next. Newest first.
   the typed keys by the schema's own spelling rules, toneless syllables
   added to the bundled syllabary. Taught-word sentences 0% → 83% top-1,
   main set unchanged at 90%; reload ~1 ms. 119 package tests.
+  Review fixes: use counts kept in librime's 32-bit range (capped at 9),
+  a reload is retried until the session has read the latest file, the
+  file follows the store even when Chinese is not loaded, writes land in
+  order. The file holds the best 3,000 words (librime parses it on the
+  main thread, ~1 ms per thousand) and the session opens after deployment.
 - Grammar model measured (`sugu-bench --grammar`): Chinese top-1 90% → 94%,
   keystroke p99 3.7 ms, footprint unchanged; D-015 updated with the data.
 - Cross-language proper nouns and per-app script (D-021): Japanese kanji
