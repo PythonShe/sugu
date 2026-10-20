@@ -47,6 +47,13 @@ An entry Sugu has learned from the user's commits, visible and deletable in the
 inspector.
 _Avoid_: user dictionary (that is what the user adds explicitly), history
 
+**Learned Phrase**:
+A run of two to five characters from the user's commits, with the text Sugu
+typed just before them, which raises the same characters where the user
+typed that context before. Deleted with Forget Last Hour and Delete All;
+not listed in the inspector. The code calls them personal n-grams.
+_Avoid_: phrase dictionary, history
+
 **No-Learn List**:
 Apps where Sugu neither learns from commits nor reads left context.
 _Avoid_: blocklist, private mode

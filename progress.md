@@ -3,6 +3,20 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Personal n-grams (D-083): commits teach their character n-grams after
+  the text Sugu typed before them, in the learned store, blended into the
+  bundled models per character; Settings › Learning › Learn Phrases, on
+  by default. Bench habits: Chinese 0% → 88%, Japanese 12% → 50%; main
+  sets 98% and 94% after, context sets 75% and 71%. Reviewed; fixed
+  normalization of n-grams that read the same, runs too long for the
+  model, Forget Last Hour reloading after a failed save, and nothing kept
+  from secure input. CI passes: keystroke p99 3.87 ms, footprint 82 MB,
+  fuzz 0 failures.
+- Leipzig news corpora measured and not adopted (D-082): no accuracy gain,
+  +97 MB resident, Japanese conversion p99 doubled.
+- Apple's models (D-081): On This Mac asks for translations only, one
+  language at a time; conversions come from Private Cloud Compute.
+  Probed with Apple Intelligence ready: translations from both levels.
 - librime reads a 10-candidate page instead of 100, and the candidate
   count returns to 30 with new input (D-078): Chinese keystroke p50
   0.48 → 0.37 ms, p99 4.18 → 3.76 ms, accuracy unchanged.

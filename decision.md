@@ -1466,3 +1466,37 @@ any call made without the owner present. Each entry: what, why, reversibility.
   (D-061), and weighs the model toward news vocabulary over the user's
   words. Not adopted; the bundled models stay on Tatoeba. Personal
   n-grams (D-079) are the way to the user's own collocations.
+
+## D-083 · Personal n-grams (2026-10-20)
+- What is learned: every run of two to five characters ending in a commit,
+  reaching into up to four characters Sugu typed just before it
+  (`InputSession.typedBefore`: its own commits and the keys it let
+  through since it last lost track of the caret). Never text read from the
+  field. `Commit.context` carries that text; nil means the commit's
+  n-grams are not learned (Learn Phrases off), so learn and unlearn agree.
+- Where: the learned store's `ngrams` table (mode, gram, count, last
+  used) with `ngram_events` for the last two hours, like words. Learn and
+  unlearn (undo, retype) move counts by one; Forget Last Hour takes back
+  that hour's uses; expiry drops n-grams unused for the expiry period;
+  Delete All drops them all. At most 100,000 per mode, the least recently
+  used pruned once there are a tenth more. Chinese n-grams are stored in
+  Simplified, the script the respeller scores in. Not synced: they are
+  fragments of sentences, and sync carries words.
+- How they rank: `BlendedLanguageModel` interpolates per character,
+  `(1 − λ)·P_bundled + λ·P_user`, with `P_user` from the longest context
+  of up to four characters the user typed and `λ = 0.5·n/(n + 1)` for a
+  context typed n times. Where the user never typed the context, scores
+  are the bundled model's exactly. Japanese reranking, the homophone
+  refiner and the Chinese respeller all use it; the respeller's score
+  cache follows the model's version.
+- Weighting by context length as well (`λ` × length/4) was tried: same
+  Chinese results, Japanese habits 38% rather than 50%.
+- Bench (`Bench/*-phrases.tsv`, 8 sentences learned as n-grams only, then
+  8 readings in new sentences sharing their habits): Chinese 0% → 88%,
+  Japanese 12% → 50%; afterwards the main sets 97% → 98% (zh) and 92% →
+  94% (ja), the context sets 60% → 75% (zh) and 71% → 71% (ja). Keystroke
+  p99 unchanged (3.8–4.1 ms). Japanese misses left are where AzooKey's
+  connection costs outweigh what the model adds (D-061); in use, the same
+  commits also teach their words.
+- Settings › Learning: Learn Phrases, on by default, enabled while Learn
+  From Typing is on; off, n-grams are neither learned nor used.

@@ -18,9 +18,9 @@ reasons behind each choice are in `docs/adr/` (product) and `decision.md`
 | Module | Role | Depends on |
 |---|---|---|
 | `SuguCore` | Modes, the key model, candidates, composition state, the `CompositionEngine` protocol and `EngineTraits`, punctuation, width and kana conversion, the kana keyboard layout, computed candidates, Latin inference, the pinyin syllabary, preferences, `Log` (unified-log channels) | — |
-| `SuguLearning` | `LearnedStore`: learned and user words in SQLite with an in-memory index, deletions, expiry, pins | Core |
+| `SuguLearning` | `LearnedStore`: learned and user words in SQLite with an in-memory index, deletions, expiry, pins; the user's character n-grams | Core, LM |
 | `SuguInput` | `InputSession`, the input state machine, with `CandidateAssembler`, `CandidateList`, the `v` expression engine, the `LoadingEngine` that holds letters until librime is ready, `InputClient` and `EngineSource` protocols, `ShiftTapDetector` | Core, Learning |
-| `SuguLM` | `CharacterLanguageModel`: the bundled character n-gram models that rerank Japanese sentences and respell Chinese ones (ADR 0005) | — |
+| `SuguLM` | `CharacterLanguageModel`: the bundled character n-gram models that rerank Japanese sentences and respell Chinese ones (ADR 0005); `PersonalNGrams` and `BlendedLanguageModel`, the user's n-grams interpolated into them (D-083) | — |
 | `SuguRime` | librime through the `CRimeShim` C target: schema generation, runtime, `RimeEngine` (pinyin) and `ZhuyinEngine`, OpenCC `ScriptConverter`, `ChineseRespelling` with the `SentenceRespeller`, the learned-word user dictionary and the pinyin decoder | Core, LM |
 | `SuguAzooKey` | `AzooKeyEngine`: predictions, clause and live conversion over AzooKeyKanaKanjiConverter; Zenzai loaded on a background converter and adopted between compositions | Core, LM |
 | `SuguEngines` | `EngineHub` (the real `EngineSource`: engines prepared at mode change and focus, deployment retries, preferences, script) and `ModelLibrary` (optional downloads) | Input, Rime, AzooKey, Learning, Downloads, LM |
@@ -67,7 +67,10 @@ checks accuracy and latency budgets.
    candidates); the shell sets the marked text through `TextInputClient` and
    draws the page in `CandidateView` with Core Text.
 5. A commit inserts text, and, when the engine's traits allow and the app is
-   not excluded, teaches `LearnedStore`; `⌃⌫` can take the last commit back,
+   not excluded, teaches `LearnedStore` its words and its character
+   n-grams after the text Sugu typed just before (`typedBefore`, never
+   read from the field), which `BlendedLanguageModel` mixes into the
+   bundled models at once; `⌃⌫` can take the last commit back,
    and 英数 pressed twice retypes a Japanese one as its romaji. Neither
    edits committed text in terminals (`canEditCommitted`).
 
@@ -81,7 +84,8 @@ checks accuracy and latency budgets.
   or text; Settings › Advanced exports this run's entries on request.
 - A damaged learned store is renamed `learned.sqlite.damaged-<date>` and a
   fresh one opened.
-- Learned words stay in the store's directory, excluded from backups. The
+- Learned words and phrases stay in the store's directory, excluded from
+  backups; phrases are not synced. The
   Chinese ones are also written, read-only for librime, into its user
   directory (`sugu_learned.txt`, likewise excluded) so they take part in
   sentences; it is regenerated from the store on every change. Sync

@@ -82,8 +82,8 @@ does it.
 ## Later phases
 
 - A personal model from what the user commits, kept in the learned store
-  with the same gates as learned words, blended with the bundled one; it
-  can also feed Zenzai's personalization.
+  with the same gates as learned words, blended with the bundled one:
+  built (D-079, D-083). It could also feed Zenzai's personalization.
 
 ## Considered options
 

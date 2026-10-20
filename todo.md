@@ -103,7 +103,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Japanese: AzooKey's sentences ranked by the model (D-047)
 - [x] Japanese: words respelled when the model prefers another spelling (D-052)
 - [x] Live conversion no longer traps after Esc from a conversion (D-051)
-- [ ] Personal n-grams from commits in the learned store, blended with the bundled model — on by default with a setting (D-079)
+- [x] Personal n-grams from commits in the learned store, blended with the bundled model — on by default with a setting (D-079, D-083)
 - [x] Chinese: librime's sentence respelled where the model reads another spelling as clearly better (D-053; Tatoeba's grammar did not hold, D-050)
 - [x] Chinese respelling for Traditional and Japanese forms (D-054)
 - [x] Bench: 101 Japanese and 100 Chinese sentences (D-050)
