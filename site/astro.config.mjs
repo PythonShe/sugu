@@ -14,5 +14,7 @@ export default defineConfig({
   vite: {
     // The icon and the third-party notices come from the app's sources.
     server: { fs: { allow: ['..'] } },
+    // Icons as files, not data: URLs, which the CSP (public/_headers) refuses.
+    build: { assetsInlineLimit: 0 },
   },
 });

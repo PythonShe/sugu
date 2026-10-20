@@ -21,23 +21,51 @@ function kind(key: string): { type: string; cache: string; download?: boolean } 
   return undefined;
 }
 
-/** An object from the bucket, for GET and HEAD; anything else is not found. */
+/**
+ * An object from the bucket, for GET and HEAD, with ranges (resumed
+ * downloads) and conditional requests; anything else is not found.
+ */
 export async function serve(request: Request, env: Env, key: string): Promise<Response> {
   const served = kind(key);
   if (!served) return new Response('Not found', { status: 404 });
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
   }
-  const object = request.method === 'HEAD' ? await env.UPDATES.head(key) : await env.UPDATES.get(key);
+  const object =
+    request.method === 'HEAD'
+      ? await env.UPDATES.head(key)
+      : await env.UPDATES.get(key, { onlyIf: request.headers, range: request.headers });
   if (!object) return new Response('Not found', { status: 404 });
   const headers = new Headers({
     'Content-Type': served.type,
     'Cache-Control': served.cache,
-    'Content-Length': String(object.size),
+    'Accept-Ranges': 'bytes',
     ETag: object.httpEtag,
     'X-Content-Type-Options': 'nosniff',
   });
   if (served.download) headers.set('Content-Disposition', `attachment; filename="${key.split('/').pop()}"`);
+  // A GET whose precondition held for the copy the client has.
+  if (request.method === 'GET' && !('body' in object)) return new Response(null, { status: 304, headers });
+  const range = request.method === 'GET' ? bytes(object.range, object.size) : undefined;
+  if (range) {
+    headers.set('Content-Range', `bytes ${range.start}-${range.start + range.length - 1}/${object.size}`);
+    headers.set('Content-Length', String(range.length));
+  } else {
+    headers.set('Content-Length', String(object.size));
+  }
   const body = 'body' in object ? (object as R2ObjectBody).body : null;
-  return new Response(body, { headers });
+  return new Response(body, { status: range ? 206 : 200, headers });
+}
+
+/** The bytes R2 returned for a range request; undefined for the whole object. */
+function bytes(range: R2Range | undefined, size: number): { start: number; length: number } | undefined {
+  if (!range) return undefined;
+  if ('suffix' in range && range.suffix !== undefined) {
+    const length = Math.min(range.suffix, size);
+    return { start: size - length, length };
+  }
+  const start = 'offset' in range && range.offset !== undefined ? range.offset : 0;
+  const length = 'length' in range && range.length !== undefined ? range.length : size - start;
+  if (start === 0 && length === size) return undefined;
+  return { start, length };
 }

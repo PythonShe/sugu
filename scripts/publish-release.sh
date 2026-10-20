@@ -40,14 +40,14 @@ ZIP="$DIST/Sugu-$VERSION.zip"
 [[ "$(field length)" == "$(wc -c <"$ZIP" | tr -d ' ')" ]] || fail "release.json's length is not the archive's."
 
 # A public file, past any cache: its bytes in $2, or nothing when it is not
-# there yet.
+# there yet; fails on any other answer.
 fetch() {
   local status
-  status="$(curl -sS -o "$2" -w '%{http_code}' -H 'Cache-Control: no-cache' "$SITE/$1?$(date +%s)")"
+  status="$(curl -sS -o "$2" -w '%{http_code}' -H 'Cache-Control: no-cache' "$SITE/$1?$(date +%s)")" || status=none
   case "$status" in
     200) ;;
     404) rm -f "$2" ;;
-    *) fail "$SITE/$1 answered $status." ;;
+    *) echo "$SITE/$1 answered $status." >&2; return 1 ;;
   esac
 }
 WORK="$(mktemp -d)"
@@ -95,7 +95,7 @@ done
 
 if [[ -d "$DIST/notes" ]]; then
   for file in "$DIST"/notes/*.md; do
-    [[ "$(basename "$file")" == body.md ]] && continue
+    [[ -f "$file" && "$(basename "$file")" != body.md ]] || continue
     put "$file" "$PREFIX/notes/$(basename "$file")" "text/markdown; charset=utf-8" no-cache
   done
 fi
@@ -103,6 +103,7 @@ fi
 # Every release, newest first; a release keeps the date it first came out.
 fetch releases.json "$WORK/releases.json"
 [[ -f "$WORK/releases.json" ]] || echo '[]' >"$WORK/releases.json"
+jq -e 'type == "array"' "$WORK/releases.json" >/dev/null || fail "The live releases.json is not a list of releases."
 TODAY="$(date -u +%Y-%m-%d)"
 jq --arg version "$VERSION" --arg today "$TODAY" --arg site "$SITE/$PREFIX" \
   --slurpfile release "$DIST/release.json" '
@@ -123,7 +124,7 @@ put "$WORK/latest.json" latest.json "application/json" no-cache
 put "$DIST/appcast.xml" appcast.xml "application/xml" no-cache
 
 for _ in $(seq 30); do
-  fetch appcast.xml "$WORK/appcast.xml"
+  fetch appcast.xml "$WORK/appcast.xml" || true
   if [[ -f "$WORK/appcast.xml" && "$(build_of "$WORK/appcast.xml")" == "$BUILD" ]]; then
     echo "Published Sugu $VERSION (build $BUILD)."
     exit 0

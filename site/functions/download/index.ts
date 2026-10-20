@@ -3,7 +3,7 @@ import type { Env } from '../../server/updates';
 /** The newest package, wherever the site was built: read from latest.json on every request. */
 export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   const object = await env.UPDATES.get('latest.json');
-  const latest = object ? ((await object.json()) as { version?: string }) : undefined;
+  const latest = object ? ((await object.json().catch(() => undefined)) as { version?: string } | undefined) : undefined;
   if (!latest?.version || !/^\d+\.\d+\.\d+$/.test(latest.version)) {
     return Response.redirect(new URL('/', request.url).toString(), 302);
   }
