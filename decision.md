@@ -471,3 +471,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   per app) `"` types 「」 and `'` types 『』, as Taiwan and Hong Kong write
   them, and `$` types ＄ rather than ￥. Simplified and Japanese forms
   keep “” ‘’ and ￥.
+
+## D-036 · More in the Input menu (2026-10-20)
+- The Input menu gains the settings people change while typing rather than
+  in Settings: Chinese Characters (a submenu of the five scripts, shown
+  when Chinese is on), Learn from Typing (the Learning pane's switch), and
+  Check for Updates… in builds that can update. Each edits the same
+  preference as Settings, so both stay in step.
+- The script submenu sets the global choice; an app with its own script
+  rule keeps it.
+- IMK passes the chosen item to `performMenuAction`, submenu items
+  included; items are told apart by tag. Not yet seen in a live menu bar
+  (no foreground testing here).

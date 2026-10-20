@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Input menu: Chinese Characters, Learn from Typing, Check for Updates…
+  (D-036).
 - Traditional Chinese quotes with 「」『』 (D-035).
 - First launch takes the mode order and Chinese characters from the
   preferred languages; the mode order is kept everywhere (D-034).

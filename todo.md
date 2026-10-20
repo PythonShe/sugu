@@ -77,7 +77,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Kana input types the kana of each physical key, JIS or ANSI, with voicing marks (D-033)
 - [x] First run follows the preferred languages: Japanese-first users start in Japanese (D-034)
 - [x] Traditional Chinese punctuation: 「」『』 for the Taiwan and Hong Kong scripts (D-035)
-- [ ] Input menu: Chinese script, pause learning, Check for Updates
+- [x] Input menu: Chinese script, pause learning, Check for Updates (D-036)
 - [ ] Candidate window: width cap with truncation, hover highlight
 - [ ] Undo after commit: verify the deletion in hosts that ignore the replacement range
 - [ ] Zhuyin, if wanxiang or librime algebra supports it under a compatible license
