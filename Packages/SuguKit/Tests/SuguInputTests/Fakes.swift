@@ -59,6 +59,7 @@ final class FakeEngine: CompositionEngine {
     private var selected = ""
     private var converting = false
     private var highlighted = 0
+    var traits: EngineTraits { EngineTraits(hasConversionPhase: converts, learnsCommits: true, takesSuguCandidates: true) }
     private(set) var state = CompositionState.empty
 
     init(table: [String: [String]], converts: Bool = false) {

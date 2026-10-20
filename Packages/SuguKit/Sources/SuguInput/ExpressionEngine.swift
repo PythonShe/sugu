@@ -7,6 +7,8 @@ final class ExpressionEngine: CompositionEngine {
     private let computed: ComputedCandidates
     private var text = ""
     private var caret = 0
+    /// Results are made fresh each time: never learned, never restored.
+    let traits = EngineTraits(hasConversionPhase: false, learnsCommits: false, takesSuguCandidates: false)
     private(set) var state = CompositionState.empty
 
     init(computed: ComputedCandidates) {

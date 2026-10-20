@@ -35,11 +35,33 @@ public struct Commit: Sendable, Equatable {
     }
 }
 
+/// How an engine composes, which decides how the input session binds keys
+/// and treats what it commits.
+public struct EngineTraits: Sendable, Equatable {
+    /// Typing shows predictions and Space converts in a phase of its own,
+    /// clause by clause (AzooKey). Without it, candidates are live while
+    /// typing and the first is chosen by default (librime, expressions).
+    public var hasConversionPhase: Bool
+    /// Commits teach the learned store and ⌃⌫ can take them back into the
+    /// engine.
+    public var learnsCommits: Bool
+    /// Sugu adds its own candidates (learned, computed, Latin) to the
+    /// engine's.
+    public var takesSuguCandidates: Bool
+
+    public init(hasConversionPhase: Bool, learnsCommits: Bool, takesSuguCandidates: Bool) {
+        self.hasConversionPhase = hasConversionPhase
+        self.learnsCommits = learnsCommits
+        self.takesSuguCandidates = takesSuguCandidates
+    }
+}
+
 /// One language engine driving one composition. Implementations own the raw
 /// input and conversion state; Sugu's input session owns key bindings,
 /// modes, punctuation, and candidates that do not come from the engine.
 @MainActor
 public protocol CompositionEngine: AnyObject {
+    var traits: EngineTraits { get }
     var state: CompositionState { get }
 
     /// Characters this engine accepts as input in the current state.

@@ -49,6 +49,7 @@ public final class AzooKeyEngine: CompositionEngine {
     /// clause's kana length.
     private var bestFollowing: (length: Int, text: String)?
 
+    public let traits = EngineTraits(hasConversionPhase: true, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
     /// Built once: constructing it reads the emoji dictionary from disk,
     /// which cost more than the conversion itself on every keystroke.

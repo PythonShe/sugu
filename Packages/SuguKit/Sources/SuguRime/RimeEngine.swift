@@ -13,6 +13,7 @@ public final class RimeEngine: CompositionEngine {
     /// fetched only when the user pages past them.
     private var candidateLimit: Int
 
+    public let traits = EngineTraits(hasConversionPhase: false, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
 
     public init(runtime: RimeRuntime, script: ChineseScript = .simplified, candidateLimit: Int = 30) {

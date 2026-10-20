@@ -209,24 +209,24 @@ public final class InputSession {
             return false
         }
         if !isEmpty, let consumed = handleFunctionKey(key) { return consumed }
-
-        switch mode {
-        case .english: return false
-        case .chinese: return handleChinese(key)
-        case .japanese: return handleJapanese(key)
-        }
-    }
-
-    // MARK: Chinese
-
-    private func handleChinese(_ key: KeyInput) -> Bool {
-        let character = key.printable
+        if mode == .english { return false }
         if key.modifiers.contains(.option) {
+            // Option types the layout's symbols; finish the composition first.
             if !isEmpty { commitComposition() }
             return false
         }
-        if isEmpty {
-            guard let character, !key.modifiers.contains(.numericPad) else { return false }
+        guard let engine = active, !engine.state.isEmpty else { return start(key) }
+        return engine.traits.hasConversionPhase ? handleStaged(key, engine: engine) : handleLive(key, engine: engine)
+    }
+
+    // MARK: Starting a composition
+
+    private func start(_ key: KeyInput) -> Bool {
+        guard let character = key.printable, !key.modifiers.contains(.numericPad) else { return false }
+        switch mode {
+        case .english:
+            return false
+        case .chinese:
             if character == ComputedCandidates.chineseNumberPrefix {
                 begin(with: expression, input: String(character))
                 return true
@@ -236,14 +236,41 @@ public final class InputSession {
                 return true
             }
             if ChinesePunctuator.handles(character) {
-                let previous = lastCharacterBeforeCaret()
-                commitText(punctuator.output(for: character, after: previous), reading: String(character), learn: false)
+                typePunctuation(character)
                 return true
             }
             return false
+        case .japanese:
+            if key.keyCode == VirtualKey.space { return typeFullWidthSpace(key) }
+            guard let engine = engines.engine(for: .japanese), engine.accepts(character) else { return false }
+            begin(with: engine, input: input(for: character))
+            return true
         }
-        guard let engine = active else { return false }
+    }
 
+    private func typeFullWidthSpace(_ key: KeyInput) -> Bool {
+        guard preferences.fullWidthSpace, !key.modifiers.contains(.shift) else { return false }
+        commitText("　", reading: " ", learn: false)
+        return true
+    }
+
+    private func typePunctuation(_ character: Character) {
+        let previous = lastCharacterBeforeCaret()
+        commitText(punctuator.output(for: character, after: previous), reading: String(character), learn: false)
+    }
+
+    /// Romaji input maps symbol keys to Japanese symbols; kana input and
+    /// pinyin pass keys through.
+    private func input(for character: Character) -> String {
+        guard mode == .japanese, !preferences.kanaInput else { return String(character) }
+        return preferences.japanesePunctuation.romajiInput(for: character)
+    }
+
+    // MARK: Live candidates (librime, expressions)
+
+    /// Candidates follow every key and the first is chosen by default:
+    /// Space commits it, digits pick another.
+    private func handleLive(_ key: KeyInput, engine: any CompositionEngine) -> Bool {
         switch key.keyCode {
         case VirtualKey.escape: cancelComposition(); return true
         case VirtualKey.returnKey, VirtualKey.keypadEnter: commit(engine.commitRaw()); return true
@@ -266,9 +293,11 @@ public final class InputSession {
         default:
             break
         }
-        guard let character else { return true }
-        if engine is ExpressionEngine, engine.accepts(character) {
-            engine.insert(String(character))
+        guard let character = key.printable else { return true }
+        // What the engine takes is input, even digits and operators in an
+        // expression; only the rest selects or turns pages.
+        if engine.accepts(character) {
+            engine.insert(input(for: character))
             refresh()
             return true
         }
@@ -280,17 +309,11 @@ public final class InputSession {
             selectOnPage(digit)
             return true
         }
-        if character == "-" && !(engine is ExpressionEngine) { turnPage(by: -1); return true }
-        if character == "=" && !(engine is ExpressionEngine) { turnPage(by: 1); return true }
-        if engine.accepts(character) {
-            engine.insert(String(character))
-            refresh()
-            return true
-        }
-        if ChinesePunctuator.handles(character) {
+        if character == "-" { turnPage(by: -1); return true }
+        if character == "=" { turnPage(by: 1); return true }
+        if mode == .chinese, ChinesePunctuator.handles(character) {
             commitHighlighted()
-            let previous = lastCharacterBeforeCaret()
-            commitText(punctuator.output(for: character, after: previous), reading: String(character), learn: false)
+            typePunctuation(character)
             return true
         }
         // Anything else: finish the composition and let the key through.
@@ -298,25 +321,11 @@ public final class InputSession {
         return false
     }
 
-    // MARK: Japanese
+    // MARK: Staged conversion (AzooKey)
 
-    private func handleJapanese(_ key: KeyInput) -> Bool {
-        let character = key.printable
-        if key.modifiers.contains(.option) {
-            if !isEmpty { commitComposition() }
-            return false
-        }
-        if isEmpty {
-            if key.keyCode == VirtualKey.space, preferences.fullWidthSpace, !key.modifiers.contains(.shift) {
-                commitText("　", reading: " ", learn: false)
-                return true
-            }
-            guard let character, !key.modifiers.contains(.numericPad), let engine = engines.engine(for: .japanese),
-                  engine.accepts(character) else { return false }
-            begin(with: engine, input: japaneseInput(for: character))
-            return true
-        }
-        guard let engine = active else { return false }
+    /// Typing shows predictions; Space converts, then moves through the
+    /// focused clause's candidates; arrows move and resize clauses.
+    private func handleStaged(_ key: KeyInput, engine: any CompositionEngine) -> Bool {
         let converting = engine.state.phase == .converting
 
         switch key.keyCode {
@@ -375,7 +384,7 @@ public final class InputSession {
         default:
             break
         }
-        guard let character else { return true }
+        guard let character = key.printable else { return true }
         // Numpad keys type numbers; they never select.
         if key.modifiers.contains(.numericPad) {
             commitComposition()
@@ -388,23 +397,18 @@ public final class InputSession {
         }
         if engine.accepts(character) {
             if converting || transformed != nil || highlight != nil {
+                // Typing on after a choice commits it and starts afresh.
                 commitComposition()
-                guard let fresh = engines.engine(for: .japanese) else { return true }
-                begin(with: fresh, input: japaneseInput(for: character))
+                guard let fresh = engines.engine(for: mode) else { return true }
+                begin(with: fresh, input: input(for: character))
                 return true
             }
-            engine.insert(japaneseInput(for: character))
+            engine.insert(input(for: character))
             refresh()
             return true
         }
         commitComposition()
         return false
-    }
-
-    /// Romaji input maps symbol keys to Japanese symbols; kana input
-    /// passes keys through to the kana table.
-    private func japaneseInput(for character: Character) -> String {
-        preferences.kanaInput ? String(character) : preferences.japanesePunctuation.romajiInput(for: character)
     }
 
     // MARK: Function keys (F6–F10)
@@ -452,7 +456,7 @@ public final class InputSession {
             commitHighlighted()
             return
         }
-        if mode == .chinese || engine is ExpressionEngine {
+        if !engine.traits.hasConversionPhase {
             commitHighlighted()
             // A partial selection (a phrase for the first syllables) leaves
             // the rest composing; focus is leaving, so commit all of it.
@@ -495,7 +499,7 @@ public final class InputSession {
             commitText(transformed, reading: reading, learn: false)
             return
         }
-        guard let index = highlight ?? (mode == .chinese || engine is ExpressionEngine ? 0 : nil),
+        guard let index = highlight ?? (engine.traits.hasConversionPhase ? nil : 0),
               candidates.indices.contains(index) else {
             commit(engine.commitConverted() ?? engine.commitRaw())
             return
@@ -532,9 +536,9 @@ public final class InputSession {
             let reading = engine.state.reading
             let learned = learnedText(shown: candidate.text, reading: reading)
             let record = Commit(text: learned, reading: reading, clauses: [.init(reading: reading, text: learned)])
-            let fromLanguage = !(engine is ExpressionEngine)
+            let learns = engine.traits.learnsCommits
             engine.clear()
-            commitText(candidate.text, reading: reading, learn: fromLanguage, record: record, undoable: fromLanguage)
+            commitText(candidate.text, reading: reading, learn: learns, record: record, undoable: learns)
         case .chineseForm:
             // A Chinese name in Japanese text does not belong in the Japanese store.
             let reading = engine.state.reading
@@ -546,7 +550,7 @@ public final class InputSession {
             let reading = engine.state.reading
             let record = Commit(text: candidate.text, reading: reading)
             engine.clear()
-            commitText(candidate.text, reading: reading, learn: false, record: record, undoable: !(engine is ExpressionEngine))
+            commitText(candidate.text, reading: reading, learn: false, record: record, undoable: engine.traits.learnsCommits)
         case .latin:
             let reading = engine.state.reading
             engine.clear()
@@ -564,9 +568,8 @@ public final class InputSession {
 
     private func commit(_ commit: Commit?) {
         guard let commit else { refresh(); return }
-        // Expressions are neither learned nor restorable into an engine.
-        let fromLanguage = !(active is ExpressionEngine)
-        commitText(commit.text, reading: commit.reading, learn: fromLanguage, record: commit, undoable: fromLanguage)
+        let learns = active?.traits.learnsCommits ?? false
+        commitText(commit.text, reading: commit.reading, learn: learns, record: commit, undoable: learns)
     }
 
     private func commitText(_ text: String, reading: String, learn: Bool, record: Commit? = nil, undoable: Bool = false) {
@@ -639,6 +642,8 @@ public final class InputSession {
 
     private var pageSize: Int { max(1, min(10, preferences.candidatesPerPage)) }
     private var verticalLayout: Bool { preferences.candidateLayout == .vertical }
+    /// Whether the active engine's first candidate is chosen by default.
+    private var hasLiveCandidates: Bool { active.map { !$0.traits.hasConversionPhase } ?? false }
 
     private func moveHighlight(by delta: Int) {
         guard !candidates.isEmpty else { return }
@@ -654,7 +659,7 @@ public final class InputSession {
         let target = min(max(0, page + delta), pages - 1)
         guard target != page else { return }
         page = target
-        if highlight != nil || mode == .chinese {
+        if highlight != nil || hasLiveCandidates {
             setHighlight(target * pageSize)
         } else {
             publish()
@@ -686,7 +691,7 @@ public final class InputSession {
         let state = engine.state
         if state.phase == .converting {
             highlight = state.highlightedIndex.flatMap { engineIndex in candidates.firstIndex { $0.engineIndex == engineIndex } } ?? 0
-        } else if mode == .chinese || engine is ExpressionEngine {
+        } else if !engine.traits.hasConversionPhase {
             highlight = candidates.isEmpty ? nil : 0
         } else {
             highlight = nil
@@ -697,7 +702,8 @@ public final class InputSession {
 
     private func assembled(_ state: CompositionState) -> [Candidate] {
         assembler.assemble(.init(
-            mode: active is ExpressionEngine ? .english : mode,
+            mode: mode,
+            includesSuguCandidates: active?.traits.takesSuguCandidates ?? false,
             state: state,
             context: preferences.leftContextRanking ? context : "",
             vocabulary: preferences.leftContextRanking && preferences.documentVocabulary ? vocabulary : "",
@@ -721,7 +727,7 @@ public final class InputSession {
                 caret = state.caret
                 // Show a highlighted prediction inline while it is chosen, and
                 // Sugu's own candidates, which replace the whole reading.
-                if mode == .japanese, let highlight, candidates.indices.contains(highlight),
+                if engine.traits.hasConversionPhase, let highlight, candidates.indices.contains(highlight),
                    state.phase == .composing || candidates[highlight].engineIndex == nil {
                     segments = [CompositionSegment(candidates[highlight].text, role: .focused)]
                     caret = candidates[highlight].text.count
@@ -733,7 +739,7 @@ public final class InputSession {
             } else if state.phase == .converting {
                 showWindow = showsConversionWindow
             } else {
-                showWindow = mode == .chinese || engine is ExpressionEngine || preferences.japanesePredictions
+                showWindow = !engine.traits.hasConversionPhase || preferences.japanesePredictions
             }
             if showWindow, !candidates.isEmpty {
                 let start = page * pageSize
@@ -744,7 +750,7 @@ public final class InputSession {
                     page: page,
                     hasPreviousPage: page > 0,
                     hasNextPage: start + pageSize < candidates.count,
-                    isPrediction: state.phase == .composing && mode == .japanese
+                    isPrediction: state.phase == .composing && engine.traits.hasConversionPhase
                 )
             }
         }

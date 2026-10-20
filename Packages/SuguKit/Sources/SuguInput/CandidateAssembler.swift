@@ -12,6 +12,8 @@ struct CandidateAssembler {
 
     struct Input {
         var mode: InputMode
+        /// Whether the engine takes Sugu's candidates (not an expression).
+        var includesSuguCandidates = true
         var state: CompositionState
         /// Text left of the caret whose words should rank first.
         var context: String
@@ -27,6 +29,7 @@ struct CandidateAssembler {
 
     func assemble(_ input: Input) -> [Candidate] {
         let state = input.state
+        guard input.includesSuguCandidates else { return state.candidates }
         var engine = state.candidates
         if !input.context.isEmpty || !input.vocabulary.isEmpty {
             engine = rerank(engine, context: input.context, vocabulary: input.vocabulary)
