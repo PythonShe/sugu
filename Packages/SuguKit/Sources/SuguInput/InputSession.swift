@@ -66,6 +66,10 @@ public final class InputSession {
     private var transformed: String?
     private var punctuator = ChinesePunctuator()
     private var context = ""
+    /// The field's text around the caret when it gained focus, plus what was
+    /// committed since: its words rank first while the field has focus
+    /// (document vocabulary). Kept in memory only.
+    private var vocabulary = ""
     /// The commit ⌃⌫ can take back, with the engine that composed it.
     private var undoable: (commit: Commit, engine: any CompositionEngine, mode: InputMode, learned: Bool)?
 
@@ -117,6 +121,7 @@ public final class InputSession {
         self.client = client
         punctuator.reset()
         undoable = nil
+        vocabulary = readVocabulary()
         let bundleID = client.bundleIdentifier
         let rule = preferences.rule(for: bundleID)
         provider.setChineseScript(chineseScript)
@@ -133,6 +138,7 @@ public final class InputSession {
         guard self.client === client else { return }
         if !isEmpty { commitComposition() }
         self.client = nil
+        vocabulary = ""
     }
 
     // MARK: Modes
@@ -553,6 +559,9 @@ public final class InputSession {
         page = 0
         showsConversionWindow = false
         client?.commit(text)
+        if !vocabulary.isEmpty {
+            vocabulary = String((vocabulary + text).suffix(Self.vocabularyLimit * 2))
+        }
         let record = record ?? Commit(text: text, reading: reading)
         var learned = false
         if learn, mode != .english, !isSecureInput, let client, preferences.learns(in: client.bundleIdentifier), let store {
@@ -671,6 +680,7 @@ public final class InputSession {
             mode: active is ExpressionEngine ? .english : mode,
             state: state,
             context: preferences.leftContextRanking ? context : "",
+            vocabulary: preferences.leftContextRanking && preferences.documentVocabulary ? vocabulary : "",
             pageSize: pageSize,
             chineseText: { [provider] in provider.chineseText($0) },
             offersChineseForms: preferences.enabledModes.contains(.chinese)
@@ -731,10 +741,21 @@ public final class InputSession {
         !isSecureInput && preferences.readsContext(in: client?.bundleIdentifier)
     }
 
+    static let contextLimit = 200
+    static let vocabularyLimit = 2_000
+
     private func readContext() -> String {
         guard preferences.leftContextRanking, canReadField else { return "" }
-        let limit = preferences.documentVocabulary ? 4_000 : 200
-        return client?.textBeforeCaret(limit: limit) ?? ""
+        return client?.textBeforeCaret(limit: Self.contextLimit) ?? ""
+    }
+
+    /// Text on both sides of the caret, read once when the field gains
+    /// focus rather than on the keystroke path.
+    private func readVocabulary() -> String {
+        guard preferences.leftContextRanking, preferences.documentVocabulary, canReadField, let client else { return "" }
+        let before = client.textBeforeCaret(limit: Self.vocabularyLimit) ?? ""
+        let after = client.textAfterCaret(limit: Self.vocabularyLimit) ?? ""
+        return before + "\n" + after
     }
 
     private func lastCharacterBeforeCaret() -> Character? {

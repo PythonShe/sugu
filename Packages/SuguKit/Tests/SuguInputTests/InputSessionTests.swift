@@ -284,4 +284,35 @@ struct InputSessionTests {
         _ = session.handle(Key.enter)
         #expect(client.document == "东京")
     }
+
+    @Test func wordsLeftOfTheCaretRankFirst() {
+        client.document = "他已经拟好了"
+        let session = makeSession()
+        type("nihao", into: session)
+        #expect(session.display.candidates?.candidates.first?.text == "拟好")
+    }
+
+    @Test func documentVocabularyRanksWordsAnywhereInTheField() {
+        client.documentAfterCaret = "计划已经拟好"
+        let off = makeSession()
+        type("nihao", into: off)
+        #expect(off.display.candidates?.candidates.first?.text == "你好")
+        off.cancelComposition()
+        off.detach(client)
+
+        let on = makeSession { $0.documentVocabulary = true }
+        type("nihao", into: on)
+        #expect(on.display.candidates?.candidates.first?.text == "拟好")
+        #expect((provider.engines[.chinese] as? FakeEngine)?.leftContext.isEmpty == true)
+    }
+
+    @Test func documentVocabularyIsNotReadInSecureInput() {
+        client.documentAfterCaret = "计划已经拟好"
+        let session = makeSession { $0.documentVocabulary = true }
+        session.isSecureInput = true
+        session.attach(client)
+        session.isSecureInput = false
+        type("nihao", into: session)
+        #expect(session.display.candidates?.candidates.first?.text == "你好")
+    }
 }

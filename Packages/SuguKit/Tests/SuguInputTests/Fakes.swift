@@ -9,6 +9,8 @@ final class FakeClient: InputClient {
     var document = ""
     var marked: [CompositionSegment] = []
     var exposesText = true
+    /// Text right of the caret, which commits do not touch.
+    var documentAfterCaret = ""
 
     init(bundleIdentifier: String? = "com.example.editor") {
         self.bundleIdentifier = bundleIdentifier
@@ -27,6 +29,10 @@ final class FakeClient: InputClient {
 
     func textBeforeCaret(limit: Int) -> String? {
         exposesText ? String(document.suffix(limit)) : nil
+    }
+
+    func textAfterCaret(limit: Int) -> String? {
+        exposesText ? String(documentAfterCaret.prefix(limit)) : nil
     }
 
     func deleteBeforeCaret(count: Int) -> Bool {
@@ -104,7 +110,8 @@ final class FakeEngine: CompositionEngine {
     }
     func clear() { input = ""; selected = ""; converting = false; highlighted = 0; state = .empty }
     func restore(reading: String) { input = reading; converting = converts; refresh() }
-    func setLeftContext(_ text: String) {}
+    private(set) var leftContext = ""
+    func setLeftContext(_ text: String) { leftContext = text }
 
     private func refresh() {
         guard !input.isEmpty else { state = .empty; return }

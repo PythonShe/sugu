@@ -76,6 +76,16 @@ final class TextInputClient: InputClient {
         return String(text.suffix(limit))
     }
 
+    func textAfterCaret(limit: Int) -> String? {
+        let selected = client.selectedRange()
+        guard selected.location != NSNotFound else { return nil }
+        let start = NSMaxRange(selected)
+        let end = min(client.length(), start + limit * 2)
+        guard end > start else { return "" }
+        guard let text = client.attributedSubstring(from: NSRange(location: start, length: end - start))?.string else { return nil }
+        return String(text.prefix(limit))
+    }
+
     func deleteBeforeCaret(count: Int) -> Bool {
         guard let end = insertionPoint, let before = textBeforeCaret(limit: count), before.count == count else { return false }
         let length = before.utf16.count

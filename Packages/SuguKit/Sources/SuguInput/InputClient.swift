@@ -13,6 +13,9 @@ public protocol InputClient: AnyObject {
     /// Up to `limit` characters left of the caret, or nil when the field
     /// does not expose its text.
     func textBeforeCaret(limit: Int) -> String?
+    /// Up to `limit` characters right of the caret (after any selection),
+    /// or nil when the field does not expose its text.
+    func textAfterCaret(limit: Int) -> String?
     /// Deletes `count` characters left of the caret. Returns false when the
     /// field does not support it.
     func deleteBeforeCaret(count: Int) -> Bool

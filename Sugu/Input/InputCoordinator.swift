@@ -64,10 +64,10 @@ final class InputCoordinator {
     // MARK: Events
 
     func handle(_ event: NSEvent, client: any IMKTextInput & NSObjectProtocol, controller: IMKInputController) -> Bool {
+        session.isSecureInput = IsSecureEventInputEnabled()
         if self.client?.represents(client) != true {
             session.attach(attach(client, controller: controller))
         }
-        session.isSecureInput = IsSecureEventInputEnabled()
         switch event.type {
         case .flagsChanged:
             flagsChanged(event)

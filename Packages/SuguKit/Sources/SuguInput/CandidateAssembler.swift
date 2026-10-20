@@ -13,9 +13,10 @@ struct CandidateAssembler {
     struct Input {
         var mode: InputMode
         var state: CompositionState
-        /// Text left of the caret (and, when enabled, elsewhere in the
-        /// field) whose words should rank first.
+        /// Text left of the caret whose words should rank first.
         var context: String
+        /// Text elsewhere in the field whose words should also rank first.
+        var vocabulary = ""
         /// Rows per page, so the Latin candidate stays on the first page.
         var pageSize: Int
         /// Chinese text in the script in use (see `EngineProvider`).
@@ -27,8 +28,8 @@ struct CandidateAssembler {
     func assemble(_ input: Input) -> [Candidate] {
         let state = input.state
         var engine = state.candidates
-        if !input.context.isEmpty {
-            engine = rerank(engine, context: input.context)
+        if !input.context.isEmpty || !input.vocabulary.isEmpty {
+            engine = rerank(engine, context: input.context, vocabulary: input.vocabulary)
         }
         // Sugu's candidates replace the whole reading, so they only apply
         // while nothing in the composition has been converted yet.
@@ -96,14 +97,15 @@ struct CandidateAssembler {
         return result
     }
 
-    /// Moves candidates that already appear in the context ahead of the
-    /// engine's first choice when they plausibly cover the same input (same
-    /// length as the first candidate, two or more characters).
-    func rerank(_ candidates: [Candidate], context: String) -> [Candidate] {
+    /// Moves candidates that already appear in the context or vocabulary
+    /// ahead of the engine's first choice when they plausibly cover the same
+    /// input (same length as the first candidate, two or more characters).
+    func rerank(_ candidates: [Candidate], context: String, vocabulary: String = "") -> [Candidate] {
         guard let first = candidates.first, first.text.count >= 2 else { return candidates }
+        func appears(_ text: String) -> Bool { context.contains(text) || vocabulary.contains(text) }
         let window = candidates.prefix(10)
-        let hits = window.filter { $0.text.count == first.text.count && $0.text != first.text && context.contains($0.text) }
-        guard !hits.isEmpty, !context.contains(first.text) else { return candidates }
+        let hits = window.filter { $0.text.count == first.text.count && $0.text != first.text && appears($0.text) }
+        guard !hits.isEmpty, !appears(first.text) else { return candidates }
         let hitTexts = Set(hits.map(\.text))
         return hits + candidates.filter { !hitTexts.contains($0.text) }
     }

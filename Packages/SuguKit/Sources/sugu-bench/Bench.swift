@@ -115,6 +115,7 @@ private final class Field: InputClient {
     func commit(_ text: String) {}
     func setMarkedText(_ segments: [CompositionSegment], caret: Int) {}
     func textBeforeCaret(limit: Int) -> String? { nil }
+    func textAfterCaret(limit: Int) -> String? { nil }
     func deleteBeforeCaret(count: Int) -> Bool { false }
     func selectedText() -> String? { nil }
 }
