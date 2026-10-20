@@ -112,3 +112,7 @@ downloads the model: zenz-v3.1 small, Q5_K_M (CC-BY-SA-4.0, 74 MB, pinned
 by revision and SHA-256). On the seed benchmark it raises Japanese top-1
 from 76% to 80% at about 60 MB more footprint and twice the keystroke time,
 so it is labelled experimental.
+
+### 2026-10-20 · Amendment: proprietary license
+Sugu is now proprietary and free of charge (ADR 0006). Decision 8's
+reasoning still holds: a GPL fork could not ship under `LICENSE` either.

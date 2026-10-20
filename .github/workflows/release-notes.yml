@@ -77,7 +77,7 @@ jobs:
           fi
 
           SYSTEM=$(cat <<'SYSTEM_EOF'
-          You write release notes for Sugu, an open-source, privacy-first input method for macOS for typing Chinese (pinyin, double pinyin, zhuyin) and Japanese (romaji and kana) in one input source. Conversion and learning happen on the Mac; optional language-model features use Apple's on-device model or Private Cloud Compute.
+          You write release notes for Sugu, a free, privacy-first input method for macOS for typing Chinese (pinyin, double pinyin, zhuyin) and Japanese (romaji and kana) in one input source. Conversion and learning happen on the Mac; optional language-model features use Apple's on-device model or Private Cloud Compute.
 
           Input: git commit subject lines in the form `type(scope): description`, sometimes with decision ids such as D-081.
 

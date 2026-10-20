@@ -1,15 +1,15 @@
 # Sugu
 
-**Sugu** (すぐ — *"immediately"*) is an open-source, privacy-first input method for macOS, built for Japanese and Chinese composition.
+**Sugu** (すぐ — *"immediately"*) is a free, privacy-first input method for macOS, built for Japanese and Chinese composition.
 
 The name is the thesis: the right word should appear *immediately* — in the first candidate slot, with no wait.
 
 ## Principles
 
-- **Local-first, privacy-first** — an input method reads everything you type. Sugu is auditable and sends nothing: composition, conversion and learning stay on your Mac, and you can see the words it has learned and delete what it has learned. Apple's language models can translate and rewrite if you turn them on, on your Mac or, only if you choose it, in Private Cloud Compute, which can also suggest conversions.
+- **Local-first, privacy-first** — an input method reads everything you type. Sugu sends nothing you type: composition, conversion and learning stay on your Mac, and you can see the words it has learned and delete what it has learned. Apple's language models can translate and rewrite if you turn them on, on your Mac or, only if you choose it, in Private Cloud Compute, which can also suggest conversions.
 - **One input source** — Chinese, Japanese and English live in one input source, so switching never depends on macOS input-source switching.
 - **Fast and accurate, measured** — latency and memory budgets are checked by a benchmark that drives the whole input pipeline, and accuracy is measured on public test sets.
-- **Open source** — Apache-2.0. Full stop, no proprietary tier.
+- **Free** — no price, no account, no paid tier.
 
 ## Features
 
@@ -24,7 +24,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Install
 
-Requires macOS 14 or later. Download `Sugu-<version>.pkg` from the [releases](https://github.com/PythonShe/sugu/releases), open it, and Sugu is selected in the input menu. It is listed under Chinese, Simplified in **System Settings › Keyboard › Input Sources**. Sugu checks for updates itself; this can be turned off in its settings.
+Requires macOS 14 or later. Download `Sugu-<version>.pkg` from [sugu.zheng-she.com](https://sugu.zheng-she.com), open it, and Sugu is selected in the input menu. It is listed under Chinese, Simplified in **System Settings › Keyboard › Input Sources**. Sugu checks for updates itself; this can be turned off in its settings.
 
 To uninstall, remove Sugu from **Input Sources**, then in Terminal:
 
@@ -61,4 +61,4 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' bu
 
 ## License
 
-[Apache-2.0](LICENSE). Sugu includes third-party software and data under their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt); the Chinese dictionary is rime-wanxiang by amzxyz (CC-BY-4.0), and the language models are computed from sentences by the contributors of Tatoeba (CC BY 2.0 FR). rime-ice (GPL-3.0) and the Zenzai model (CC-BY-SA-4.0) are never bundled and are downloaded only at the user's request.
+Proprietary, free of charge — see [LICENSE](LICENSE) and [ADR 0006](docs/adr/0006-proprietary-license-and-distribution.md). Sugu includes third-party software and data under their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt); the Chinese dictionary is rime-wanxiang by amzxyz (CC-BY-4.0), and the language models are computed from sentences by the contributors of Tatoeba (CC BY 2.0 FR). rime-ice (GPL-3.0) and the Zenzai model (CC-BY-SA-4.0) are never bundled and are downloaded only at the user's request.

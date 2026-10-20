@@ -1,7 +1,7 @@
 # Sugu Rules
 
-Sugu is an open-source, privacy-first input method for macOS for Japanese and
-Chinese composition. Single-component repo — Swift / AppKit / InputMethodKit.
+Sugu is a proprietary, free, privacy-first input method for macOS for
+Japanese and Chinese composition. Single-component repo — Swift / AppKit / InputMethodKit.
 `AGENTS.md` is a verbatim copy of `CLAUDE.md`; after editing either, re-copy it
 over the other in the same commit. Product decisions live in `docs/adr/`;
 domain language in `CONTEXT.md`.
@@ -14,7 +14,7 @@ domain language in `CONTEXT.md`.
 | Project | XcodeGen + SwiftPM | `project.yml` is the source of truth; `Sugu.xcodeproj` is generated and gitignored |
 | Chinese engine | librime (BSD-3-Clause) + rime-wanxiang data (CC-BY-4.0) | C API; built by script into a static `.xcframework` |
 | Japanese engine | AzooKeyKanaKanjiConverter (MIT) | SwiftPM, in-process; Zenzai trait compiled in, used only once the user downloads a model |
-| Updates | Sparkle | system-profile reporting off |
+| Updates | Sparkle | signed feed; releases on `sugu.zheng-she.com` (R2); system-profile reporting off |
 
 Verify third-party licenses from COPYING files in a clone before shipping a
 dependency.
@@ -55,13 +55,15 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
 
 ## 3. Product & License
 
-- License: **Apache-2.0**. Zero telemetry; composition, conversion, and
-  learning resolve on-device. The only network traffic is update checks,
-  user-initiated downloads, and Private Cloud Compute requests the user
-  turned on (ADR 0004).
+- License: **proprietary** (`LICENSE`), free of charge; the repository is
+  private and releases come only from `sugu.zheng-she.com` (ADR 0006).
+- Zero telemetry; composition, conversion, and learning resolve on-device.
+  The only network traffic is update checks, user-initiated downloads, and
+  Private Cloud Compute requests the user turned on (ADR 0004).
 - Budgets: keystroke to updated candidates < 5 ms p99; candidate-window draw
   < 16 ms; resident memory < 200 MB in the default configuration.
-- GPL-licensed code or data is never bundled.
+- Bundled third-party code and data are under permissive or
+  attribution-only licenses; GPL, LGPL and share-alike stay user downloads.
 - Public-facing docs describe the project only.
 
 ## 4. Git Conventions

@@ -76,7 +76,7 @@ entry() {
 {
   echo "Sugu — Third-Party Notices"
   echo
-  echo "Sugu is licensed under the Apache License 2.0. It includes the software"
+  echo "Sugu is proprietary software (see LICENSE). It includes the software"
   echo "and data listed below, each under its own license."
 } >"$TMP"
 

@@ -1,6 +1,6 @@
 Sugu — Third-Party Notices
 
-Sugu is licensed under the Apache License 2.0. It includes the software
+Sugu is proprietary software (see LICENSE). It includes the software
 and data listed below, each under its own license.
 
 ================================================================================

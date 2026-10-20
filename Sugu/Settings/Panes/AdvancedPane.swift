@@ -28,13 +28,13 @@ final class AdvancedPane: SettingsPane {
         let version = NSTextField(labelWithString: model.version)
         version.isSelectable = true
         form.row(String(localized: "Version:"), version)
-        let link = form.makeButton("github.com/PythonShe/sugu") {
-            NSWorkspace.shared.open(URL(string: "https://github.com/PythonShe/sugu")!)
+        let link = form.makeButton("sugu.zheng-she.com") {
+            NSWorkspace.shared.open(URL(string: "https://sugu.zheng-she.com")!)
         }
         link.isBordered = false
         link.contentTintColor = .linkColor
         link.setAccessibilityRole(.link)
-        form.row(String(localized: "Source code:"), link)
+        form.row(String(localized: "Website:"), link)
         form.button(String(localized: "Show"), label: String(localized: "Acknowledgements:")) { [weak self] in self?.showNotices() }
     }
 
