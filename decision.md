@@ -234,3 +234,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
   not on the keystroke path, and never in secure input or excluded apps.
 - Learned words still come first: they are the user's own choices.
 
+## D-023 · Built-in input method comparison deferred (2026-10-20)
+- ADR 0003 d21 asks for the built-in input methods to be scored on the
+  bench sets. macOS exposes no conversion API for them: they only convert
+  keys delivered to the frontmost app's key window, so scoring them means
+  synthesized typing in the foreground, which would take over the owner's
+  screen during this build. It is left open until it can run on a machine
+  nobody is using; the bench sets and scoring are ready for it.
+

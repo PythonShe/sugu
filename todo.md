@@ -56,6 +56,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 7. Proof & delivery
 - [x] `sugu-bench`: accuracy harness (top-1, keystrokes/char) + latency/memory measurement (D-018)
+- [ ] Score the built-in Chinese and Japanese input methods on the same sets (ADR 0003 d21) — needs foreground typing; deferred (D-023)
 - [x] CI workflow: build, tests, budgets (`scripts/ci.sh`; manual trigger, D-019)
 - [x] Packaging: signed/notarized `.pkg` scripts, Sparkle (profile off), dev install script (D-020)
 - [x] README, third-party notices/attribution, ADR updates
