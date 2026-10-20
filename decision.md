@@ -215,6 +215,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   `Sugu --register` as the console user, which registers, enables and
   selects the input source (`TISRegisterInputSource`, `TISEnableInputSource`,
   `TISSelectInputSource`), so it is in use when the installer finishes.
+  It selects only on a first installation; an upgrade leaves the input
+  source the user has chosen.
 - Sparkle 2.10.0 lives in the `SuguUpdates` package target, so Xcode and
   SwiftPM resolve one dependency graph and agree on `Package.resolved`.
   The public key is a build setting set only by the release script; builds
@@ -344,8 +346,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
   marked text without candidates. The hub calls `onEngineReady` when
   librime is up, and the session hands the letters over as a new
   composition, so `nihao` typed during deployment shows 你好 with nothing
-  lost. If librime does not come up, Space or Return commits the letters
-  as typed, never learned.
+  lost, with the caret where it was. Space waits for librime rather than
+  committing letters; Return commits them as typed, as always, and once
+  setup has failed Space does too. Nothing typed this way is learned.
 - The session asks the hub to `prepare` a mode on a mode change and on
   focus, so deployment (Chinese) and converter creation (Japanese, ~20 ms)
   happen there rather than on the first key.
@@ -353,6 +356,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
   ten minutes, on the next use of Chinese, each retry rebuilding librime's
   compiled copy from the bundled data. Settings › Chinese shows a Status
   row (Failed, Try Again) only while it is failing.
+- Review fixes: a failed deployment leaves librime not ready (it had
+  reported ready on the previous schema with its sessions gone), and a
+  deployment that finishes after settings changed makes no engine for the
+  old schema, going straight to the next deployment.
 
 ## D-028 · Control keys inside a composition (2026-10-20)
 - Any ⌃ or ⌘ key committed the composition and went to the app, so ⌃H or
@@ -402,10 +409,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
   every app, with nothing to show why.
 - The window server names the process holding secure input
   (`kCGSSessionSecureInputPID` in `CGSessionCopyCurrentDictionary()`).
-  Sugu now treats input as secure only when that process is the app being
-  typed in, matched by the client's bundle identifier (the frontmost app
-  when it has none); when the holder cannot be read, it stays secure, as
-  before. Reading it costs ~70 µs and happens only while secure input is
+  Sugu sets secure input aside only when that holder cannot own the field
+  being typed in: the login window, or another regular app that is neither
+  the client nor active. Anything else — a helper process such as a
+  browser's web content, an unreadable holder — stays secure. Reading it costs ~70 µs and happens only while secure input is
   on. The check runs before a new field is attached, so a secure field's
   text is never read for vocabulary.
 
@@ -420,7 +427,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   adopts it between compositions, re-importing the user words; from then on
   conversions use Zenzai. A model that fails to load leaves Zenzai off and
   is logged, rather than AzooKey retrying the load at every conversion. A
-  model installed or removed is loaded afresh.
+  model installed or removed is loaded afresh, including one replaced while
+  a load was running.
 - Measured with `sugu-bench --zenzai` (which now waits for the load):
   Japanese top-1 90% (78% without), keystroke p99 ~20 ms, resident 270 MB.
   Zenzai stays experimental and outside the default-configuration budgets.

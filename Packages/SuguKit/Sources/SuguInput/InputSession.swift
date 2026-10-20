@@ -13,6 +13,8 @@ public protocol EngineSource: AnyObject {
     func prepare(_ mode: InputMode)
     /// Called when an engine `engine(for:)` returned nil for is ready.
     var onEngineReady: ((InputMode) -> Void)? { get set }
+    /// Whether the last attempt to set up a mode's engine failed.
+    func isFailing(_ mode: InputMode) -> Bool
     /// Called after the learned store changed through a commit, so engines
     /// that take user words (AzooKey) can refresh them.
     func learnedWordsDidChange()

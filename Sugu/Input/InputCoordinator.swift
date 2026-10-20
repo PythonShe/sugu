@@ -61,19 +61,21 @@ final class InputCoordinator {
         return adapter
     }
 
-    /// Whether secure input belongs to the app being typed in: a password
-    /// prompt in Terminal, an app's own password field. Secure input is
-    /// global, so left on by an app in the background, or by the login
-    /// window, it would otherwise turn Sugu off in every app.
+    /// Whether secure input may concern the field being typed in. Secure
+    /// input is global, so left on by an app in the background, or by the
+    /// login window, it would otherwise turn Sugu off in every app. It is
+    /// set aside only when the window server names a holder that cannot own
+    /// this field: the login window, or another regular app that is neither
+    /// the client nor frontmost. A helper process (a browser's web content)
+    /// may hold it for the client's field, so anything else stays secure.
     private func isSecureInputHere() -> Bool {
         guard IsSecureEventInputEnabled() else { return false }
         guard let session = CGSessionCopyCurrentDictionary() as? [String: Any],
-              let holder = (session["kCGSSessionSecureInputPID"] as? NSNumber)?.int32Value else { return true }
-        if let bundleID = client?.bundleIdentifier {
-            let apps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
-            if !apps.isEmpty { return apps.contains { $0.processIdentifier == holder } }
-        }
-        return holder == NSWorkspace.shared.frontmostApplication?.processIdentifier
+              let holder = (session["kCGSSessionSecureInputPID"] as? NSNumber)?.int32Value,
+              let app = NSRunningApplication(processIdentifier: holder) else { return true }
+        if app.bundleIdentifier == "com.apple.loginwindow" { return false }
+        guard app.activationPolicy == .regular, !app.isActive else { return true }
+        return app.bundleIdentifier == client?.bundleIdentifier
     }
 
     // MARK: Events

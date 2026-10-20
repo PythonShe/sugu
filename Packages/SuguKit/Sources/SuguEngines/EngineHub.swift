@@ -66,6 +66,9 @@ public final class EngineHub: EngineSource {
     /// Until then Japanese converts without it.
     private var zenzaiLoaded: URL?
     private var zenzaiLoading: Task<Void, Never>?
+    /// Counts model installs and removals, so a load that began before one
+    /// is not adopted.
+    private var zenzaiGeneration = 0
     private var preparing: Task<Void, Never>?
     private var userWordsRefresh: Task<Void, Never>?
     private var chineseWordsUpdate: Task<Void, Never>?
@@ -192,12 +195,16 @@ public final class EngineHub: EngineSource {
                 Log.engines.notice("Chinese ready in \(ContinuousClock.now - started, privacy: .public)\(rebuild ? " after a rebuild" : "", privacy: .public)")
                 chineseError = nil
                 retry = nil
-                // Opening the session reads the user dictionary; done here,
-                // not on the first keystroke.
-                _ = engine(for: .chinese)
-                chinese?.openSession()
-                updateChineseWords(after: .zero)
-                onEngineReady?(.chinese)
+                // Settings that changed while deploying redeploy below; an
+                // engine on this schema would lose its session to that.
+                if runtime.schema == self.schema {
+                    // Opening the session reads the user dictionary; done
+                    // here, not on the first keystroke.
+                    _ = engine(for: .chinese)
+                    chinese?.openSession()
+                    updateChineseWords(after: .zero)
+                    onEngineReady?(.chinese)
+                }
             } catch {
                 chineseError = error
                 let wait = retry.flatMap { $0.schema == schema ? min($0.wait * 2, .seconds(600)) : nil } ?? .seconds(5)
@@ -208,6 +215,10 @@ public final class EngineHub: EngineSource {
             // Settings may have changed while deploying.
             if runtime.schema != self.schema { warmUp(.chinese) }
         }
+    }
+
+    public func isFailing(_ mode: InputMode) -> Bool {
+        mode == .chinese && chineseError != nil
     }
 
     /// Tries a failed Chinese deployment again now, from a fresh build.
@@ -341,6 +352,7 @@ public final class EngineHub: EngineSource {
         if schema != runtime.schema, runtime.isReady || preparing != nil { chinese = nil; warmUp(.chinese) }
         // A new or removed model file is loaded afresh.
         zenzaiLoaded = nil
+        zenzaiGeneration += 1
         japanese?.update(japaneseConfiguration)
         loadZenzai()
     }
@@ -352,6 +364,7 @@ public final class EngineHub: EngineSource {
               zenzaiLoaded != locations.zenzaiModel, zenzaiLoading == nil else { return }
         let model = locations.zenzaiModel
         let workingDirectory = locations.azooKey
+        let generation = zenzaiGeneration
         zenzaiLoading = Task { [weak self] in
             let started = ContinuousClock.now
             let loaded = await AzooKeyEngine.loadZenzai(model, workingDirectory: workingDirectory)
@@ -360,11 +373,12 @@ public final class EngineHub: EngineSource {
             }
             guard let self else { return }
             zenzaiLoading = nil
+            guard generation == zenzaiGeneration else { loadZenzai(); return }
             guard let loaded else {
                 Log.engines.error("Zenzai model did not load")
                 return
             }
-            guard let japanese, preferences.zenzaiEnabled, locations.zenzaiModel == loaded.model else { return }
+            guard let japanese, preferences.zenzaiEnabled else { return }
             japanese.adopt(loaded)
             zenzaiLoaded = loaded.model
             japanese.update(japaneseConfiguration)

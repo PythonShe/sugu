@@ -137,6 +137,8 @@ final class FakeEngineSource: EngineSource {
     var prepared: [InputMode] = []
     func prepare(_ mode: InputMode) { prepared.append(mode) }
     var onEngineReady: ((InputMode) -> Void)?
+    var failing: Set<InputMode> = []
+    func isFailing(_ mode: InputMode) -> Bool { failing.contains(mode) }
     func learnedWordsDidChange() { learnedChanges += 1 }
     var script = ChineseScript.simplified
     /// Script conversions by text, standing in for OpenCC.

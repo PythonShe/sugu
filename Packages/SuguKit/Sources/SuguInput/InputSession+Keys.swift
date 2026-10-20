@@ -114,7 +114,13 @@ extension InputSession {
         switch key.keyCode {
         case VirtualKey.escape: cancelComposition(); return true
         case VirtualKey.returnKey, VirtualKey.keypadEnter: commit(engine.commitRaw()); return true
-        case VirtualKey.space: commitHighlighted(); return true
+        case VirtualKey.space:
+            // Space chooses a candidate; while the engine is still being set
+            // up there is none yet, and the letters wait for it. Only if
+            // setup failed does Space commit them as typed.
+            if engine === loading, !engines.isFailing(mode) { return true }
+            commitHighlighted()
+            return true
         case VirtualKey.delete: engine.deleteBackward(); refresh(); return true
         case VirtualKey.forwardDelete: engine.deleteForward(); refresh(); return true
         case VirtualKey.home: engine.moveCaret(.start); refresh(); return true

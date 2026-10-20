@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Review of D-027–D-032 fixed: failed redeploys no longer look ready,
+  no engine for a schema already replaced, hand-off keeps the caret, Space
+  waits while Chinese loads, a Zenzai model replaced mid-load is reloaded,
+  upgrades do not reselect Sugu, and secure input held by a helper process
+  stays secure. CI passes (p99 3.9 ms).
 - Zenzai loads in the background and is adopted between compositions
   (D-032): the first load was 8.6 s on the main thread after install.
   With Zenzai, Japanese top-1 90%; learned names do not survive its

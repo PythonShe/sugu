@@ -79,6 +79,9 @@ public final class RimeRuntime {
             isInitialized = true
         }
         api.cleanup_all_sessions?()
+        // The sessions are gone and the build is being replaced: not ready
+        // again until this deployment succeeds.
+        self.schema = nil
         let succeeded = await Task.detached(priority: .userInitiated) {
             let api = RimeAPI.shared.api
             guard api.start_maintenance?(1) ?? 0 != 0 else { return (api.is_maintenance_mode?() ?? 0) == 0 }

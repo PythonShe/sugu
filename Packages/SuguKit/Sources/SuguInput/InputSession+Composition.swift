@@ -5,10 +5,22 @@ import SuguLearning
 extension InputSession {
     // MARK: Composition lifecycle
 
-    /// Hands the letters typed while the engine was set up over to it.
+    /// Hands the letters typed while the engine was set up over to it,
+    /// with the caret where it was and any F9/F10 form still shown.
     func engineBecameReady(_ mode: InputMode) {
         guard mode == self.mode, active === loading, let engine = engines.engine(for: mode) else { return }
-        begin(with: engine, input: loading.state.reading)
+        let waiting = loading.state
+        let shownForm = transformed
+        begin(with: engine, input: waiting.reading)
+        let caretFromEnd = waiting.reading.count - waiting.caret
+        if caretFromEnd > 0 {
+            for _ in 0..<caretFromEnd { engine.moveCaret(.left) }
+            refresh()
+        }
+        if let shownForm {
+            transformed = shownForm
+            publish()
+        }
     }
 
     func begin(with engine: any CompositionEngine, input: String) {
