@@ -116,7 +116,9 @@ final class FakeEngine: CompositionEngine {
         return .committed(commit)
     }
     func moveFocus(forward: Bool) {}
-    func resizeFocus(by delta: Int) {}
+    /// The clause resizes asked for, in order.
+    var resizes: [Int] = []
+    func resizeFocus(by delta: Int) { resizes.append(delta) }
     func commitConverted() -> Commit? {
         guard !input.isEmpty else { return nil }
         if converting, case .committed(let commit) = select(highlighted) { return commit }

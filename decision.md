@@ -1299,3 +1299,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   capitals, a capital first, lower case, as Apple's, Google's and
   Microsoft's input methods do. Another key, or the other of the two,
   starts from the letters as typed.
+- Apple's Japanese input's control keys: ⌃⇧R reconverts the selection
+  (as かな twice does), in either language; with nothing selected it is
+  the app's. ⌃I and ⌃O shrink and grow the focused clause while
+  converting, as ⇧← ⇧→ do, and do nothing otherwise inside a
+  composition. The key reads as I without Control, so Tab stays Tab.

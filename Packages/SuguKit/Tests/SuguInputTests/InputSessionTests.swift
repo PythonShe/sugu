@@ -309,6 +309,30 @@ struct InputSessionTests {
         #expect(client.document == "ｎｉｈｏｎｇｏ")
     }
 
+    /// ⌃I and ⌃O shrink and grow the clause while converting; ⌃⇧R
+    /// reconverts the selection.
+    @Test func controlKeysOfApplesJapaneseInput() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        let control = { (letter: String, modifiers: KeyModifiers) in
+            KeyInput(keyCode: 0, characters: "", charactersIgnoringModifiers: letter, modifiers: modifiers)
+        }
+        #expect(session.handle(control("o", [.control])))
+        #expect(japanese.resizes.isEmpty)
+        _ = session.handle(Key.space)
+        #expect(session.handle(control("i", [.control])))
+        #expect(session.handle(control("o", [.control])))
+        #expect(japanese.resizes == [-1, 1])
+        _ = session.handle(Key.enter)
+        client.selection = "日本語"
+        #expect(session.handle(control("r", [.control, .shift])))
+        #expect(!session.isEmpty)
+        session.abandonComposition()
+        client.selection = nil
+        #expect(!session.handle(control("r", [.control, .shift])))
+    }
+
     /// F10 again cycles capitals, a capital first and lower case; F9 too.
     @Test func repeatedFunctionKeysCycleCase() {
         let session = makeSession()

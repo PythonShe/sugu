@@ -251,9 +251,11 @@ extension InputSession {
     /// Reconverts the selected text in fields that expose it: the selection
     /// becomes a composition of its reading, the one it was learned with or
     /// else the dictionary's.
-    public func reconvertSelection() {
+    /// Returns whether there was a selection to reconvert.
+    @discardableResult
+    public func reconvertSelection() -> Bool {
         guard mode != .english, isEmpty, canReadField, let client, let selected = client.selectedText(), !selected.isEmpty,
-              let engine = engines.engine(for: mode) else { return }
+              let engine = engines.engine(for: mode) else { return false }
         let reading: String
         if mode == .japanese {
             reading = WidthConversion.hiragana(selected).isHiraganaReading ? WidthConversion.hiragana(selected) : (store?.reading(for: selected, mode: mode) ?? selected)
@@ -263,7 +265,7 @@ extension InputSession {
             let learned = store?.reading(for: selected, mode: mode).flatMap { reading in
                 typesZhuyin == (Zhuyin.syllables(ofCodes: reading) != nil) ? reading : nil
             }
-            guard let known = learned ?? engines.chineseReading(of: selected) else { return }
+            guard let known = learned ?? engines.chineseReading(of: selected) else { return false }
             reading = known
         }
         active = engine
@@ -271,6 +273,7 @@ extension InputSession {
         engine.restore(reading: reading)
         showsConversionWindow = true
         refresh()
+        return true
     }
 }
 

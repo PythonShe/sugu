@@ -39,6 +39,11 @@ extension InputSession {
             switchCJKMode()
             return true
         }
+        // ⌃⇧R reconverts the selection, as in Apple's Japanese input.
+        if isEmpty, key.modifiers.isSuperset(of: [.control, .shift]), key.modifiers.isDisjoint(with: [.command, .option]),
+           key.charactersIgnoringModifiers.lowercased() == "r", reconvertSelection() {
+            return true
+        }
         if let binding = controlBinding(for: key) {
             switch binding {
             case .key(let code, let modifiers):
@@ -46,6 +51,11 @@ extension InputSession {
             case .caret(let forward):
                 guard let engine = active else { return true }
                 if engine.state.phase == .converting { engine.moveFocus(forward: forward) } else { engine.moveCaret(forward ? .right : .left) }
+                refresh()
+                return true
+            case .resize(let delta):
+                guard let engine = active, engine.state.phase == .converting else { return true }
+                engine.resizeFocus(by: delta)
                 refresh()
                 return true
             }
@@ -467,12 +477,15 @@ extension InputSession {
         case key(UInt16, KeyModifiers)
         /// Moves the caret, or the focused clause while converting.
         case caret(forward: Bool)
+        /// Shrinks or grows the focused clause while converting.
+        case resize(Int)
     }
 
     /// Control keys inside a composition, as in the text system's Emacs
     /// bindings and Apple's Japanese input method: ⌃H ⌃D delete, ⌃A ⌃E ⌃B
-    /// ⌃F move, ⌃N ⌃P choose, ⌃G cancels, ⌃M commits, and ⌃J ⌃K ⌃; ⌃L ⌃:
-    /// are F6–F10. ⌃[ is Escape with or without a composition, for vim.
+    /// ⌃F move, ⌃N ⌃P choose, ⌃G cancels, ⌃M commits, ⌃I ⌃O shrink and grow
+    /// the clause, and ⌃J ⌃K ⌃; ⌃L ⌃: are F6–F10. ⌃[ is Escape with or
+    /// without a composition, for vim.
     /// Read from the layout's characters, like the text system.
     func controlBinding(for key: KeyInput) -> ControlBinding? {
         guard key.modifiers.contains(.control), key.modifiers.isDisjoint(with: [.command, .option]),
@@ -490,6 +503,8 @@ extension InputSession {
         case "p": return .key(VirtualKey.tab, [.shift])
         case "g": return .key(VirtualKey.escape, [])
         case "m": return .key(VirtualKey.returnKey, [])
+        case "i": return .resize(-1)
+        case "o": return .resize(1)
         case "j": return .key(VirtualKey.f6, [])
         case "k": return .key(VirtualKey.f7, [])
         case ";": return .key(VirtualKey.f8, [])

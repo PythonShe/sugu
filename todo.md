@@ -160,7 +160,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Shift-Space types the other width (D-075)
 - [x] Kana input's 、。 follow the punctuation style (D-075)
 - [x] Repeated F9/F10 cycle case: abc → ABC → Abc (D-075)
-- [ ] ⌃⇧R reconverts; ⌃I ⌃O resize the clause
+- [x] ⌃⇧R reconverts; ⌃I ⌃O resize the clause (D-075)
 - [ ] Punctuation typed while converting commits with the conversion
 - [ ] Symbols by their Japanese names (やじるし →)
 - [ ] 人名 and 地名 on the candidates
