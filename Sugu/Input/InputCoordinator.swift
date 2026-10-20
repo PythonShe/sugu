@@ -95,6 +95,10 @@ final class InputCoordinator {
                 return lastKey.handled
             }
             shiftTap.interrupt()
+            // A click since the last key may have moved the caret.
+            if let lastKey, Self.secondsSinceMouse() < ProcessInfo.processInfo.systemUptime - lastKey.timestamp {
+                session.caretMayHaveMoved()
+            }
             let handled = keyDown(event)
             lastKey = (event.timestamp, event.keyCode, handled)
             return handled

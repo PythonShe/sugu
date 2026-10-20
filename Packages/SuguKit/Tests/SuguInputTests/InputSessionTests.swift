@@ -96,7 +96,9 @@ struct InputSessionTests {
         type("nihao", into: session)
         _ = session.handle(Key.char(","))
         #expect(client.document == "你好，")
+        // Text Sugu did not type: the field is read.
         client.document += "v2"
+        session.caretMayHaveMoved()
         _ = session.handle(Key.char("."))
         #expect(client.document.hasSuffix("v2."))
     }
@@ -272,6 +274,17 @@ struct InputSessionTests {
         #expect(session.mode == .english)
         session.shiftTapped()
         #expect(session.mode == .chinese)
+    }
+
+    @Test func punctuationWidthFollowsWhatWasTypedInUnreadableFields() {
+        let session = makeSession()
+        client.exposesText = false
+        #expect(!session.handle(Key.char("3")))
+        #expect(session.handle(Key.char(".")))
+        #expect(client.document == ".")
+        type("nihao ", into: session)
+        #expect(session.handle(Key.char(",")))
+        #expect(client.document == ".你好，")
     }
 
     @Test func modeIsRememberedPerApp() {

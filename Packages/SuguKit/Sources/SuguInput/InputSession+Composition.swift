@@ -162,6 +162,7 @@ extension InputSession {
         list.clear()
         showsConversionWindow = false
         client?.commit(text)
+        lastTyped = text.last
         if !vocabulary.isEmpty {
             vocabulary = String((vocabulary + text).suffix(Self.vocabularyLimit * 2))
         }

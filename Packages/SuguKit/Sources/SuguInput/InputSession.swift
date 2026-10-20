@@ -83,6 +83,10 @@ public final class InputSession {
     var vocabulary = ""
     /// The commit ⌃⌫ can take back.
     var undoable: PendingUndo?
+    /// The character just before the caret when Sugu knows it: the last it
+    /// committed or let through. Some hosts report the field late, so this
+    /// is trusted over reading it; nil once the caret may have moved.
+    var lastTyped: Character?
 
     public init(
         preferences: Preferences,
@@ -141,6 +145,7 @@ public final class InputSession {
         self.client = client
         punctuator.reset()
         undoable = nil
+        lastTyped = nil
         vocabulary = readVocabulary()
         let bundleID = client.bundleIdentifier
         let rule = preferences.rule(for: bundleID)
@@ -178,6 +183,11 @@ public final class InputSession {
             if newMode != .english { engines.prepare(newMode) }
             onModeChange?(newMode)
         }
+    }
+
+    /// The caret may have moved without a key (a click in the field).
+    public func caretMayHaveMoved() {
+        lastTyped = nil
     }
 
     /// A Shift tap: switches to English, and a Chinese composition of typed

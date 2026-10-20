@@ -5,6 +5,15 @@ extension InputSession {
 
     /// Handles one key press. Returns true when Sugu consumed it.
     public func handle(_ key: KeyInput) -> Bool {
+        let handled = handleKey(key)
+        if !handled {
+            // The app has the key: it types the character, or moves the caret.
+            lastTyped = key.isShortcut ? nil : key.printable
+        }
+        return handled
+    }
+
+    private func handleKey(_ key: KeyInput) -> Bool {
         if isSecureInput { return false }
         let isUndoKey = key.modifiers.contains(.control) && key.keyCode == VirtualKey.delete
         // Undo applies only to the commit just made; any other key ends it.
@@ -30,7 +39,7 @@ extension InputSession {
         if let binding = controlBinding(for: key) {
             switch binding {
             case .key(let code, let modifiers):
-                return handle(KeyInput(keyCode: code, characters: "", modifiers: modifiers))
+                return handleKey(KeyInput(keyCode: code, characters: "", modifiers: modifiers))
             case .caret(let forward):
                 guard let engine = active else { return true }
                 if engine.state.phase == .converting { engine.moveFocus(forward: forward) } else { engine.moveCaret(forward ? .right : .left) }
@@ -95,7 +104,7 @@ extension InputSession {
     }
 
     private func typePunctuation(_ character: Character) {
-        let previous = lastCharacterBeforeCaret()
+        let previous = lastTyped ?? lastCharacterBeforeCaret()
         commitText(punctuator.output(for: character, after: previous), reading: String(character), learn: false)
     }
 

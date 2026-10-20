@@ -555,3 +555,14 @@ any call made without the owner present. Each entry: what, why, reversibility.
   `hello` meant English, as Sogou, Microsoft Pinyin and Rime's
   `commit_code` treat it. A composition with a choice in it, an F-key
   form, or Japanese commits as it shows, as before.
+
+## D-042 · Punctuation width from what Sugu typed (2026-10-20)
+- Automatic punctuation width read the character before the caret from
+  the field on every punctuation key. Browsers and Electron apps answer
+  late (D-038) and some fields cannot be read, so `3.14` became `3。14`
+  and 我 typed fast was taken as a Latin letter.
+- The session now keeps the character it last committed or let through to
+  the app and trusts it over the field. It forgets it when a key the app
+  handles moves the caret or edits (arrows, ⌫, shortcuts), on focus
+  change, and when the window server reports a click since the last key;
+  then the field is read as before.
