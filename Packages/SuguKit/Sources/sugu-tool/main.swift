@@ -8,7 +8,6 @@ let arguments = Array(CommandLine.arguments.dropFirst())
 let usage = """
 usage: sugu-tool build-data --wanxiang <dir> --opencc <dir> --out <dir> [--version <v>]
        sugu-tool build-lm --corpus <file> --out <file> [--exclude <bench.tsv>]...
-       sugu-tool build-grammar --corpus <file> --opencc <dir> --builder <build_grammar> --out <file> [--exclude <bench.tsv>]...
        sugu-tool convert --data <dir> (--chinese | --japanese) [--user <dir>] [--scheme <name>] [--rime-ice] [--grammar] <reading>...
 """
 
@@ -36,12 +35,6 @@ do {
         guard let corpus = option("--corpus"), let out = option("--out") else { fail(usage) }
         let excluded = arguments.indices.filter { arguments[$0] == "--exclude" && $0 + 1 < arguments.count }.map { URL(fileURLWithPath: arguments[$0 + 1]) }
         try BuildLanguageModel.run(corpus: URL(fileURLWithPath: corpus), output: URL(fileURLWithPath: out), excluding: excluded)
-    case "build-grammar":
-        guard let corpus = option("--corpus"), let openCC = option("--opencc"), let builder = option("--builder"),
-              let out = option("--out") else { fail(usage) }
-        let excluded = arguments.indices.filter { arguments[$0] == "--exclude" && $0 + 1 < arguments.count }.map { URL(fileURLWithPath: arguments[$0 + 1]) }
-        try BuildGrammar.run(corpus: URL(fileURLWithPath: corpus), openCC: URL(fileURLWithPath: openCC), builder: URL(fileURLWithPath: builder),
-                             output: URL(fileURLWithPath: out), excluding: excluded)
     case "convert":
         guard let data = option("--data") else { fail(usage) }
         let user = option("--user")

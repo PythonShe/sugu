@@ -18,7 +18,6 @@ WANXIANG_DICTS="zi jichu cuoyin duoyin diming mingren yiren en"
 # language models (ADR 0005).
 TATOEBA_OPUS_VERSION=v2026-07-08
 TATOEBA_JA_SHA256=d5b2eb0eb1084b20c8b86aff29aedb51dfac96eb53c8ba65fe6aa4dfaf00de60
-TATOEBA_CMN_SHA256=1d582fbbf05e5af2ca718e3a6565597337eef2dfb562c9c73c4d2c4b86e56b76
 
 # License texts for bundled code that ships without one in its sources
 # (scripts/make-notices.sh).

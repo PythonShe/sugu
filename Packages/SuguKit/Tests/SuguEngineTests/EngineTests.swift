@@ -43,13 +43,6 @@ struct RimeEngineTests {
         #expect(FileManager.default.fileExists(atPath: Shared.user.appendingPathComponent("sugu.schema.yaml").path))
     }
 
-    /// The grammar model built from Tatoeba (ADR 0005) settles what the
-    /// dictionary's frequencies alone get wrong.
-    @Test func bundledGrammarReadsCollocations() async throws {
-        #expect(try await first("qiantianwanshangxialeyichangdaxue") == "前天晚上下了一场大学")
-        #expect(try await first("qiantianwanshangxialeyichangdaxue", schema: RimeSchema(bundledGrammar: true)) == "前天晚上下了一场大雪")
-    }
-
     @Test func fuzzyPinyin() async throws {
         #expect(try await first("zongguo", schema: RimeSchema(fuzzy: [.zZh])) == "中国")
     }

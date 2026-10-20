@@ -59,12 +59,6 @@ public final class EngineHub: EngineSource {
         }
 
         public var hasGrammarModel: Bool { FileManager.default.fileExists(atPath: grammarModel.path) }
-        /// The Chinese grammar model built with the language models; it
-        /// lives with librime's data, and goes when they are turned off.
-        public var hasBundledGrammar: Bool {
-            languageModels != nil
-                && FileManager.default.fileExists(atPath: rimeShared.appendingPathComponent("\(RimeSchema.bundledGrammarLanguage).gram").path)
-        }
         public var hasZenzaiModel: Bool { FileManager.default.fileExists(atPath: zenzaiModel.path) }
         public var hasRimeIce: Bool { FileManager.default.fileExists(atPath: rimeIceManifest.path) }
     }
@@ -352,7 +346,6 @@ public final class EngineHub: EngineSource {
             scheme: preferences.pinyinScheme,
             fuzzy: preferences.fuzzyPinyin,
             useGrammar: preferences.useGrammarModel && isGrammarModelInstalled,
-            bundledGrammar: locations.hasBundledGrammar,
             dictionary: preferences.chineseDictionary == .rimeIce && isRimeIceInstalled ? .rimeIce : .wanxiang
         )
     }

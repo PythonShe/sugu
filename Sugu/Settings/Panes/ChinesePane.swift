@@ -32,7 +32,7 @@ final class ChinesePane: SettingsPane {
         form.row(String(localized: "rime-ice:"), ice)
 
         form.gap()
-        let grammar = form.checkbox(String(localized: "Use the large grammar model"), label: String(localized: "Large grammar model:"),
+        let grammar = form.checkbox(String(localized: "Use the grammar model"), label: String(localized: "Grammar model:"),
                                     get: { model.preferences.useGrammarModel && model.isInstalled(.grammarModel) },
                                     set: { model.preferences.useGrammarModel = $0 })
         form.onRefresh { grammar.isEnabled = model.isInstalled(.grammarModel) }
