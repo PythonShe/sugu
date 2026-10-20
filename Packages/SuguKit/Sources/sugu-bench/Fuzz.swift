@@ -1,0 +1,209 @@
+import Darwin
+import Foundation
+import SuguCore
+import SuguEngines
+import SuguInput
+import SuguLearning
+
+/// Random key sequences through `InputSession` with the real engines,
+/// checking after every key what must hold whatever was typed. Each
+/// session follows from the seed and its number, so a failure replays with
+/// `--fuzz-session`.
+@MainActor
+enum Fuzz {
+    struct Failure: Error, CustomStringConvertible {
+        var mode: InputMode
+        var session: Int
+        var keys: [String]
+        var problem: String
+
+        var description: String {
+            "\(mode) session \(session): \(problem)\n  keys: \(keys.joined(separator: " "))"
+        }
+    }
+
+    /// With `trace`, every key and the composition before it go to
+    /// standard error.
+    static func run(data: URL, sessions: Range<Int>, seed: UInt64, trace: Bool, configure: (inout Preferences) -> Void) async throws -> [Failure] {
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-fuzz-\(getpid())", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: work) }
+        var preferences = Preferences()
+        preferences.rememberModePerApp = false
+        configure(&preferences)
+        let lexicon = data.appendingPathComponent("Lexicon")
+        let syllables = Lexicon.load(Lexicon.syllablesFile, in: lexicon)
+        let store = try LearnedStore(url: work.appendingPathComponent("learned.sqlite"), syllabary: PinyinSyllabary(syllables))
+        let engines = EngineHub(
+            locations: EngineHub.Locations(
+                rimeShared: data.appendingPathComponent("Rime"),
+                rimeUser: work.appendingPathComponent("Rime"),
+                azooKey: work.appendingPathComponent("AzooKey"),
+                models: work.appendingPathComponent("Models"),
+                lexicon: lexicon,
+                languageModels: data.appendingPathComponent("LM")
+            ),
+            preferences: preferences,
+            store: store,
+            version: "fuzz",
+            chineseWordsDelay: .zero
+        )
+        await engines.waitUntilReady()
+        engines.prepare(.japanese)
+        let latin = LatinInference(syllables: syllables, englishWords: Lexicon.load(Lexicon.englishWordsFile, in: lexicon))
+        let session = InputSession(preferences: preferences, engines: engines, store: store, latin: latin)
+        let field = FuzzField()
+        session.attach(field)
+
+        var failures: [Failure] = []
+        for mode in [InputMode.chinese, .japanese] {
+            session.setMode(mode)
+            for number in sessions {
+                // Where a trap stopped the run.
+                FileHandle.standardError.write(Data("fuzz \(mode) \(number)\n".utf8))
+                var random = SplitMix(seed: seed &+ UInt64(number) &* 0x9E37_79B9)
+                var keys: [String] = []
+                func fail(_ problem: String) -> Failure { Failure(mode: mode, session: number, keys: keys, problem: problem) }
+                field.reset()
+                do {
+                    for _ in 0..<random.next(below: 60) + 5 {
+                        let (name, key) = randomKey(&random, mode: mode)
+                        keys.append(name)
+                        if trace { FileHandle.standardError.write(Data("  \(name) → \(session.display.segments.map(\.text).joined())\n".utf8)) }
+                        let wasComposing = !session.display.segments.isEmpty
+                        let committed = field.committed
+                        if !session.handle(key) { field.typeUnhandled(key) }
+                        try check(session, field, fail)
+                        if key.keyCode == VirtualKey.returnKey, key.modifiers.isEmpty, wasComposing {
+                            guard session.display.segments.isEmpty else { throw fail("Return left a composition") }
+                            guard field.committed.count > committed.count else { throw fail("Return committed nothing") }
+                        }
+                    }
+                    keys.append("⏎")
+                    let wasComposing = !session.display.segments.isEmpty
+                    _ = session.handle(KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
+                    try check(session, field, fail)
+                    if wasComposing, !session.display.segments.isEmpty { throw fail("Return left a composition") }
+                } catch let failure as Failure {
+                    failures.append(failure)
+                    session.commitComposition()
+                }
+            }
+        }
+        return failures
+    }
+
+    /// What holds after any key.
+    private static func check(_ session: InputSession, _ field: FuzzField, _ fail: (String) -> Failure) throws {
+        let display = session.display
+        let length = display.segments.map(\.text.count).reduce(0, +)
+        guard (0...length).contains(display.caret) else { throw fail("caret \(display.caret) outside \(length) characters") }
+        if display.segments.contains(where: \.text.isEmpty) { throw fail("an empty segment") }
+        guard field.marked.map(\.text).joined() == display.segments.map(\.text).joined() else {
+            throw fail("the field shows \"\(field.marked.map(\.text).joined())\", the session \"\(display.segments.map(\.text).joined())\"")
+        }
+        if let page = display.candidates {
+            if page.candidates.isEmpty { throw fail("an empty candidate page") }
+            if let row = page.highlightedIndex, !page.candidates.indices.contains(row) { throw fail("highlight \(row) outside \(page.candidates.count) rows") }
+            if page.candidates.contains(where: \.text.isEmpty) { throw fail("an empty candidate") }
+        }
+    }
+
+    private static let japaneseSyllables = "a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n nn ga gi gu ge go za ji zu ze zo da de do ba bi bu be bo pa pi pu pe po kya kyu kyo sha shu sho cha chu cho ryo tt kk xtu -".split(separator: " ")
+    private static let pinyinSyllables = "a o e ai ei ao ou an en ang eng er ba bo bai bei bao ban ben bang beng bi bie biao bian bin bing bu ca ce cai cao can cang ci cu cha che chi chu chuan da de dai dao dan dang deng di dian ding du dui duo fa fo fei fan fen fang feng fu ga ge gai gao gan gen gang gong gu gua guo ha he hai hao han hen hang hong hu hua huo ji jia jie jian jin jing ju jue ka ke kai kan kang kong ku kuai la le lai lao lan lang li lian liang lin ling lu lv lve ma me mai mao man men mang mi mian ming mu na ne nai nan nen ni nian nin nu nv pa po pai pao pan pen pi pian pin ping pu qi qia qian qin qing qu quan ran ren ri rou ru sa se san sen si su shi shang shen sheng shu ta te tai tan tang ti tian ting tu tong wa wo wai wan wen wang wu xi xia xian xin xing xu xue ya ye yao yan yin ying yong yu yuan za ze zai zan zi zu zhi zhang zhe zheng zhong zhu '".split(separator: " ")
+
+    /// A key a person might press while composing, with its name for the
+    /// failure report.
+    private static func randomKey(_ random: inout SplitMix, mode: InputMode) -> (String, KeyInput) {
+        func special(_ name: String, _ keyCode: UInt16, _ modifiers: KeyModifiers = []) -> (String, KeyInput) {
+            (name, KeyInput(keyCode: keyCode, characters: "", modifiers: modifiers))
+        }
+        switch random.next(below: 100) {
+        case 0..<55:
+            let syllables = mode == .japanese ? japaneseSyllables : pinyinSyllables
+            let syllable = String(syllables[random.next(below: syllables.count)])
+            // One key of it; the rest follow as the next keys would.
+            let character = syllable[syllable.index(syllable.startIndex, offsetBy: random.next(below: syllable.count))]
+            return (String(character), KeyInput(keyCode: character == "," ? 0x2B : 0, characters: String(character)))
+        case 55..<60:
+            let letter = Character(UnicodeScalar(UInt8(97 + random.next(below: 26))))
+            return (String(letter), KeyInput(keyCode: 0, characters: String(letter)))
+        case 60..<68: return ("␣", KeyInput(keyCode: VirtualKey.space, characters: " "))
+        case 68..<74: return ("⌫", KeyInput(keyCode: VirtualKey.delete, characters: "\u{7f}"))
+        case 74..<78:
+            let digit = String(1 + random.next(below: 9))
+            return (digit, KeyInput(keyCode: 0, characters: digit))
+        case 78..<81: return special("←", VirtualKey.left)
+        case 81..<84: return special("→", VirtualKey.right)
+        case 84..<86: return special("⇧←", VirtualKey.left, .shift)
+        case 86..<88: return special("⇧→", VirtualKey.right, .shift)
+        case 88..<90: return special("↓", VirtualKey.down)
+        case 90..<91: return special("↑", VirtualKey.up)
+        case 91..<92: return special("⇟", VirtualKey.pageDown)
+        case 92..<93: return special("⇥", VirtualKey.tab)
+        case 93..<96: return ("⎋", KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
+        case 96..<98: return ("⏎", KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
+        default:
+            let punctuation = String(Array(",.?!")[random.next(below: 4)])
+            return (punctuation, KeyInput(keyCode: punctuation == "," ? 0x2B : 0, characters: punctuation))
+        }
+    }
+}
+
+/// A field that keeps what was committed, which is also the text before
+/// the caret, and the marked text.
+@MainActor
+private final class FuzzField: InputClient {
+    private(set) var committed = ""
+    private(set) var marked: [CompositionSegment] = []
+    var bundleIdentifier: String? { "com.zheng-she.sugu-fuzz" }
+
+    func reset() {
+        committed = ""
+        marked = []
+    }
+
+    func commit(_ text: String) {
+        committed += text
+        marked = []
+    }
+
+    /// What the app does with a key Sugu passes on.
+    func typeUnhandled(_ key: KeyInput) {
+        if key.keyCode == VirtualKey.delete, !committed.isEmpty {
+            committed.removeLast()
+        } else if !key.isShortcut, let character = key.printable {
+            committed.append(character)
+        }
+    }
+
+    func setMarkedText(_ segments: [CompositionSegment], caret: Int) { marked = segments }
+    func textBeforeCaret(limit: Int) -> String? { String(committed.suffix(limit)) }
+    func textAfterCaret(limit: Int) -> String? { "" }
+
+    func deleteBeforeCaret(count: Int) -> Bool {
+        guard committed.count >= count else { return false }
+        committed.removeLast(count)
+        return true
+    }
+
+    func selectedText() -> String? { nil }
+}
+
+/// A small deterministic generator (SplitMix64), so a seed replays.
+struct SplitMix {
+    private var state: UInt64
+
+    init(seed: UInt64) { state = seed }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return z ^ (z >> 31)
+    }
+
+    mutating func next(below bound: Int) -> Int {
+        Int(next() % UInt64(bound))
+    }
+}
