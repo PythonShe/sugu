@@ -60,7 +60,8 @@ public final class InputSession {
     private var transformed: String?
     private var punctuator = ChinesePunctuator()
     private var context = ""
-    private var undoable: (commit: Commit, mode: InputMode, length: Int)?
+    /// The commit ⌃⌫ can take back, with the engine that composed it.
+    private var undoable: (commit: Commit, engine: any CompositionEngine, mode: InputMode)?
 
     public init(
         preferences: Preferences,
@@ -421,16 +422,21 @@ public final class InputSession {
     /// changes.
     public func commitComposition() {
         guard let engine = active, !engine.state.isEmpty else { return }
-        if let transformed {
-            engine.clear()
-            commitText(transformed, reading: engine.state.reading, learn: false)
+        if transformed != nil {
+            commitHighlighted()
             return
         }
         if mode == .chinese || engine is ExpressionEngine {
             commitHighlighted()
+            // A partial selection (a phrase for the first syllables) leaves
+            // the rest composing; focus is leaving, so commit all of it.
+            if let rest = active, !rest.state.isEmpty {
+                commit(rest.commitConverted() ?? rest.commitRaw())
+            }
         } else {
             commit(engine.commitConverted())
         }
+        if let rest = active, !rest.state.isEmpty { cancelComposition() }
     }
 
     public func cancelComposition() {
@@ -485,10 +491,17 @@ public final class InputSession {
                 highlight = nil
                 refresh()
             }
-        case .learned, .computed:
+        case .learned:
             let reading = engine.state.reading
             engine.clear()
             commit(Commit(text: candidate.text, reading: reading, clauses: [.init(reading: reading, text: candidate.text)]))
+        case .computed:
+            // Dates, numerals and results are made fresh each time; learning
+            // them would pin yesterday's date to the reading.
+            let reading = engine.state.reading
+            let record = Commit(text: candidate.text, reading: reading)
+            engine.clear()
+            commitText(candidate.text, reading: reading, learn: false, record: record, undoable: !(engine is ExpressionEngine))
         case .latin:
             let reading = engine.state.reading
             engine.clear()
@@ -498,11 +511,13 @@ public final class InputSession {
 
     private func commit(_ commit: Commit?) {
         guard let commit else { refresh(); return }
-        let learn = !(active is ExpressionEngine)
-        commitText(commit.text, reading: commit.reading, learn: learn, commit: commit)
+        // Expressions are neither learned nor restorable into an engine.
+        let fromLanguage = !(active is ExpressionEngine)
+        commitText(commit.text, reading: commit.reading, learn: fromLanguage, record: commit, undoable: fromLanguage)
     }
 
-    private func commitText(_ text: String, reading: String, learn: Bool, commit: Commit? = nil) {
+    private func commitText(_ text: String, reading: String, learn: Bool, record: Commit? = nil, undoable: Bool = false) {
+        let engine = active
         active?.clear()
         active = nil
         transformed = nil
@@ -511,21 +526,25 @@ public final class InputSession {
         page = 0
         showsConversionWindow = false
         client?.commit(text)
-        let record = commit ?? Commit(text: text, reading: reading)
+        let record = record ?? Commit(text: text, reading: reading)
         if learn, mode != .english, !isSecureInput, let client, preferences.learns(in: client.bundleIdentifier), let store {
             store.learn(record, mode: mode)
             provider.learnedWordsDidChange()
         }
-        undoable = learn || commit != nil ? (record, mode, text.count) : nil
+        self.undoable = undoable ? engine.map { (record, $0, mode) } : nil
         publish()
     }
 
     /// Restores the last commit as a composition with its candidates open.
+    /// Deletes only when the text left of the caret is still exactly what
+    /// was committed, so a field that moved the caret loses nothing.
     private func undoLastCommit() -> Bool {
-        guard let undoable, undoable.mode == mode, let client,
-              let engine = mode == .chinese ? provider.engine(for: .chinese) : provider.engine(for: .japanese),
-              client.deleteBeforeCaret(count: undoable.length) else { return false }
+        guard let undoable, undoable.mode == mode, canReadField, let client else { return false }
+        let text = undoable.commit.text
+        guard client.textBeforeCaret(limit: text.count) == text,
+              client.deleteBeforeCaret(count: text.count) else { return false }
         self.undoable = nil
+        let engine = undoable.engine
         active = engine
         engine.clear()
         engine.restore(reading: undoable.commit.reading)
@@ -537,7 +556,7 @@ public final class InputSession {
     /// Reconverts the selected text in fields that expose it: the selection
     /// becomes a composition of its reading when Sugu knows one.
     public func reconvertSelection() {
-        guard mode != .english, isEmpty, let client, let selected = client.selectedText(), !selected.isEmpty,
+        guard mode != .english, isEmpty, canReadField, let client, let selected = client.selectedText(), !selected.isEmpty,
               let engine = provider.engine(for: mode) else { return }
         let reading: String
         if mode == .japanese {
@@ -668,14 +687,20 @@ public final class InputSession {
 
     // MARK: Document context
 
+    /// The one gate for reading the field: never in secure input or in apps
+    /// excluded from learning and context.
+    private var canReadField: Bool {
+        !isSecureInput && preferences.readsContext(in: client?.bundleIdentifier)
+    }
+
     private func readContext() -> String {
-        guard preferences.leftContextRanking, !isSecureInput, preferences.readsContext(in: client?.bundleIdentifier) else { return "" }
+        guard preferences.leftContextRanking, canReadField else { return "" }
         let limit = preferences.documentVocabulary ? 4_000 : 200
         return client?.textBeforeCaret(limit: limit) ?? ""
     }
 
     private func lastCharacterBeforeCaret() -> Character? {
-        client?.textBeforeCaret(limit: 1)?.last
+        canReadField ? client?.textBeforeCaret(limit: 1)?.last : nil
     }
 }
 

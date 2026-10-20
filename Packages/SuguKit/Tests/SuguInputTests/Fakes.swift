@@ -44,7 +44,11 @@ final class FakeClient: InputClient {
 final class FakeEngine: CompositionEngine {
     var table: [String: [String]]
     var converts: Bool
+    /// Readings whose first candidate covers only their start, as librime
+    /// selects a phrase for the first syllables and keeps composing.
+    var partial: [String: (consumed: Int, text: String)] = [:]
     private var input = ""
+    private var selected = ""
     private var converting = false
     private var highlighted = 0
     private(set) var state = CompositionState.empty
@@ -68,9 +72,15 @@ final class FakeEngine: CompositionEngine {
     func cancelConversion() { converting = false; refresh() }
     func highlight(_ index: Int) { highlighted = index; refresh() }
     func select(_ index: Int) -> SelectionResult {
+        if index == 0, let split = partial[input] {
+            selected += split.text
+            input.removeFirst(split.consumed)
+            refresh()
+            return .continued
+        }
         let words = table[input] ?? []
         guard words.indices.contains(index) else { return .continued }
-        let commit = Commit(text: words[index], reading: input, clauses: [.init(reading: input, text: words[index])])
+        let commit = Commit(text: selected + words[index], reading: input, clauses: [.init(reading: input, text: words[index])])
         clear()
         return .committed(commit)
     }
@@ -79,15 +89,18 @@ final class FakeEngine: CompositionEngine {
     func commitConverted() -> Commit? {
         guard !input.isEmpty else { return nil }
         if converting, case .committed(let commit) = select(highlighted) { return commit }
+        // Like librime, an engine without a conversion step commits its
+        // first candidate.
+        if !converts, table[input]?.isEmpty == false, case .committed(let commit) = select(0) { return commit }
         return commitRaw()
     }
     func commitRaw() -> Commit? {
         guard !input.isEmpty else { return nil }
-        let commit = Commit(text: input, reading: input)
+        let commit = Commit(text: selected + input, reading: input)
         clear()
         return commit
     }
-    func clear() { input = ""; converting = false; highlighted = 0; state = .empty }
+    func clear() { input = ""; selected = ""; converting = false; highlighted = 0; state = .empty }
     func restore(reading: String) { input = reading; converting = converts; refresh() }
     func setLeftContext(_ text: String) {}
 

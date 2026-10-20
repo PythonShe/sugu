@@ -8,7 +8,7 @@ import SuguLearning
 struct InputSessionTests {
     let provider = FakeProvider()
     let client = FakeClient()
-    let chinese = FakeEngine(table: ["nihao": ["你好", "拟好"], "shijie": ["世界"], "github": ["给他不"]])
+    let chinese = FakeEngine(table: ["nihao": ["你好", "拟好"], "shijie": ["世界"], "github": ["给他不"], "riqi": ["日期"], "nihaoshijie": ["你好世界"]])
     let japanese = FakeEngine(table: ["nihongo": ["日本語", "二本語"]], converts: true)
     let store: LearnedStore
 
@@ -193,5 +193,52 @@ struct InputSessionTests {
         type("nihao", into: session)
         session.detach(client)
         #expect(client.document == "你好")
+    }
+
+    @Test func computedCandidatesAreNotLearned() throws {
+        let session = makeSession()
+        type("riqi", into: session)
+        let row = try #require(session.display.candidates?.candidates.firstIndex { $0.source == .computed })
+        session.selectCandidate(onPage: row)
+        #expect(!client.document.isEmpty)
+        #expect(store.count == 0)
+    }
+
+    @Test func undoLeavesTextThatChanged() {
+        let session = makeSession()
+        type("nihao", into: session)
+        _ = session.handle(Key.space)
+        client.document += "!"
+        #expect(!session.handle(Key.undo))
+        #expect(client.document == "你好!")
+    }
+
+    @Test func expressionsAreNotUndoable() {
+        let session = makeSession()
+        for c in "v12+3" { _ = session.handle(Key.char(c)) }
+        _ = session.handle(Key.space)
+        #expect(!session.handle(Key.undo))
+        #expect(client.document == "15")
+    }
+
+    @Test func excludedAppsAreNotRead() {
+        let session = makeSession { $0.noLearnApps = ["com.example.editor"] }
+        client.document = "v2"
+        _ = session.handle(Key.char("."))
+        // Without reading "v2", punctuation cannot follow it.
+        #expect(client.document == "v2。")
+        _ = session.handle(Key.char("n"))
+        _ = session.handle(Key.space)
+        #expect(!session.handle(Key.undo))
+    }
+
+    @Test func focusChangeCommitsAPartialSelection() {
+        chinese.partial["nihaoshijie"] = (5, "你好")
+        chinese.table["shijie"] = ["世界"]
+        let session = makeSession()
+        type("nihaoshijie", into: session)
+        session.detach(client)
+        #expect(client.document == "你好世界")
+        #expect(session.isEmpty)
     }
 }
