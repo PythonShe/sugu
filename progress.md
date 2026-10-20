@@ -3,6 +3,13 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Host apps (D-076): activation no longer reads the field (Chromium
+  stalls), terminals keep their committed text from ⌃⌫ and 英数 twice,
+  Alacritty's real bundle ID, connections closed by controller,
+  hidePalettes, Caps Lock from the session state, held 英数/かな pressed
+  once, candidate-window clicks kept apart from field clicks,
+  password-only system apps treated as secure. CI passes: keystroke p99
+  3.78 ms, footprint 82 MB, fuzz 0 failures.
 - Japanese habits from the ninth advisor pass (D-075): Shift-Space types
   the other space width, kana 、。 follow the punctuation style, F9/F10
   cycle case, ⌃⇧R reconverts and ⌃I/⌃O resize clauses, 、。！？ commit
