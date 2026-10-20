@@ -82,3 +82,11 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] ~~Undo after commit: verify the deletion in hosts that ignore the replacement range~~ — declined (D-038)
 - [ ] Zhuyin — deferred past v1; needs its own composition model (D-040)
 - [x] Japanese live conversion, as a preference (D-039)
+
+## 10. v1 gaps (advisor pass 3)
+- [ ] Shift tap: ignore taps with mouse activity during the hold; mid-composition commit the typed letters, then switch to English
+- [ ] Width-aware Chinese punctuation from what Sugu produced last, not a synchronous field read
+- [ ] Turning Zenzai off releases the model
+- [ ] Learned-word expiry also on setting change and daily, not only at launch
+- [ ] VoiceOver: candidate rows and pager as accessibility children
+- [ ] Skip identical marked-text updates and caret-rect reads on highlight moves
