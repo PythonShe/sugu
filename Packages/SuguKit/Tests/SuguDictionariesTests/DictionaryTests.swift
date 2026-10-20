@@ -80,6 +80,12 @@ private func utf16(_ text: String) -> Data {
     }
 }
 
+/// A clock tests move forward by hand; sync files keep whole seconds.
+private final class ManualClock: @unchecked Sendable {
+    var now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+    func advance() { now += 60 }
+}
+
 @MainActor
 @Suite struct SyncTests {
     private func store(_ clock: @escaping @Sendable () -> Date = Date.init) throws -> LearnedStore {
@@ -96,22 +102,54 @@ private func utf16(_ text: String) -> Data {
         #expect(words.first { $0.text == "速贵" }?.kind == .user)
     }
 
-    @Test func pullsOtherMacsAndSkipsWhatWasDeleted() throws {
+    @Test func pullsOtherMacsAndSkipsWhatWasDeleted() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let laptop = try store()
         laptop.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
         laptop.learn(Commit(text: "東京", reading: "とうきょう"), mode: .japanese)
-        try SyncFolder(folder: folder, deviceID: "laptop", store: laptop).export(includeLearned: false)
+        try await SyncFolder(folder: folder, deviceID: "laptop", store: laptop).export(includeLearned: false)
 
         let desktop = try store()
         let sync = SyncFolder(folder: folder, deviceID: "desktop", store: desktop)
-        #expect(try sync.pull(includeLearned: true) == 1)
+        #expect(try await sync.pull(includeLearned: true) == 1)
         #expect(desktop.lookup("sugu", mode: .chinese).map(\.text) == ["速贵"])
         // Learned words stay home unless the user opts in.
         #expect(desktop.lookup("とうきょう", mode: .japanese).isEmpty)
 
         desktop.deleteAll()
-        #expect(try sync.pull(includeLearned: true) == 0)
+        #expect(try await sync.pull(includeLearned: true) == 0)
         #expect(desktop.count == 0)
+    }
+
+    @Test func deletionsSpreadAndEchoesStayDeleted() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let clock = ManualClock()
+        let laptop = try store { clock.now }
+        let desktop = try store { clock.now }
+        let laptopSync = SyncFolder(folder: folder, deviceID: "laptop", store: laptop)
+        let desktopSync = SyncFolder(folder: folder, deviceID: "desktop", store: desktop)
+        laptop.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        try await laptopSync.export(includeLearned: false)
+        try await desktopSync.pull(includeLearned: false)
+        try await desktopSync.export(includeLearned: false)
+
+        // The desktop's file still has the word; deleting it on the laptop
+        // must not let that copy bring it back.
+        clock.advance()
+        laptop.deleteAll()
+        try await laptopSync.pull(includeLearned: false)
+        #expect(laptop.count == 0)
+
+        // The deletion reaches the desktop.
+        try await laptopSync.export(includeLearned: false)
+        #expect(try await desktopSync.pull(includeLearned: false) == 1)
+        #expect(desktop.count == 0)
+
+        // Adding the word again on purpose brings it back.
+        clock.advance()
+        laptop.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        try await laptopSync.export(includeLearned: false)
+        try await desktopSync.pull(includeLearned: false)
+        #expect(desktop.lookup("sugu", mode: .chinese).map(\.text) == ["速贵"])
     }
 }

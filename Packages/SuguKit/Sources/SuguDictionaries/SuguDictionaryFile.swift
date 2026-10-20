@@ -4,19 +4,34 @@ import SuguLearning
 
 /// Sugu's own dictionary file: tab-separated, one word per line, with
 /// enough detail (kind, pin, use count, dates) to move a store between
-/// Macs without losing ranking.
+/// Macs without losing ranking. Sync files also list deleted words, with
+/// kind `deleted user` or `deleted learned` and the deletion date as
+/// last used.
 public enum SuguDictionaryFile {
     static let header = "# Sugu dictionary"
     static let version = 1
+    private static let deletedPrefix = "deleted "
 
-    public static func encode(_ words: [LearnedWord]) -> Data {
+    public struct Contents: Sendable {
+        public var words: [LearnedWord] = []
+        public var deletions: [WordDeletion] = []
+    }
+
+    public static func encode(_ words: [LearnedWord], deletions: [WordDeletion] = []) -> Data {
         let dates = ISO8601DateFormatter()
         var lines = ["\(header) \(version)", "# mode\treading\ttext\tkind\tpinned\tcount\tfirst used\tlast used"]
         for word in words.sorted(by: { ($0.mode.rawValue, $0.reading, $0.text) < ($1.mode.rawValue, $1.reading, $1.text) }) {
             lines.append([
                 word.mode.rawValue, sanitize(word.reading), sanitize(word.text),
-                word.kind == .user ? "user" : "learned", word.pinned ? "1" : "0", String(word.count),
+                name(of: word.kind), word.pinned ? "1" : "0", String(word.count),
                 dates.string(from: word.firstUsed), dates.string(from: word.lastUsed),
+            ].joined(separator: "\t"))
+        }
+        for deletion in deletions.sorted(by: { ($0.mode.rawValue, $0.reading, $0.text) < ($1.mode.rawValue, $1.reading, $1.text) }) {
+            let date = dates.string(from: deletion.deletedAt)
+            lines.append([
+                deletion.mode.rawValue, sanitize(deletion.reading), sanitize(deletion.text),
+                deletedPrefix + name(of: deletion.kind), "0", "0", date, date,
             ].joined(separator: "\t"))
         }
         return Data((lines.joined(separator: "\n") + "\n").utf8)
@@ -24,23 +39,46 @@ public enum SuguDictionaryFile {
 
     /// Words in the file. Unknown or malformed lines are skipped.
     public static func decode(_ data: Data) -> [LearnedWord] {
-        guard let lines = TextDecoding.lines(of: data) else { return [] }
+        decodeContents(data).words
+    }
+
+    /// Words and deletions in the file.
+    public static func decodeContents(_ data: Data) -> Contents {
+        guard let lines = TextDecoding.lines(of: data) else { return Contents() }
         let dates = ISO8601DateFormatter()
-        return lines.compactMap { line in
-            guard !line.hasPrefix("#") else { return nil }
+        let now = Date()
+        var contents = Contents()
+        for line in lines where !line.hasPrefix("#") {
             let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
-            guard fields.count >= 3, let mode = InputMode(rawValue: fields[0]), !fields[1].isEmpty, !fields[2].isEmpty else { return nil }
-            let now = Date()
+            guard fields.count >= 3, let mode = InputMode(rawValue: fields[0]), !fields[1].isEmpty, !fields[2].isEmpty else { continue }
             func field(_ index: Int) -> String? { fields.indices.contains(index) ? fields[index] : nil }
-            return LearnedWord(
+            let kindName = field(3) ?? ""
+            if kindName.hasPrefix(deletedPrefix) {
+                guard let deletedAt = field(7).flatMap(dates.date(from:)) else { continue }
+                contents.deletions.append(WordDeletion(
+                    mode: mode, reading: fields[1], text: fields[2],
+                    kind: kind(named: String(kindName.dropFirst(deletedPrefix.count))), deletedAt: deletedAt
+                ))
+                continue
+            }
+            contents.words.append(LearnedWord(
                 id: 0, mode: mode, reading: fields[1], text: fields[2],
-                kind: field(3) == "learned" ? .learned : .user,
+                kind: kind(named: kindName),
                 count: field(5).flatMap(Int.init) ?? 0,
                 pinned: field(4) == "1",
                 firstUsed: field(6).flatMap(dates.date(from:)) ?? now,
                 lastUsed: field(7).flatMap(dates.date(from:)) ?? now
-            )
+            ))
         }
+        return contents
+    }
+
+    private static func name(of kind: LearnedWord.Kind) -> String {
+        kind == .user ? "user" : "learned"
+    }
+
+    private static func kind(named name: String) -> LearnedWord.Kind {
+        name == "learned" ? .learned : .user
     }
 
     private static func sanitize(_ value: String) -> String {

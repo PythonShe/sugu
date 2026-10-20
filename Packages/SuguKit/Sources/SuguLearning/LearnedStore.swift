@@ -13,15 +13,24 @@ public final class LearnedStore {
     /// Longest commit, in characters, learned as one word. Longer commits
     /// are sentences, not vocabulary.
     public static let maximumWordLength = 12
+    /// How long a deletion is remembered for sync.
+    public static let deletionRetention: TimeInterval = 365 * 86_400
 
     private let database: SQLiteDatabase
     private let clock: @Sendable () -> Date
     private var words: [Int64: LearnedWord] = [:]
     private var index: [IndexKey: [Int64]] = [:]
+    private var deletions: [WordKey: WordDeletion] = [:]
 
     private struct IndexKey: Hashable {
         var mode: InputMode
         var reading: String
+    }
+
+    private struct WordKey: Hashable {
+        var mode: InputMode
+        var reading: String
+        var text: String
     }
 
     /// Opens or creates the store at `url`.
@@ -60,7 +69,17 @@ public final class LearnedStore {
             at REAL NOT NULL
         );
         CREATE INDEX IF NOT EXISTS events_at ON events(at);
+        CREATE TABLE IF NOT EXISTS deletions (
+            mode TEXT NOT NULL,
+            reading TEXT NOT NULL,
+            text TEXT NOT NULL,
+            kind INTEGER NOT NULL,
+            deleted_at REAL NOT NULL,
+            PRIMARY KEY (mode, reading, text)
+        );
         """)
+        _ = try database.run("DELETE FROM deletions WHERE deleted_at < ?",
+                             [.real(clock().addingTimeInterval(-Self.deletionRetention).timeIntervalSinceReferenceDate)])
     }
 
     private func loadAll() throws {
@@ -74,6 +93,13 @@ public final class LearnedStore {
                 firstUsed: Date(timeIntervalSinceReferenceDate: row.double(7)),
                 lastUsed: Date(timeIntervalSinceReferenceDate: row.double(8))
             ))
+        }
+        deletions = [:]
+        try database.query("SELECT mode, reading, text, kind, deleted_at FROM deletions") { row in
+            guard let mode = InputMode(rawValue: row.string(0)), let kind = LearnedWord.Kind(rawValue: Int(row.int(3))) else { return }
+            let deletion = WordDeletion(mode: mode, reading: row.string(1), text: row.string(2), kind: kind,
+                                        deletedAt: Date(timeIntervalSinceReferenceDate: row.double(4)))
+            deletions[WordKey(mode: mode, reading: deletion.reading, text: deletion.text)] = deletion
         }
     }
 
@@ -104,6 +130,11 @@ public final class LearnedStore {
     }
 
     public var count: Int { words.count }
+
+    /// Words the user deleted, for sync.
+    public func allDeletions() -> [WordDeletion] {
+        Array(deletions.values)
+    }
 
     // MARK: Learning
 
@@ -175,6 +206,12 @@ public final class LearnedStore {
                 if let since, word.lastUsed <= since { continue }
                 let reading = LearnedWord.normalize(word.reading, mode: word.mode)
                 guard !reading.isEmpty, !word.text.isEmpty else { continue }
+                let wordKey = WordKey(mode: word.mode, reading: reading, text: word.text)
+                if let deletion = deletions[wordKey] {
+                    // Deleted here after this copy was last used: stay deleted.
+                    guard word.lastUsed > deletion.deletedAt else { continue }
+                    try forgetDeletion(wordKey)
+                }
                 let key = IndexKey(mode: word.mode, reading: reading)
                 if let id = index[key]?.first(where: { words[$0]?.text == word.text }), var existing = words[id] {
                     existing.count = max(existing.count, word.count)
@@ -206,9 +243,54 @@ public final class LearnedStore {
         return added
     }
 
+    /// Applies deletions made on another Mac: a copy here not used since
+    /// the deletion is deleted. The deletion is remembered either way, so a
+    /// third Mac's older copy is refused too. Returns how many words went.
+    @discardableResult
+    public func applyDeletions(_ incoming: [WordDeletion]) throws -> Int {
+        var removed = 0
+        try database.transaction {
+            for deletion in incoming {
+                let reading = LearnedWord.normalize(deletion.reading, mode: deletion.mode)
+                let key = WordKey(mode: deletion.mode, reading: reading, text: deletion.text)
+                if let known = deletions[key], known.deletedAt >= deletion.deletedAt { continue }
+                if let id = index[IndexKey(mode: deletion.mode, reading: reading)]?.first(where: { words[$0]?.text == deletion.text }),
+                   let word = words[id] {
+                    // Used here after it was deleted there: keep it.
+                    guard word.lastUsed <= deletion.deletedAt else { continue }
+                    try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
+                    removeFromMemory(id)
+                    removed += 1
+                }
+                var stored = deletion
+                stored.reading = reading
+                try remember(stored)
+            }
+        }
+        if removed > 0 { notify() }
+        return removed
+    }
+
+    private func remember(_ deletion: WordDeletion) throws {
+        try database.run(
+            "INSERT OR REPLACE INTO deletions (mode, reading, text, kind, deleted_at) VALUES (?, ?, ?, ?, ?)",
+            [.text(deletion.mode.rawValue), .text(deletion.reading), .text(deletion.text), .integer(Int64(deletion.kind.rawValue)),
+             .real(deletion.deletedAt.timeIntervalSinceReferenceDate)]
+        )
+        deletions[WordKey(mode: deletion.mode, reading: deletion.reading, text: deletion.text)] = deletion
+    }
+
+    private func forgetDeletion(_ key: WordKey) throws {
+        guard deletions.removeValue(forKey: key) != nil else { return }
+        try database.run("DELETE FROM deletions WHERE mode = ? AND reading = ? AND text = ?",
+                         [.text(key.mode.rawValue), .text(key.reading), .text(key.text)])
+    }
+
     private func recordUse(reading rawReading: String, text: String, mode: InputMode, kind: LearnedWord.Kind, at now: Date, logEvent: Bool = true) throws {
         let reading = LearnedWord.normalize(rawReading, mode: mode)
         guard !reading.isEmpty, !text.isEmpty else { return }
+        // Typing a deleted word again brings it back.
+        try forgetDeletion(WordKey(mode: mode, reading: reading, text: text))
         let key = IndexKey(mode: mode, reading: reading)
         if let id = index[key]?.first(where: { words[$0]?.text == text }), var word = words[id] {
             word.count += kind == .learned ? 1 : 0
@@ -239,12 +321,23 @@ public final class LearnedStore {
         notify()
     }
 
+    /// Deletes words the user chose to delete; sync deletes them on other
+    /// Macs too.
     public func delete(ids: [Int64]) {
+        remove(ids: ids, propagate: true)
+    }
+
+    private func remove(ids: [Int64], propagate: Bool) {
         guard !ids.isEmpty else { return }
+        let now = clock()
         try? database.transaction {
             for id in ids {
+                guard let word = words[id] else { continue }
                 try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
                 removeFromMemory(id)
+                if propagate {
+                    try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: now))
+                }
             }
         }
         notify()
@@ -266,6 +359,7 @@ public final class LearnedStore {
                 if word.count == 0, word.kind == .learned, !word.pinned {
                     try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
                     removeFromMemory(id)
+                    try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: clock()))
                 } else {
                     try database.run("UPDATE words SET count = ? WHERE id = ?", [.integer(Int64(word.count)), .integer(id)])
                     words[id] = word
@@ -282,7 +376,8 @@ public final class LearnedStore {
         guard days > 0 else { return 0 }
         let cutoff = clock().addingTimeInterval(-Double(days) * 86_400)
         let stale = words.values.filter { $0.kind == .learned && !$0.pinned && $0.lastUsed < cutoff }.map(\.id)
-        delete(ids: stale)
+        // Expiry is local: another Mac may have used the word since.
+        remove(ids: stale, propagate: false)
         return stale.count
     }
 

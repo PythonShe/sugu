@@ -54,3 +54,21 @@ public struct LearnedWord: Sendable, Hashable, Identifiable {
         }
     }
 }
+
+/// A word the user deleted. Kept for sync, so older copies on other Macs
+/// are deleted too and an older copy coming back is refused.
+public struct WordDeletion: Sendable, Hashable {
+    public var mode: InputMode
+    public var reading: String
+    public var text: String
+    public var kind: LearnedWord.Kind
+    public var deletedAt: Date
+
+    public init(mode: InputMode, reading: String, text: String, kind: LearnedWord.Kind, deletedAt: Date) {
+        self.mode = mode
+        self.reading = reading
+        self.text = text
+        self.kind = kind
+        self.deletedAt = deletedAt
+    }
+}
