@@ -100,6 +100,8 @@ struct InputSessionTests {
         #expect(session.handle(Key.undo))
         #expect(client.document.isEmpty)
         #expect(client.markedText == "nihao")
+        // What the undone commit taught is taken back.
+        #expect(store.count == 0)
         #expect(session.display.candidates != nil)
     }
 

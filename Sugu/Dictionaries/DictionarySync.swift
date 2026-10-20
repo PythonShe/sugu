@@ -17,6 +17,7 @@ final class DictionarySync {
         static let deviceID = "SyncDeviceID"
         static let watermarks = "SyncWatermarks"
         static let lastSync = "SyncLastDate"
+        static let includedLearned = "SyncIncludedLearned"
     }
 
     private let store: LearnedStore
@@ -54,6 +55,13 @@ final class DictionarySync {
 
     private func makeFolder() -> SyncFolder? {
         guard let folder else { return nil }
+        // Watermarks only cover the words that were being taken; when learned
+        // words are switched on, older ones must be read again.
+        let includeLearned = preferences.preferences.syncLearnedWords
+        if defaults.object(forKey: Keys.includedLearned) as? Bool != includeLearned {
+            defaults.removeObject(forKey: Keys.watermarks)
+            defaults.set(includeLearned, forKey: Keys.includedLearned)
+        }
         let stored = defaults.dictionary(forKey: Keys.watermarks) as? [String: Date] ?? [:]
         return SyncFolder(folder: folder, deviceID: deviceID, store: store, watermarks: stored)
     }
@@ -64,17 +72,27 @@ final class DictionarySync {
         let includeLearned = preferences.preferences.syncLearnedWords
         let generation = generation
         running = Task {
+            // This Mac's file is written even when reading others failed.
+            var pullError: (any Error)?
             do {
-                try await sync.pull(includeLearned: includeLearned)
+                let snapshot = try await sync.read()
                 guard generation == self.generation else { return }
+                try sync.merge(snapshot, includeLearned: includeLearned)
                 defaults.set(sync.watermarks, forKey: Keys.watermarks)
+                if let name = snapshot.unreadable.first {
+                    pullError = CocoaError(.fileReadNoPermission, userInfo: [NSFilePathErrorKey: name])
+                }
+            } catch {
+                pullError = error
+            }
+            do {
                 try await sync.export(includeLearned: includeLearned)
                 guard generation == self.generation else { return }
                 pendingExport?.cancel()
-                succeeded()
+                if let pullError { failed(pullError) } else { succeeded() }
             } catch {
                 guard generation == self.generation else { return }
-                failed(error)
+                failed(pullError ?? error)
             }
             running = nil
         }

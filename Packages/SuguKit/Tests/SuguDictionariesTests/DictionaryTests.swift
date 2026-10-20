@@ -104,6 +104,7 @@ private final class ManualClock: @unchecked Sendable {
 
     @Test func pullsOtherMacsAndSkipsWhatWasDeleted() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let laptop = try store()
         laptop.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
         laptop.learn(Commit(text: "東京", reading: "とうきょう"), mode: .japanese)
@@ -123,6 +124,7 @@ private final class ManualClock: @unchecked Sendable {
 
     @Test func deletionsSpreadAndEchoesStayDeleted() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let clock = ManualClock()
         let laptop = try store { clock.now }
         let desktop = try store { clock.now }
@@ -151,5 +153,37 @@ private final class ManualClock: @unchecked Sendable {
         try await laptopSync.export(includeLearned: false)
         try await desktopSync.pull(includeLearned: false)
         #expect(desktop.lookup("sugu", mode: .chinese).map(\.text) == ["速贵"])
+    }
+
+    @Test func pinsSyncWithoutNewerUse() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let laptop = try store()
+        let desktop = try store()
+        let laptopSync = SyncFolder(folder: folder, deviceID: "laptop", store: laptop)
+        let desktopSync = SyncFolder(folder: folder, deviceID: "desktop", store: desktop)
+        laptop.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        try await laptopSync.export(includeLearned: false)
+        try await desktopSync.pull(includeLearned: false)
+
+        let id = try #require(laptop.allWords().first?.id)
+        laptop.setPinned(true, id: id)
+        try await laptopSync.export(includeLearned: false)
+        try await desktopSync.pull(includeLearned: false)
+        #expect(desktop.allWords().first?.pinned == true)
+    }
+
+    @Test func unreadableFilesDoNotStopTheOthers() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("broken.sugudict"), withIntermediateDirectories: true)
+        let laptop = try store()
+        laptop.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        try await SyncFolder(folder: folder, deviceID: "laptop", store: laptop).export(includeLearned: false)
+
+        let desktop = try store()
+        let sync = SyncFolder(folder: folder, deviceID: "desktop", store: desktop)
+        let snapshot = try await sync.read()
+        #expect(snapshot.unreadable == ["broken.sugudict"])
+        #expect(try sync.merge(snapshot, includeLearned: false) == 1)
     }
 }

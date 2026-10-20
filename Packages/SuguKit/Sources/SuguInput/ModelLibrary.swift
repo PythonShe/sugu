@@ -86,6 +86,8 @@ public final class ModelLibrary {
 
     private let engines: EngineHub
     private var tasks: [Item: Task<Void, Never>] = [:]
+    /// Items whose removal waits for a cancelled download to unwind.
+    private var removing: Set<Item> = []
 
     public init(engines: EngineHub) {
         self.engines = engines
@@ -105,14 +107,14 @@ public final class ModelLibrary {
     }
 
     public func install(_ item: Item) {
-        guard tasks[item] == nil else { return }
+        guard tasks[item] == nil, !removing.contains(item) else { return }
         set(item, .downloading(0))
         tasks[item] = Task {
             do {
                 try await perform(item)
                 set(item, .installed)
                 engines.modelsDidChange()
-            } catch is CancellationError {
+            } catch where Self.isCancellation(error) {
                 // A cancel can arrive after the files were moved in.
                 let installed = isInstalled(item)
                 set(item, installed ? .installed : .notInstalled)
@@ -134,9 +136,11 @@ public final class ModelLibrary {
     public func remove(_ item: Item) {
         let running = tasks[item]
         running?.cancel()
+        removing.insert(item)
         Task {
             await running?.value
             deleteFiles(of: item)
+            removing.remove(item)
             set(item, .notInstalled)
             engines.modelsDidChange()
         }
@@ -193,6 +197,12 @@ public final class ModelLibrary {
         guard states[item] != state else { return }
         states[item] = state
         onChange?(item)
+    }
+
+    /// A cancelled download surfaces as URLSession's own error, not as
+    /// `CancellationError`.
+    private static func isCancellation(_ error: any Error) -> Bool {
+        error is CancellationError || (error as? URLError)?.code == .cancelled
     }
 
     private static func failure(for error: any Error) -> Failure {

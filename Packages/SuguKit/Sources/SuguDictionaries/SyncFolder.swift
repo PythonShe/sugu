@@ -41,22 +41,42 @@ public final class SyncFolder {
         let file = folder.appendingPathComponent(ownName)
         let folder = folder
         try await Task.detached(priority: .utility) {
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            // The folder is the user's; when it is gone (an unmounted disk),
+            // fail rather than create a stand-in on this Mac.
+            guard FileManager.default.fileExists(atPath: folder.path) else { throw CocoaError(.fileNoSuchFile) }
             try Self.coordinatedWrite(data, to: file)
         }.value
+    }
+
+    /// Other Macs' files, read off the main actor.
+    public struct Snapshot: Sendable {
+        fileprivate var files: [(name: String, data: Data)]
+        /// Files that exist but could not be read this time.
+        public var unreadable: [String]
     }
 
     /// Merges what other Macs wrote since the last pull. Returns how many
     /// words were added or deleted.
     @discardableResult
     public func pull(includeLearned: Bool) async throws -> Int {
+        try merge(await read(), includeLearned: includeLearned)
+    }
+
+    /// Reads other Macs' files. A file that cannot be read is skipped and
+    /// listed, so one bad file does not stop the others.
+    public func read() async throws -> Snapshot {
         let folder = folder
         let ownName = ownName
-        let files = try await Task.detached(priority: .utility) {
+        return try await Task.detached(priority: .utility) {
             try Self.readOtherFiles(in: folder, excluding: ownName)
         }.value
+    }
+
+    /// Merges files read with `read()` into the store.
+    @discardableResult
+    public func merge(_ snapshot: Snapshot, includeLearned: Bool) throws -> Int {
         var changed = 0
-        for (name, data) in files {
+        for (name, data) in snapshot.files {
             let contents = SuguDictionaryFile.decodeContents(data)
             let words = contents.words.filter { includeLearned || $0.kind == .user }
             let deletions = contents.deletions.filter { includeLearned || $0.kind == .user }
@@ -73,11 +93,11 @@ public final class SyncFolder {
 
     /// Other Macs' files that are on this disk. Files a cloud provider has
     /// not downloaded yet are requested and read on a later pull.
-    nonisolated private static func readOtherFiles(in folder: URL, excluding ownName: String) throws -> [(String, Data)] {
+    nonisolated private static func readOtherFiles(in folder: URL, excluding ownName: String) throws -> Snapshot {
         let fm = FileManager.default
         let keys: [URLResourceKey] = [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey]
         let entries = try fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys)
-        var result: [(String, Data)] = []
+        var result = Snapshot(files: [], unreadable: [])
         for entry in entries {
             let name = entry.lastPathComponent
             // Older iCloud Drive keeps an evicted file as ".name.icloud".
@@ -92,7 +112,11 @@ public final class SyncFolder {
                 try? fm.startDownloadingUbiquitousItem(at: entry)
                 continue
             }
-            result.append((name, try coordinatedRead(entry)))
+            if let data = try? coordinatedRead(entry) {
+                result.files.append((name, data))
+            } else {
+                result.unreadable.append(name)
+            }
         }
         return result
     }

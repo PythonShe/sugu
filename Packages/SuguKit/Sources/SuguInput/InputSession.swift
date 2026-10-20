@@ -61,7 +61,7 @@ public final class InputSession {
     private var punctuator = ChinesePunctuator()
     private var context = ""
     /// The commit ⌃⌫ can take back, with the engine that composed it.
-    private var undoable: (commit: Commit, engine: any CompositionEngine, mode: InputMode)?
+    private var undoable: (commit: Commit, engine: any CompositionEngine, mode: InputMode, learned: Bool)?
 
     public init(
         preferences: Preferences,
@@ -433,6 +433,9 @@ public final class InputSession {
             if let rest = active, !rest.state.isEmpty {
                 commit(rest.commitConverted() ?? rest.commitRaw())
             }
+        } else if highlight != nil, engine.state.phase != .converting {
+            // A highlighted suggestion is what the field shows.
+            commitHighlighted()
         } else {
             commit(engine.commitConverted())
         }
@@ -527,11 +530,13 @@ public final class InputSession {
         showsConversionWindow = false
         client?.commit(text)
         let record = record ?? Commit(text: text, reading: reading)
+        var learned = false
         if learn, mode != .english, !isSecureInput, let client, preferences.learns(in: client.bundleIdentifier), let store {
             store.learn(record, mode: mode)
             provider.learnedWordsDidChange()
+            learned = true
         }
-        self.undoable = undoable ? engine.map { (record, $0, mode) } : nil
+        self.undoable = undoable ? engine.map { (record, $0, mode, learned) } : nil
         publish()
     }
 
@@ -544,6 +549,11 @@ public final class InputSession {
         guard client.textBeforeCaret(limit: text.count) == text,
               client.deleteBeforeCaret(count: text.count) else { return false }
         self.undoable = nil
+        // The commit was a mistake; so was what it taught.
+        if undoable.learned, let store {
+            store.unlearn(undoable.commit, mode: undoable.mode)
+            provider.learnedWordsDidChange()
+        }
         let engine = undoable.engine
         active = engine
         engine.clear()

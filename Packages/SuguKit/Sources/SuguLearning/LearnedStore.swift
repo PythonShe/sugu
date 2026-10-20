@@ -141,14 +141,10 @@ public final class LearnedStore {
     /// Learns from a commit: each converted clause and, when it is short
     /// enough to be a word, the whole commit.
     public func learn(_ commit: Commit, mode: InputMode) {
-        var pairs = commit.clauses.filter { $0.text != $0.reading }.map { ($0.reading, $0.text) }
-        if commit.text.count <= Self.maximumWordLength, commit.text != commit.reading, !pairs.contains(where: { $0.1 == commit.text }) {
-            pairs.append((commit.reading, commit.text))
-        }
         let now = clock()
         do {
             try database.transaction {
-                for (reading, text) in pairs {
+                for (reading, text) in Self.pairs(learnedFrom: commit) {
                     try recordUse(reading: reading, text: text, mode: mode, kind: .learned, at: now)
                 }
                 try database.run("DELETE FROM events WHERE at < ?", [.real(now.addingTimeInterval(-7_200).timeIntervalSinceReferenceDate)])
@@ -157,6 +153,42 @@ public final class LearnedStore {
             try? loadAll()
         }
         notify()
+    }
+
+    /// Takes back what `learn` recorded for a commit the user undid: one use
+    /// of each word, and the word itself when that was its only use.
+    public func unlearn(_ commit: Commit, mode: InputMode) {
+        do {
+            try database.transaction {
+                for (rawReading, text) in Self.pairs(learnedFrom: commit) {
+                    let reading = LearnedWord.normalize(rawReading, mode: mode)
+                    guard let id = index[IndexKey(mode: mode, reading: reading)]?.first(where: { words[$0]?.text == text }),
+                          var word = words[id] else { continue }
+                    word.count = max(0, word.count - 1)
+                    if word.count == 0, word.kind == .learned, !word.pinned {
+                        try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
+                        removeFromMemory(id)
+                    } else {
+                        try database.run("UPDATE words SET count = ? WHERE id = ?", [.integer(Int64(word.count)), .integer(id)])
+                        words[id] = word
+                        try database.run("DELETE FROM events WHERE rowid = (SELECT MAX(rowid) FROM events WHERE word_id = ?)", [.integer(id)])
+                    }
+                }
+            }
+        } catch {
+            try? loadAll()
+        }
+        notify()
+    }
+
+    /// The (reading, text) pairs a commit teaches: each converted clause and,
+    /// when it is short enough to be a word, the whole commit.
+    private static func pairs(learnedFrom commit: Commit) -> [(String, String)] {
+        var pairs = commit.clauses.filter { $0.text != $0.reading }.map { ($0.reading, $0.text) }
+        if commit.text.count <= maximumWordLength, commit.text != commit.reading, !pairs.contains(where: { $0.1 == commit.text }) {
+            pairs.append((commit.reading, commit.text))
+        }
+        return pairs
     }
 
     /// Adds a word the user typed in, or imported.
@@ -194,8 +226,9 @@ public final class LearnedStore {
     }
 
     /// Merges words from Sugu's own file (another Mac, or a sync folder).
-    /// Only words used after `since` are taken, so a word deleted here is
-    /// not brought back by an older copy. A word already in the store keeps
+    /// A word missing here is taken only when used after `since`, so a word
+    /// deleted here is not brought back by an older copy. A word already in
+    /// the store always merges and keeps
     /// the higher count, the later use, and its pin if either side has one.
     /// Returns how many words were new.
     @discardableResult
@@ -203,7 +236,6 @@ public final class LearnedStore {
         var added = 0
         try database.transaction {
             for word in incoming {
-                if let since, word.lastUsed <= since { continue }
                 let reading = LearnedWord.normalize(word.reading, mode: word.mode)
                 guard !reading.isEmpty, !word.text.isEmpty else { continue }
                 let wordKey = WordKey(mode: word.mode, reading: reading, text: word.text)
@@ -214,11 +246,15 @@ public final class LearnedStore {
                 }
                 let key = IndexKey(mode: word.mode, reading: reading)
                 if let id = index[key]?.first(where: { words[$0]?.text == word.text }), var existing = words[id] {
+                    // Words both sides have always merge, so a pin or more
+                    // uses on another Mac arrive even without a newer use.
+                    let before = existing
                     existing.count = max(existing.count, word.count)
                     existing.lastUsed = max(existing.lastUsed, word.lastUsed)
                     existing.firstUsed = min(existing.firstUsed, word.firstUsed)
                     existing.pinned = existing.pinned || word.pinned
                     if word.kind == .user { existing.kind = .user }
+                    guard existing != before else { continue }
                     try database.run(
                         "UPDATE words SET count = ?, pinned = ?, kind = ?, first_used = ?, last_used = ? WHERE id = ?",
                         [.integer(Int64(existing.count)), .integer(existing.pinned ? 1 : 0), .integer(Int64(existing.kind.rawValue)),
@@ -226,6 +262,9 @@ public final class LearnedStore {
                     )
                     words[id] = existing
                 } else {
+                    // A word missing here and not used since the last pull
+                    // was deleted here (or expired); it stays gone.
+                    if let since, word.lastUsed <= since { continue }
                     let id = try database.run(
                         "INSERT INTO words (mode, reading, text, kind, count, pinned, first_used, last_used) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                         [.text(word.mode.rawValue), .text(reading), .text(word.text), .integer(Int64(word.kind.rawValue)), .integer(Int64(word.count)),

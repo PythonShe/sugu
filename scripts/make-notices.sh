@@ -18,17 +18,26 @@ swift package --package-path "$KIT" resolve >/dev/null
 [[ -d "$RIME/librime" ]] || { echo "run scripts/build-librime.sh first" >&2; exit 1; }
 [[ -f "$ROOT/.vendor/wanxiang/LICENSE" ]] || { echo "run scripts/fetch-data.sh first" >&2; exit 1; }
 
-# fetch <name> <url> <sha256>: a pinned license text, cached in .vendor.
+# fetch <name> <url> <sha256>: a pinned license text, cached in .vendor as
+# $CACHE/<name>. Called as a plain statement (not in $(...)), so a failed
+# download or checksum stops the script.
 fetch() {
   mkdir -p "$CACHE"
   local file="$CACHE/$1"
-  if [[ ! -f "$file" ]]; then
-    curl -fsSL -o "$file.partial" "$2"
-    echo "$3  $file.partial" | shasum -a 256 -c - >/dev/null
-    mv "$file.partial" "$file"
+  [[ -f "$file" ]] && return
+  curl -fsSL -o "$file.partial" "$2"
+  if ! echo "$3  $file.partial" | shasum -a 256 -c - >/dev/null; then
+    rm -f "$file.partial"
+    echo "checksum mismatch: $1" >&2
+    exit 1
   fi
-  echo "$file"
+  mv "$file.partial" "$file"
 }
+
+fetch mozc-LICENSE "https://raw.githubusercontent.com/google/mozc/$MOZC_REF/LICENSE" "$MOZC_LICENSE_SHA256"
+fetch cldr-LICENSE "https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_REF/LICENSE" "$CLDR_LICENSE_SHA256"
+fetch llama.cpp-LICENSE "https://raw.githubusercontent.com/azooKey/llama.cpp/$LLAMA_CPP_REF/LICENSE" "$LLAMA_CPP_LICENSE_SHA256"
+fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle/$SPARKLE_VERSION/LICENSE" "$SPARKLE_LICENSE_SHA256"
 
 version() {
   python3 -I -c 'import json, sys
@@ -69,14 +78,10 @@ entry "Boost $BOOST_VERSION (headers, with librime)" "https://www.boost.org" "BS
 entry "rime-wanxiang $WANXIANG_REF (dictionary data, compiled)" "https://github.com/amzxyz/rime_wanxiang" "CC-BY-4.0" "$ROOT/.vendor/wanxiang/LICENSE"
 entry "AzooKeyKanaKanjiConverter $(version azookeykanakanjiconverter)" "https://github.com/azooKey/AzooKeyKanaKanjiConverter" "MIT" "$AZOOKEY/LICENSE"
 entry "azooKey dictionary data" "https://github.com/ensan-hcl/azooKey_dictionary_storage" "Apache-2.0" "$AZOOKEY_DATA/azooKey_dictionary_storage/LICENSE"
-entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/mozc" "BSD-3-Clause" \
-  "$(fetch mozc-LICENSE "https://raw.githubusercontent.com/google/mozc/$MOZC_REF/LICENSE" "$MOZC_LICENSE_SHA256")"
-entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" \
-  "$(fetch cldr-LICENSE "https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_REF/LICENSE" "$CLDR_LICENSE_SHA256")"
-entry "llama.cpp $LLAMA_CPP_REF (azooKey build, for Zenzai)" "https://github.com/azooKey/llama.cpp" "MIT" \
-  "$(fetch llama.cpp-LICENSE "https://raw.githubusercontent.com/azooKey/llama.cpp/$LLAMA_CPP_REF/LICENSE" "$LLAMA_CPP_LICENSE_SHA256")"
-entry "Sparkle $SPARKLE_VERSION" "https://sparkle-project.org" "MIT (bsdiff and other parts: BSD-style, below)" \
-  "$(fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle/$SPARKLE_VERSION/LICENSE" "$SPARKLE_LICENSE_SHA256")"
+entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/mozc" "BSD-3-Clause" "$CACHE/mozc-LICENSE"
+entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" "$CACHE/cldr-LICENSE"
+entry "llama.cpp $LLAMA_CPP_REF (azooKey build, for Zenzai)" "https://github.com/azooKey/llama.cpp" "MIT" "$CACHE/llama.cpp-LICENSE"
+entry "Sparkle $SPARKLE_VERSION" "https://sparkle-project.org" "MIT (bsdiff and other parts: BSD-style, below)" "$CACHE/sparkle-LICENSE"
 entry "SwiftyMarisa $(version swiftymarisa)" "https://github.com/ensan-hcl/SwiftyMarisa" \
   "BSD-2-Clause (chosen from BSD-2-Clause OR LGPL)" "$CHECKOUTS/SwiftyMarisa/LICENSE.md"
 entry "swift-tokenizers $(version swift-tokenizers)" "https://github.com/ensan-hcl/swift-tokenizers" "Apache-2.0" "$CHECKOUTS/swift-tokenizers/LICENSE"
