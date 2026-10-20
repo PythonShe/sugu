@@ -10,7 +10,7 @@ cd "$ROOT"
 
 [[ -d Frameworks/librime.xcframework ]] || scripts/build-librime.sh
 scripts/fetch-data.sh
-[[ -f Data/Rime/build/sugu.table.bin && -f Data/Rime/opencc/emoji.txt ]] || scripts/build-data.sh
+[[ -f Data/Rime/build/sugu.table.bin && -f Data/Rime/opencc/emoji.txt && -f Data/LM/ja.lm && -f Data/LM/zh.lm ]] || scripts/build-data.sh
 
 # Every pinned package has an entry in the notices, and no share-alike
 # file ships in the app (D-072).
@@ -35,11 +35,20 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' te
 swift test --package-path Packages/SuguKit
 swift run --package-path Packages/SuguKit -c release sugu-bench \
   --data Data --bench Bench --json "${SUGU_BENCH_JSON:-/dev/null}" --check
-swift run --package-path Packages/SuguKit -c release sugu-bench \
-  --data Data --bench Bench --fuzz 200 2>/dev/null
-swift run --package-path Packages/SuguKit -c release sugu-bench \
-  --data Data --bench Bench --fuzz 200 --zhuyin 2>/dev/null
+# Fuzz progress goes to stderr; it is shown only when a run fails.
+fuzz() {
+  local log
+  log="$(mktemp)"
+  if ! swift run --package-path Packages/SuguKit -c release sugu-bench \
+    --data Data --bench Bench --fuzz "$@" 2>"$log"; then
+    tail -n 40 "$log" >&2
+    rm -f "$log"
+    exit 1
+  fi
+  rm -f "$log"
+}
+fuzz 200
+fuzz 200 --zhuyin
 for layout in eten ibm; do
-  swift run --package-path Packages/SuguKit -c release sugu-bench \
-    --data Data --bench Bench --fuzz 50 --zhuyin --zhuyin-layout "$layout" 2>/dev/null
+  fuzz 50 --zhuyin --zhuyin-layout "$layout"
 done

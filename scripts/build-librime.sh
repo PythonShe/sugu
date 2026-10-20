@@ -26,7 +26,7 @@ checkout() { # name url ref
 
 mkdir -p "$WORK/src" "$PREFIX"
 
-checkout librime https://github.com/rime/librime.git "$LIBRIME_REF"
+checkout librime https://github.com/rime/librime.git "$LIBRIME_COMMIT"
 git -C "$WORK/src/librime" submodule update --init --quiet \
   deps/leveldb deps/marisa-trie deps/opencc deps/yaml-cpp
 checkout librime-octagram https://github.com/lotem/librime-octagram.git "$OCTAGRAM_REF"
