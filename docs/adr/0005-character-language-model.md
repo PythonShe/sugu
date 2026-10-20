@@ -36,9 +36,18 @@ does it.
    costs. With Zenzai on, Zenzai's choice stands.
 
 5. **Measured, not assumed.** Bench sentences are left out of the model's
-   corpus (15 of Tatoeba's sentences match them). On the Japanese seed set
-   `sugu-bench` top-1 goes from 78% to 86% and characters from 95.7% to
-   97.5%; learned names stay first; keystroke p99 is unchanged.
+   corpus (19 of Tatoeba's sentences match them). On the first 50
+   Japanese sentences `sugu-bench` top-1 went from 78% to 86%; on 51
+   written afterwards to check it, from 78% to 84%; learned names stay
+   first; keystroke p99 is unchanged.
+
+6. **Not for Chinese yet.** librime builds one sentence and offers no
+   alternatives to rerank. A small octagram grammar built from Tatoeba's
+   Mandarin sentences scored 94% against 90% on the first 50 bench
+   sentences, but on 50 more it broke as many common words as it fixed
+   (老师 → 老是, 医生 → 一生) at every scale tried: 92 thousand sentences
+   are too few for collocation counts. Chinese keeps the dictionary's
+   ranking, with the wanxiang grammar model as the download.
 
 ## Later phases
 

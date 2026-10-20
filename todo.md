@@ -101,8 +101,8 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] `SuguLM`: character n-gram reader and builder; `sugu-tool build-lm`; Tatoeba pinned in the data scripts
 - [x] Japanese: AzooKey's sentences ranked by the model (D-047)
 - [ ] Personal n-grams from commits in the learned store, blended with the bundled model
-- [x] Chinese: bundled grammar model from Tatoeba, no download needed (D-048)
-- [ ] Bench: a larger held-out Japanese and Chinese set
+- [ ] Chinese: a ranking source that holds on held-out sentences (Tatoeba's grammar did not, D-050)
+- [x] Bench: 101 Japanese and 100 Chinese sentences (D-050)
 - [x] Chinese keystroke tail: librime on compositions past 25 letters, not Sugu (D-049)
 - [ ] Zenzai personalization from the personal model
 

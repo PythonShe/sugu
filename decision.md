@@ -686,3 +686,18 @@ any call made without the owner present. Each entry: what, why, reversibility.
   `max_homophones: 4` move the p99 by 0.1–0.3 ms with the same accuracy.
   Not worth narrowing what librime considers; settings unchanged. Bench
   p99 runs 3.9–4.2 ms on an idle machine and higher under load.
+
+## D-050 · Bundled Chinese grammar withdrawn; bench doubled (2026-10-20)
+- The bench gained 51 Japanese and 50 Chinese original sentences, aimed at
+  homophones and collocations (書く/描く, 暑い/熱い/厚い, 会う/合う, 取钱,
+  晚饭). The new sentences are left out of the corpora like the others.
+- Japanese holds: top-1 78% → 85% with the character model over 101
+  sentences, characters 96.3% → 97.8%.
+- Chinese does not: on 100 sentences the D-048 grammar gives 91% against
+  92% without it, and 92% at best (scale 10, where it does almost
+  nothing). It fixes 大雪 and 大家的 and breaks 老师, 医生, 衣服 for
+  frequent strings like 老是 and 一生. The scale was fitted to 50
+  sentences. Reverted: no bundled grammar, the setting is again "Use the
+  grammar model", and `build-grammar` is gone.
+- Lesson kept for later tuning: fit on one half of the bench, confirm on
+  the other.
