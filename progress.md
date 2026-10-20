@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Japanese words the engine joined to their particle (を引き) are
+  respelled too (D-055): top-1 90%. Model order and pruning re-checked;
+  order 5 with pruning stays.
 - Chinese sentences respelled where the character model reads another
   spelling as clearly better (ADR 0005 decision 8, D-053): top-1 91% →
   97% on a 150-sentence bench, learned words 83% → 92%, no sentence

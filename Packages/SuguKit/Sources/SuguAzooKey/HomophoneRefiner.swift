@@ -41,8 +41,16 @@ final class HomophoneRefiner {
     /// Words from the user's dictionary and learned words stay, also where
     /// the converter spelled one out of several words.
     func refined(_ sentence: KanaKanjiConverterModule.Candidate, after history: String, model: CharacterLanguageModel) -> KanaKanjiConverterModule.Candidate {
-        var words = sentence.data
-        guard !words.isEmpty, words.map(\.word).joined() == sentence.text else { return sentence }
+        guard !sentence.data.isEmpty, sentence.data.map(\.word).joined() == sentence.text else { return sentence }
+        var words: [DicdataElement] = []
+        // Whether each word stands in for one of another class, which it is
+        // only compared with spellings of its own classes.
+        var standIns: [Bool] = []
+        for element in sentence.data {
+            let parts = split(element) ?? (elements: [element], standIn: false)
+            words += parts.elements
+            standIns += parts.elements.indices.map { parts.standIn && $0 > 0 }
+        }
         let kept = userWordCharacters(in: sentence.text)
         // Where the word at `index` starts in `sentence.text`; words after
         // `index` are still the sentence's own.
@@ -63,6 +71,7 @@ final class HomophoneRefiner {
             let base = cost(of: [word], between: previous, and: next)
             var choice: (elements: [DicdataElement], value: PValue, score: Float)?
             for spelling in spellings(of: word.ruby) where spelling.map(\.word).joined() != word.word {
+                if standIns[index], spelling[0].lcid != word.lcid || spelling[spelling.count - 1].rcid != word.rcid { continue }
                 var trial = words
                 trial.replaceSubrange(index...index, with: spelling)
                 let trialValue = value - base + cost(of: spelling, between: previous, and: next)
@@ -74,11 +83,12 @@ final class HomophoneRefiner {
                 continue
             }
             words.replaceSubrange(index...index, with: choice.elements)
+            standIns.replaceSubrange(index...index, with: repeatElement(false, count: choice.elements.count))
             value = choice.value
             score = choice.score
             index += choice.elements.count
         }
-        guard words != sentence.data else { return sentence }
+        guard words.map(\.word).joined() != sentence.text else { return sentence }
         return KanaKanjiConverterModule.Candidate(text: words.map(\.word).joined(), value: value, composingCount: sentence.composingCount, lastMid: sentence.lastMid, data: words)
     }
 
@@ -101,11 +111,40 @@ final class HomophoneRefiner {
         return kept
     }
 
-    /// Content words of two to six kana; particles and auxiliaries
-    /// (147...554 in the dictionary's word classes) have no spellings worth
-    /// a lookup.
+    /// A particle and the word after it as two elements, where the
+    /// converter wrote them as one (を引き, が早い): the particle's class on
+    /// the left and the word's on the right. The word is the dictionary's
+    /// entry for its reading, so it is priced and respelled like any other;
+    /// `standIn` when no entry ends in the element's class and one of
+    /// another class takes its place (引き as a noun for the verb's stem).
+    private func split(_ element: DicdataElement) -> (elements: [DicdataElement], standIn: Bool)? {
+        guard Self.isFunctionWord(element.lcid), !Self.isFunctionWord(element.rcid), element.metadata.isEmpty else { return nil }
+        let ruby = Array(element.ruby)
+        let text = Array(element.word)
+        guard ruby.count >= 3 else { return nil }
+        for length in stride(from: min(3, ruby.count - 2), through: 1, by: -1) {
+            let particleRuby = String(ruby[..<length])
+            let particle = WidthConversion.hiragana(particleRuby)
+            guard text.count > length, String(text[..<length]) == particle else { continue }
+            let rest = String(text[length...])
+            let entries = spellings(of: String(ruby[length...])).filter { $0.map(\.word).joined() == rest }
+            let exact = entries.first { $0.last?.rcid == element.rcid }
+            guard let word = exact ?? entries.first(where: { $0.count == 1 }) else { continue }
+            let value = element.value() - word.map { $0.value() }.reduce(0, +)
+            return ([DicdataElement(word: particle, ruby: particleRuby, cid: element.lcid, mid: element.mid, value: value)] + word, exact == nil)
+        }
+        return nil
+    }
+
+    /// Particles and auxiliaries, 147...554 in the dictionary's word classes.
+    private static func isFunctionWord(_ cid: Int) -> Bool {
+        (147...554).contains(cid)
+    }
+
+    /// Content words of two to six kana; particles and auxiliaries have no
+    /// spellings worth a lookup.
     private static func mayRespell(_ word: DicdataElement) -> Bool {
-        (2...6).contains(word.ruby.count) && word.metadata.isEmpty && !(147...554).contains(word.lcid)
+        (2...6).contains(word.ruby.count) && word.metadata.isEmpty && !isFunctionWord(word.lcid)
     }
 
     /// The words' own costs and the connections into, between, and out of

@@ -56,8 +56,9 @@ does it.
    of its reading from the same dictionary, as one word or several,
    when the engine's cost of the words and their connections plus the
    model's score is higher. Words from the user's dictionary and learned
-   words, and text that spells one, keep their spelling. Top-1 went from
-   85% to 89%, by two sentences on each half of the bench.
+   words, and text that spells one, keep their spelling. A particle the
+   engine joined to the next word (を引き) is split off first, so the word
+   is respelled too. Top-1 went from 85% to 90%.
 
 8. **Respelling Chinese sentences.** librime's sentence is read as words
    of the dictionary's list (two or three syllables, weight at least

@@ -793,3 +793,23 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Learned words are compared in Simplified too, whatever script they
   were committed in.
 
+## D-055 · Words joined to their particle; model order and pruning (2026-10-20)
+- AzooKey can hand back a particle and the next word as one element
+  (を引き, は足, が早い), with the particle's class on the left. The
+  refiner skipped them as particles, which is why 弾きます and 速い never
+  came up. Such an element is now split into the particle and the
+  word's own dictionary entry, looked up by the rest of the reading.
+- When no entry ends in the element's class (引き is found as a noun,
+  the sentence used the verb's stem), the noun stands in and is compared
+  only with spellings of its own classes. Comparing it with all of them
+  let verb spellings win on the connection to ます alone: 送ります →
+  贈ります and a learned 勤めて → 努めて.
+- Japanese top-1 89% → 90% (弾きます), learned words 100%. Space
+  conversion p50 2.7 → 3.3 ms, p99 5.7 ms, from the extra lookups.
+- Model shape re-checked on both languages: order 4 and 6 and no pruning
+  of single n-grams. Order 4 loses two Japanese sentences, order 6
+  loses one; without pruning Japanese gains one sentence for a model
+  three times the size (46 MB, 22 MB for Chinese) and 50 MB more
+  resident memory. Order 5 with pruning stays. Chinese is 97% in all
+  five.
+

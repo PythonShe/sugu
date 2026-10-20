@@ -339,6 +339,21 @@ struct RimeEngineTests {
         #expect(commit.reading == "ゆきがたくさんふっています")
     }
 
+    /// The converter can write a particle and the word after it as one
+    /// element (を引き); the word is respelled all the same. With the
+    /// bundled model, which leaves the bench's sentences out.
+    @Test(.enabled(if: hasData)) func respellingReachesAWordJoinedToItsParticle() throws {
+        let engine = try makeEngine()
+        engine.insert("kanojohapianowohikimasu")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined() != "彼女はピアノを弾きます", "the converter alone already writes 弾き; pick another sentence")
+        engine.clear()
+        engine.languageModel = try CharacterLanguageModel(contentsOf: dataDirectory.appendingPathComponent("LM/ja.lm"))
+        engine.insert("kanojohapianowohikimasu")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined() == "彼女はピアノを弾きます")
+    }
+
     @Test func respellingLeavesTheUsersWords() throws {
         let engine = try makeEngine()
         engine.setUserWords([(reading: "ゆき", text: "行き")])
