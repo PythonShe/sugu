@@ -107,10 +107,12 @@ final class SettingsModel {
         preferences.enabledModes + InputMode.allCases.filter { !preferences.enabledModes.contains($0) }
     }
 
+    /// A mode turned back on takes its place for the preferred languages,
+    /// as on first launch.
     func setEnabled(_ mode: InputMode, _ enabled: Bool) {
-        // Keeps the order; a mode turned back on returns to its place.
-        let modes = orderedModes.filter { $0 == mode ? enabled : isEnabled($0) || $0 == .english }
-        preferences.enabledModes = modes.filter { $0 != .english } + [.english]
+        let modes = Set(preferences.enabledModes.filter { $0 != mode } + (enabled ? [mode] : []) + [.english])
+        let order = Preferences(preferredLanguages: Locale.preferredLanguages).enabledModes
+        preferences.enabledModes = order.filter(modes.contains)
     }
 
     // MARK: Engines

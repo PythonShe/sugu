@@ -109,23 +109,6 @@ extension InputSession {
         return preferences.japanesePunctuation.romajiInput(for: character)
     }
 
-    /// Types input into the composition. In kana input a voicing mark
-    /// joins the kana before the caret (か゛ → が) when it takes one.
-    func insert(_ input: String, into engine: any CompositionEngine) {
-        let state = engine.state
-        if mode == .japanese, preferences.kanaInput, let mark = input.first, input.count == 1,
-           mark == KanaLayout.voicedMark || mark == KanaLayout.semiVoicedMark,
-           state.phase == .composing, state.caret > 0, state.caret <= state.reading.count {
-            let before = state.reading[state.reading.index(state.reading.startIndex, offsetBy: state.caret - 1)]
-            if let voiced = KanaLayout.applying(mark, to: before) {
-                engine.deleteBackward()
-                engine.insert(String(voiced))
-                return
-            }
-        }
-        engine.insert(input)
-    }
-
     // MARK: Live candidates (librime, expressions)
 
     /// Candidates follow every key and the first is chosen by default:
@@ -163,7 +146,7 @@ extension InputSession {
         // What the engine takes is input, even digits and operators in an
         // expression; only the rest selects or turns pages.
         if engine.accepts(character) {
-            insert(input(for: key, character: character), into: engine)
+            engine.insert(input(for: key, character: character))
             refresh()
             return true
         }
@@ -269,7 +252,7 @@ extension InputSession {
                 begin(with: fresh, input: input(for: key, character: character))
                 return true
             }
-            insert(input(for: key, character: character), into: engine)
+            engine.insert(input(for: key, character: character))
             refresh()
             return true
         }

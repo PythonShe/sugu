@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Review of D-033–D-039: voicing marks join kana inside AzooKey (the
+  shown text is not kana under live conversion), and a mode turned back on
+  takes its place for the preferred languages. CI passes (p99 3.7 ms).
 - Japanese live conversion as a preference (D-039); keystroke p99 3.7 ms
   with it. Zhuyin deferred to a planned pass.
 - Candidate window: long candidates shortened in the middle, hover

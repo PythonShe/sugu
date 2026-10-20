@@ -189,6 +189,18 @@ struct RimeEngineTests {
         #expect(commit.reading == "わたしはがくせい")
     }
 
+    @Test func voicingMarksJoinTheKanaBeforeThem() throws {
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
+        var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
+        configuration.kanaInput = true
+        configuration.liveConversion = true
+        let engine = AzooKeyEngine(configuration: configuration)
+        for kana in ["き", "ょ", "う", "か", "゛", "あ", "゛", "は", "゜"] { engine.insert(kana) }
+        engine.moveCaret(.left)
+        engine.moveCaret(.right)
+        #expect(engine.state.reading == "きょうがあ゛ぱ")
+    }
+
     @Test func liveConversionShowsAndCommitsTheBestSentence() throws {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
         var configuration = AzooKeyEngine.Configuration(workingDirectory: work)

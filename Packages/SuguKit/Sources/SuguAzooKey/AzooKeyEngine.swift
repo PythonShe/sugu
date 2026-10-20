@@ -171,8 +171,24 @@ public final class AzooKeyEngine: CompositionEngine {
 
     public func insert(_ text: String) {
         if converting { commitFixedPrefixForTyping() }
-        composing.insertAtCursorPosition(text, inputStyle: inputStyle)
+        if let voiced = voicing(text) {
+            composing.deleteBackwardFromCursorPosition(count: 1)
+            composing.insertAtCursorPosition(String(voiced), inputStyle: inputStyle)
+        } else {
+            composing.insertAtCursorPosition(text, inputStyle: inputStyle)
+        }
         refreshComposing()
+    }
+
+    /// In kana input a voicing mark joins the kana before the caret
+    /// (か゛ → が) when it takes one; otherwise it is typed as it is.
+    private func voicing(_ text: String) -> Character? {
+        guard configuration.kanaInput, text.count == 1, let mark = text.first,
+              mark == KanaLayout.voicedMark || mark == KanaLayout.semiVoicedMark,
+              composing.convertTargetCursorPosition > 0 else { return nil }
+        let target = composing.convertTarget
+        let before = target[target.index(target.startIndex, offsetBy: composing.convertTargetCursorPosition - 1)]
+        return KanaLayout.applying(mark, to: before)
     }
 
     public func deleteBackward() {

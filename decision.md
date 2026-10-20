@@ -449,7 +449,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
   same table as AzooKey's `defaultKanaUS`). The shell reads the keyboard
   type from `KBGetLayoutType(LMGetKbdType())` per key.
 - ゛ and ゜ join the kana before the caret when it takes them (か゛ → が,
-  は゜ → ぱ, う゛ → ゔ); otherwise they are typed as they are.
+  は゜ → ぱ, う゛ → ゔ); otherwise they are typed as they are. AzooKey's
+  engine does the joining on its kana, since what the field shows (live
+  conversion, fixed clauses) is not kana.
 
 ## D-034 · First launch follows the preferred languages (2026-10-20)
 - Every install started in Chinese, so someone who types Japanese met
@@ -463,7 +465,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   later does not move them.
 - The order of `enabledModes` is the user's: the session starts in the
   first, ⌃⇧Space and the Input menu follow it, the General pane lists the
-  modes in it, and turning a mode off and on keeps its place.
+  modes in it, and a mode turned back on takes its place for the
+  preferred languages, as on first launch.
 
 ## D-035 · Traditional Chinese punctuation (2026-10-20)
 - Quotes followed Simplified usage whatever the characters. With
