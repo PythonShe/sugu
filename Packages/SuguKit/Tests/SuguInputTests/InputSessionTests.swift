@@ -351,6 +351,17 @@ struct InputSessionTests {
         #expect(client.markedText == "n")
     }
 
+    /// A symbol's name offers it after the engine's two best words.
+    @Test func japaneseSymbolsByName() {
+        let names = FakeEngine(table: ["やじるし": ["矢印", "鏃", "やじるし"]], converts: true)
+        source.engines[.japanese] = names
+        names.acceptsSymbols = true
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("やじるし", into: session)
+        #expect(session.display.candidates?.candidates.prefix(5).map(\.text) == ["矢印", "鏃", "→", "←", "↑"])
+    }
+
     /// F10 again cycles capitals, a capital first and lower case; F9 too.
     @Test func repeatedFunctionKeysCycleCase() {
         let session = makeSession()

@@ -1309,3 +1309,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
   than standing as a composition of their own that needs Return (Apple's
   way). Other keys still start the next composition. ATOK's conversion on
   。 is not added.
+- Symbols by their Japanese names (やじるし → ← ↑ ↓, まる ○, しかく □,
+  こめ ※, ゆうびん 〒, Greek letters by name), as Apple's, Google's and
+  ATOK's do: AzooKey's dictionary has the words, not the symbols. A short
+  Sugu-written table in SuguCore, offered for the whole reading after the
+  engine's two best words, so 資格 and 四角 stay ahead of □; names that
+  are everyday words alone (から, おなじ, かける) are left out. Not
+  learned, like emoji.

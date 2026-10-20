@@ -75,7 +75,12 @@ struct CandidateAssembler {
         learned.forEach(append)
         if let first = engine.first { append(first) }
         computedCandidates.forEach(append)
-        engine.dropFirst().forEach(append)
+        // Symbols by name come after the words of the same reading the
+        // engine likes best (やじるし: 矢印, then →).
+        let symbols = input.mode == .japanese ? JapaneseSymbolNames.symbols(for: state.reading).map { Candidate(text: $0, source: .computed) } : []
+        engine.dropFirst().prefix(1).forEach(append)
+        symbols.forEach(append)
+        engine.dropFirst(2).forEach(append)
         if let latinLast {
             if seen.insert(latinLast.text).inserted {
                 result.insert(latinLast, at: min(result.count, max(1, input.pageSize - 1)))
