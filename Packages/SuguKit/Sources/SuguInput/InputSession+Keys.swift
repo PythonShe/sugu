@@ -26,7 +26,10 @@ extension InputSession {
 
         switch key.keyCode {
         case VirtualKey.kana where preferences.enabledModes.contains(.japanese):
-            setMode(.japanese); return true
+            // かな again, in Japanese with text selected, reconverts it, as
+            // in Apple's Japanese input.
+            if mode == .japanese, isEmpty { reconvertSelection() } else { setMode(.japanese) }
+            return true
         case VirtualKey.eisu:
             setMode(.english); return true
         default:
@@ -124,6 +127,20 @@ extension InputSession {
     /// Candidates follow every key and the first is chosen by default:
     /// Space commits it, digits pick another.
     private func handleLive(_ key: KeyInput, engine: any CompositionEngine) -> Bool {
+        // An F9/F10 form stands until the composition is edited: Esc goes
+        // back to the candidates, Return and Space commit the form, and
+        // keys that change the composition drop it.
+        if transformed != nil {
+            switch key.keyCode {
+            case VirtualKey.escape: transformed = nil; publish(); return true
+            case VirtualKey.returnKey, VirtualKey.keypadEnter, VirtualKey.space: commitHighlighted(); return true
+            case VirtualKey.delete, VirtualKey.forwardDelete, VirtualKey.home, VirtualKey.end, VirtualKey.left, VirtualKey.right,
+                 VirtualKey.up, VirtualKey.down, VirtualKey.tab, VirtualKey.pageUp, VirtualKey.pageDown:
+                transformed = nil
+            default:
+                if key.printable.map(engine.accepts) == true { transformed = nil }
+            }
+        }
         switch key.keyCode {
         case VirtualKey.escape: abandonComposition(); return true
         case VirtualKey.returnKey, VirtualKey.keypadEnter: commit(engine.commitRaw()); return true
@@ -152,7 +169,9 @@ extension InputSession {
         default:
             break
         }
-        guard let character = key.printable else { return true }
+        // Keys Sugu does not bind (F1–F5, Help) finish the composition and
+        // go to the app.
+        guard let character = key.printable else { commitHighlighted(); return false }
         // What the engine takes is input, even digits and operators in an
         // expression; only the rest selects or turns pages.
         if engine.accepts(character) {
@@ -234,6 +253,11 @@ extension InputSession {
             } else if !list.candidates.isEmpty {
                 // Step into the predictions.
                 if list.highlight == nil { list.setHighlight(backward ? list.candidates.count - 1 : 0); publish() } else { moveHighlight(by: backward ? -1 : 1) }
+            } else if key.keyCode == VirtualKey.tab {
+                // With nothing to step into, Tab converts, as in Kotoeri.
+                transformed = nil
+                engine.convert()
+                refresh()
             }
             return true
         case VirtualKey.pageUp: turnPage(by: -1); return true
@@ -243,7 +267,7 @@ extension InputSession {
         default:
             break
         }
-        guard let character = key.printable else { return true }
+        guard let character = key.printable else { commitComposition(); return false }
         // Numpad keys type numbers; they never select.
         if key.modifiers.contains(.numericPad) {
             commitComposition()

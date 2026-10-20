@@ -121,3 +121,9 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Removing rime-ice selects Wanxiang; one of Chinese and Japanese stays on (D-068)
 - [x] Add Word sheet: trailing buttons, refused words reported (D-068)
 - [ ] Settings coming forward when opened from the input menu while another app is active — check on device
+
+## 14. Typing path (advisor pass 6)
+- [x] Commit to a replaced field before dropping it (D-071)
+- [x] Chinese F9/F10 forms: Esc, editing; unbound keys pass; Tab converts; かな reconverts (D-071)
+- [x] Candidate window keeps its anchor per field; screen choice and clamping (D-071)
+- [ ] VoiceOver announcements from the candidate panel — check on device

@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Typing-path fixes from the sixth advisor pass: no lost composition on a
+  replaced field, Chinese F9/F10 forms, unbound keys, Tab and かな, the
+  candidate window's anchor (D-071).
 - AzooKey's dictionary is read into memory in the background: Japanese
   keystroke p99 2.4 → 2.0 ms, footprint 100 → 81 MB (D-070).
 - Model lookups by interpolation search; the Chinese respeller scores

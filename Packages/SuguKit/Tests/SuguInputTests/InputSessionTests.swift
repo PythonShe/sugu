@@ -243,6 +243,60 @@ struct InputSessionTests {
         #expect(client.document == "ｎｉｈｏｎｇｏ")
     }
 
+    /// In Chinese, an F9/F10 form gives way when the composition is edited,
+    /// and Esc goes back to the candidates rather than dropping it all.
+    @Test func chineseFormsGiveWayToEditing() {
+        let session = makeSession()
+        let f9 = KeyInput(keyCode: VirtualKey.f9, characters: "\u{F70C}")
+        type("nihao", into: session)
+        _ = session.handle(f9)
+        #expect(client.markedText == "ｎｉｈａｏ")
+        _ = session.handle(Key.escape)
+        #expect(client.markedText == "nihao")
+        #expect(session.display.candidates?.candidates.first?.text == "你好")
+        _ = session.handle(f9)
+        _ = session.handle(Key.backspace)
+        #expect(client.markedText == "niha")
+        _ = session.handle(f9)
+        _ = session.handle(Key.char("o"))
+        #expect(client.markedText == "nihao")
+        _ = session.handle(f9)
+        _ = session.handle(Key.space)
+        #expect(client.document == "ｎｉｈａｏ")
+    }
+
+    /// Keys Sugu does not bind finish the composition and reach the app.
+    @Test func unboundKeysFinishTheComposition() {
+        let session = makeSession()
+        let f1 = KeyInput(keyCode: 122, characters: "\u{F704}")
+        type("nihao", into: session)
+        #expect(!session.handle(f1))
+        #expect(client.document == "你好")
+        session.setMode(.japanese)
+        type("nihongo", into: session)
+        #expect(!session.handle(f1))
+        #expect(session.isEmpty && client.marked.isEmpty && client.document.count > 2)
+    }
+
+    /// Tab converts when there are no predictions to step into.
+    @Test func tabConvertsWithoutPredictions() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("kyou", into: session)
+        #expect(session.display.candidates == nil)
+        _ = session.handle(Key.tab)
+        #expect(japanese.state.phase == .converting)
+    }
+
+    /// かな in Japanese with text selected reconverts it.
+    @Test func kanaKeyReconvertsTheSelection() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        client.selection = "にほんご"
+        _ = session.handle(KeyInput(keyCode: VirtualKey.kana, characters: ""))
+        #expect(japanese.state.reading == "にほんご")
+    }
+
     /// Emacs and Kotoeri control keys edit the composition instead of
     /// committing it and reaching the app.
     @Test func controlKeysEditTheComposition() {

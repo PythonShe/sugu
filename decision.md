@@ -1088,3 +1088,29 @@ any call made without the owner present. Each entry: what, why, reversibility.
   of the one built key by key. It fixes よろしく but loses 風邪 (風を引いて)
   and a learned word (100% → 90%), and doubles conversion time (p99
   4.5 → 9 ms).
+
+## D-071 · Typing-path fixes from the sixth advisor pass (2026-10-20)
+- A field replaced without a deactivation lost its composition: the
+  coordinator dropped the old client adapter before the session, which
+  holds it weakly, committed to it, so the text was learned but never
+  inserted. The old client is now detached (and committed to) first.
+- Chinese F9/F10 forms behave as in Japanese: Esc returns to the
+  candidates, Return and Space commit the form, and editing or moving
+  drops it. Before, the form stayed on screen over further edits and Esc
+  dropped the whole composition.
+- Keys Sugu does not bind (F1–F5, Help) finish the composition and go to
+  the app instead of being swallowed. Tab converts in Japanese when there
+  are no predictions to step into, as in Kotoeri. かな in Japanese with
+  text selected reconverts it, as in Apple's Japanese input.
+- The candidate window keeps the last good anchor for the field across
+  compositions, so in hosts that report no rectangle it opens on the
+  line, not at the pointer; it forgets it when the field changes. A
+  wide anchor places the window on the screen its text starts on, and a
+  window larger than the screen keeps its start on it.
+- VoiceOver announces only a candidate the user has stepped to; untouched
+  Japanese predictions are not read on every key. Whether announcements
+  from Sugu's panel are heard at all is left for a device check.
+- Declined: secure input turning on mid-composition still cancels rather
+  than commits, since the field that just took focus is usually the
+  password field; a capital letter in a Chinese composition still commits
+  and types the capital, as D-041 keeps Latin capitals with the app.

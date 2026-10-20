@@ -56,12 +56,15 @@ final class FloatingPanel: NSPanel {
     /// Places a panel of `size` below `anchor` (a caret or text rectangle in
     /// screen coordinates), or above it when there is no room below.
     func place(size: NSSize, below anchor: NSRect, leadingInset: CGFloat = 0, gap: CGFloat = 4) {
-        let screen = NSScreen.screens.first { $0.frame.contains(NSPoint(x: anchor.midX, y: anchor.midY)) } ?? NSScreen.main
+        // The screen the text starts on, where a wide anchor spans two.
+        let screen = NSScreen.screens.first { $0.frame.contains(anchor.origin) }
+            ?? NSScreen.screens.first { $0.frame.contains(NSPoint(x: anchor.midX, y: anchor.midY)) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? NSRect(origin: .zero, size: size)
         var origin = NSPoint(x: anchor.minX - leadingInset, y: anchor.minY - gap - size.height)
         if origin.y < visible.minY { origin.y = anchor.maxY + gap }
-        origin.x = min(max(origin.x, visible.minX), visible.maxX - size.width)
-        origin.y = min(max(origin.y, visible.minY), visible.maxY - size.height)
+        // A panel wider or taller than the screen keeps its start on it.
+        origin.x = max(min(origin.x, visible.maxX - size.width), visible.minX)
+        origin.y = max(min(origin.y, visible.maxY - size.height), visible.minY)
         setFrame(NSRect(origin: origin, size: size), display: true)
     }
 }

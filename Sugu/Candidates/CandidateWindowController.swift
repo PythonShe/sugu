@@ -50,9 +50,15 @@ final class CandidateWindowController {
         pending?.cancel()
         pending = nil
         announced = nil
-        // The fallback anchor belongs to the composition that just ended.
-        lastAnchor = nil
         if panel.isVisible { panel.orderOut(nil) }
+    }
+
+    /// Hides the window and forgets the fallback anchor, which belongs to
+    /// the field that reported it: the next composition there opens on the
+    /// same line rather than at the pointer.
+    func reset() {
+        hide()
+        lastAnchor = nil
     }
 
     private func present(_ presentation: CandidatePresentation, style: CandidateView.Style, anchor: NSRect) {
@@ -74,9 +80,9 @@ final class CandidateWindowController {
     }
 
     private func announce(_ presentation: CandidatePresentation) {
-        guard NSWorkspace.shared.isVoiceOverEnabled else { return }
-        let index = presentation.highlightedIndex ?? 0
-        guard presentation.candidates.indices.contains(index) else { return }
+        // Predictions nobody has stepped into are not a choice to announce.
+        guard NSWorkspace.shared.isVoiceOverEnabled, let index = presentation.highlightedIndex,
+              presentation.candidates.indices.contains(index) else { return }
         let candidate = presentation.candidates[index]
         let text = [presentation.labels[index], candidate.text, candidate.annotation].compactMap { $0 }.joined(separator: " ")
         guard text != announced else { return }

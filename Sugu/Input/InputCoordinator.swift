@@ -45,7 +45,7 @@ final class InputCoordinator {
         guard let current = self.client, current.represents(client) else { return }
         session.detach(current)
         self.client = nil
-        candidateWindow.hide()
+        candidateWindow.reset()
     }
 
     func commitComposition(client: Any?) {
@@ -55,7 +55,13 @@ final class InputCoordinator {
 
     @discardableResult
     private func attach(_ client: any IMKTextInput & NSObjectProtocol, controller: IMKInputController) -> TextInputClient {
-        if let current = self.client, current.represents(client) { return current }
+        if let current = self.client {
+            if current.represents(client) { return current }
+            // A field left without deactivation gets its composition while
+            // its adapter still lives: the session holds it weakly.
+            session.detach(current)
+        }
+        candidateWindow.reset()
         let adapter = TextInputClient(client: client, controller: controller)
         self.client = adapter
         return adapter
