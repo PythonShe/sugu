@@ -7,6 +7,9 @@ Running log of what was built, verified, and what is next. Newest first.
   taught names and places in sentences, Chinese 0% → 83%, Japanese 30% →
   80% (AzooKey's dynamic user dictionary); main sets unchanged after
   learning (90%, 78%).
+  With the grammar model, taught-word sentences reach 92% and the main
+  set 94%; keystroke p99 3.3–3.6 ms over warm runs (6.5 ms on a cold first
+  run while the model pages in).
 - Learned readings keep a needed apostrophe (D-026): 西安 picked for
   `xi'an` is no longer offered first for `xian`.
 - Chinese learned words take part in librime's sentences (D-025): a

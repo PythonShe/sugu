@@ -298,7 +298,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
   taught names and terms go from 0% to 83% top-1, and the main Chinese set
   stays at 90% after learning. Cost: Chinese keystroke p99 3.45 → ~3.8 ms,
   about half from the user-dictionary lookup and half from the toneless
-  syllables; the budget is 5 ms.
+  syllables; the budget is 5 ms. With the grammar model (D-015) the
+  taught-word sentences reach 92%; librime scores learned words in a
+  sentence like any other.
 
 ## D-026 · Apostrophes in learned readings (2026-10-20)
 - Readings were stored without apostrophes, so a word picked after typing
