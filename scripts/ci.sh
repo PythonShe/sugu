@@ -37,3 +37,5 @@ swift run --package-path Packages/SuguKit -c release sugu-bench \
   --data Data --bench Bench --json "${SUGU_BENCH_JSON:-/dev/null}" --check
 swift run --package-path Packages/SuguKit -c release sugu-bench \
   --data Data --bench Bench --fuzz 200 2>/dev/null
+swift run --package-path Packages/SuguKit -c release sugu-bench \
+  --data Data --bench Bench --fuzz 200 --zhuyin 2>/dev/null

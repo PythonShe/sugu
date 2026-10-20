@@ -1181,6 +1181,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   the arrows page and move, Return takes the highlighted word and Esc or
   ⌫ closes it. Digits outside it are symbols and tones; Shift-comma and
   Shift-period are the comma and full stop.
+- Settings offer the keyboard in the Chinese pane, pinyin first; the
+  scheme and fuzzy pinyin dim for Zhuyin, rather than hiding and
+  resizing the pane. The mode indicator shows ㄅ for Zhuyin.
+- Symbols left that end no syllable are committed as written, and such
+  a commit teaches nothing; a script change drops the words chosen in the
+  old script. Reconversion takes a learned reading only when the keyboard
+  in use can type it. The fuzzer runs Zhuyin keys as a variant
+  (`--zhuyin`) in CI; there Return in the open window takes the
+  highlighted word, and the next Return commits.
 - Phases: syllables, layout and tone codes; the engine;
   the session's keys; Settings and the mode indicator; learning, bench
   and fuzz; then the owner's device checks — wanxiang's readings are

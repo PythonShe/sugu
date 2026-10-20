@@ -3,8 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
-- Zhuyin groundwork: syllables, the standard layout, and toned codes
-  that librime reads from the same dictionary (D-073).
+- Zhuyin input (D-073): the standard layout, toned codes librime reads
+  from the same dictionary, a sentence converted as syllables end with
+  words chosen at the caret, a Keyboard setting and ㄅ indicator; fuzzed
+  in CI with 0 failures.
 - Release readiness: no share-alike data in the app, growing build
   numbers for Sparkle, store and librime failure handling, uninstall
   steps (D-072).

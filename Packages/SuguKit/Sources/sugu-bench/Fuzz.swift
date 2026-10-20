@@ -65,12 +65,16 @@ enum Fuzz {
                 var keys: [String] = []
                 func fail(_ problem: String) -> Failure { Failure(mode: mode, session: number, keys: keys, problem: problem) }
                 field.reset()
+                // Whether Zhuyin is composing now; a session may switch languages.
+                var zhuyin: Bool { session.mode == .chinese && preferences.chineseKeyboard == .zhuyin }
                 do {
                     for _ in 0..<random.next(below: 60) + 5 {
-                        let (name, action) = randomAction(&random, mode: mode)
+                        let (name, action) = randomAction(&random, mode: mode, zhuyin: mode == .chinese && preferences.chineseKeyboard == .zhuyin)
                         keys.append(name)
                         if trace { FileHandle.standardError.write(Data("  \(name) → \(session.display.segments.map(\.text).joined())\n".utf8)) }
-                        let wasComposing = !session.display.segments.isEmpty
+                        // In Zhuyin, Return in the candidate window takes the
+                        // highlighted word; the next commits.
+                        let wasComposing = !session.display.segments.isEmpty && !(zhuyin && session.display.candidates != nil)
                         let committed = field.committed
                         let key: KeyInput
                         switch action {
@@ -85,6 +89,11 @@ enum Fuzz {
                             guard session.display.segments.isEmpty else { throw fail("Return left a composition") }
                             guard field.committed.count > committed.count else { throw fail("Return committed nothing") }
                         }
+                    }
+                    if zhuyin, session.display.candidates != nil {
+                        keys.append("⏎")
+                        _ = session.handle(KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
+                        try check(session, field, fail)
                     }
                     keys.append("⏎")
                     let wasComposing = !session.display.segments.isEmpty
@@ -119,6 +128,9 @@ enum Fuzz {
     private static let japaneseSyllables = "a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n nn ga gi gu ge go za ji zu ze zo da de do ba bi bu be bo pa pi pu pe po kya kyu kyo sha shu sho cha chu cho ryo tt kk xtu -".split(separator: " ")
     private static let pinyinSyllables = "a o e ai ei ao ou an en ang eng er ba bo bai bei bao ban ben bang beng bi bie biao bian bin bing bu ca ce cai cao can cang ci cu cha che chi chu chuan da de dai dao dan dang deng di dian ding du dui duo fa fo fei fan fen fang feng fu ga ge gai gao gan gen gang gong gu gua guo ha he hai hao han hen hang hong hu hua huo ji jia jie jian jin jing ju jue ka ke kai kan kang kong ku kuai la le lai lao lan lang li lian liang lin ling lu lv lve ma me mai mao man men mang mi mian ming mu na ne nai nan nen ni nian nin nu nv pa po pai pao pan pen pi pian pin ping pu qi qia qian qin qing qu quan ran ren ri rou ru sa se san sen si su shi shang shen sheng shu ta te tai tan tang ti tian ting tu tong wa wo wai wan wen wang wu xi xia xian xin xing xu xue ya ye yao yan yin ying yong yu yuan za ze zai zan zi zu zhi zhang zhe zheng zhong zhu '".split(separator: " ")
 
+    private static let zhuyinSymbols = Zhuyin.keyboard.keys.sorted()
+    private static let zhuyinTones: [Character] = Zhuyin.toneKeys.keys.filter { $0 != " " }.sorted()
+
     enum Action {
         case key(KeyInput)
         /// Shift pressed and released alone: English and back.
@@ -131,19 +143,19 @@ enum Fuzz {
 
     /// What a person might do while composing, with its name for the
     /// failure report.
-    private static func randomAction(_ random: inout SplitMix, mode: InputMode) -> (String, Action) {
+    private static func randomAction(_ random: inout SplitMix, mode: InputMode, zhuyin: Bool) -> (String, Action) {
         switch random.next(below: 1000) {
         case 0..<10: return ("⇧tap", .shiftTap)
         case 10..<15: return ("⌃␣", .switchLanguage)
         case 15..<20: return ("click", .click)
         default:
-            let (name, key) = randomKey(&random, mode: mode)
+            let (name, key) = randomKey(&random, mode: mode, zhuyin: zhuyin)
             return (name, .key(key))
         }
     }
 
     /// A key a person might press while composing.
-    private static func randomKey(_ random: inout SplitMix, mode: InputMode) -> (String, KeyInput) {
+    private static func randomKey(_ random: inout SplitMix, mode: InputMode, zhuyin: Bool) -> (String, KeyInput) {
         func special(_ name: String, _ keyCode: UInt16, _ modifiers: KeyModifiers = []) -> (String, KeyInput) {
             (name, KeyInput(keyCode: keyCode, characters: "", modifiers: modifiers))
         }
@@ -152,6 +164,10 @@ enum Fuzz {
             return (String(typed), KeyInput(keyCode: keyCodes[character] ?? 0, characters: String(typed), charactersIgnoringModifiers: String(character), modifiers: shift ? .shift : []))
         }
         switch random.next(below: 100) {
+        case 0..<55 where zhuyin && mode == .chinese:
+            // Symbols three times as often as tones, as syllables have them.
+            let keys = random.next(below: 4) == 0 ? zhuyinTones : zhuyinSymbols
+            return printable(keys[random.next(below: keys.count)])
         case 0..<55:
             let syllables = mode == .japanese ? japaneseSyllables : pinyinSyllables
             let syllable = String(syllables[random.next(below: syllables.count)])

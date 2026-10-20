@@ -223,7 +223,12 @@ extension InputSession {
         if mode == .japanese {
             reading = WidthConversion.hiragana(selected).isHiraganaReading ? WidthConversion.hiragana(selected) : (store?.reading(for: selected, mode: mode) ?? selected)
         } else {
-            guard let known = store?.reading(for: selected, mode: mode) ?? engines.chineseReading(of: selected) else { return }
+            // A word learned with the other keyboard has a reading this one
+            // cannot type: codes with tones for Zhuyin, letters for pinyin.
+            let learned = store?.reading(for: selected, mode: mode).flatMap { reading in
+                typesZhuyin == (Zhuyin.syllables(ofCodes: reading) != nil) ? reading : nil
+            }
+            guard let known = learned ?? engines.chineseReading(of: selected) else { return }
             reading = known
         }
         active = engine

@@ -178,3 +178,15 @@ private final class ZhuyinClient: InputClient {
     func deleteBeforeCaret(count: Int) -> Bool { false }
     func selectedText() -> String? { nil }
 }
+
+extension RimeEngineTests {
+    /// Symbols that end no syllable are committed as written.
+    @Test func zhuyinKeepsAnUnfinishedSyllable() async throws {
+        try await Shared.runtime.prepare(RimeSchema(keyboard: .zhuyin), version: "test")
+        let engine = ZhuyinEngine(runtime: Shared.runtime)
+        engine.insert("su3c")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text == "你ㄏ")
+        #expect(commit.reading == commit.text)
+    }
+}

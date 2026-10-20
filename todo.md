@@ -139,6 +139,8 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Syllables, the standard layout, and tone codes for librime (D-073)
 - [x] Zhuyin engine: syllables, caret, fixed spans over librime's sentence (D-073)
 - [x] Session keys: tones, Space, selection at the caret, editing (D-073)
-- [ ] Settings keyboard choice, mode indicator, strings
-- [ ] Learning with Bopomofo readings, reconversion, bench and fuzz
+- [x] Settings keyboard choice, mode indicator, strings (D-073)
+- [x] Zhuyin fuzzing in CI (D-073)
+- [ ] Learned words across keyboards: toned user dictionary for librime, Learning pane showing Bopomofo
+- [ ] Zhuyin reconversion from text (toned readings) and a Zhuyin bench set
 - [ ] Taiwanese readings and forms — check on device

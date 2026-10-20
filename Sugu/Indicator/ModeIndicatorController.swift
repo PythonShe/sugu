@@ -20,8 +20,8 @@ final class ModeIndicatorController {
     }()
     private var dismissal: Task<Void, Never>?
 
-    func show(_ mode: InputMode, near rect: NSRect) {
-        label.stringValue = Self.symbol(for: mode)
+    func show(_ mode: InputMode, keyboard: ChineseKeyboard, near rect: NSRect) {
+        label.stringValue = Self.symbol(for: mode, keyboard: keyboard)
         label.setAccessibilityLabel(mode.localizedName)
         let side: CGFloat = 30
         label.sizeToFit()
@@ -60,9 +60,9 @@ final class ModeIndicatorController {
         }
     }
 
-    static func symbol(for mode: InputMode) -> String {
+    static func symbol(for mode: InputMode, keyboard: ChineseKeyboard) -> String {
         switch mode {
-        case .chinese: "中"
+        case .chinese: keyboard == .zhuyin ? "ㄅ" : "中"
         case .japanese: "あ"
         case .english: "A"
         }

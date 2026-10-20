@@ -38,6 +38,8 @@ final class LoadingEngine: CompositionEngine {
     }
 
     func moveCaret(_ motion: CaretMotion) {
+        // Zhuyin keys replay in order; the engine's caret is by syllable.
+        guard !holdsZhuyin else { return }
         switch motion {
         case .left: caret = max(0, caret - 1)
         case .right: caret = min(text.count, caret + 1)

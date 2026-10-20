@@ -80,6 +80,9 @@ public final class ZhuyinEngine: CompositionEngine {
         guard script != session.script else { return }
         session.script = script
         sentences = [:]
+        // Chosen words are in the old script; librime chooses afresh.
+        fixed = []
+        lastCommit = nil
         guard !syllables.isEmpty else { return }
         reconvert()
         update()
@@ -207,6 +210,13 @@ public final class ZhuyinEngine: CompositionEngine {
         if !pending.isEmpty { finishPending(.first) }
         guard !syllables.isEmpty else { return nil }
         if let highlighted, choices.indices.contains(highlighted) { _ = select(highlighted) }
+        // Symbols that end no syllable go as written, and the commit
+        // teaches nothing.
+        if !pending.isEmpty {
+            let text = texts.joined() + pending.symbols
+            clear()
+            return Commit(text: text, reading: text)
+        }
         let commit = Commit(
             text: texts.joined(),
             reading: reading(of: syllables.indices),

@@ -12,13 +12,17 @@ final class ChinesePane: SettingsPane {
         let tryAgain = form.makeButton(String(localized: "Try Again")) { model.retryChinese() }
         let status = form.row(String(localized: "Status:"), NSStackView(views: [failed, tryAgain]))
         form.onRefresh { status.isHidden = !model.chineseFailed }
-        form.popUp(String(localized: "Pinyin:"), options: PinyinScheme.allCases.map { ($0.title, $0) },
-                   get: { model.preferences.pinyinScheme }, set: { model.preferences.pinyinScheme = $0 })
+        form.popUp(String(localized: "Keyboard:"), options: ChineseKeyboard.allCases.map { ($0.title, $0) },
+                   get: { model.preferences.chineseKeyboard }, set: { model.preferences.chineseKeyboard = $0 })
+        let scheme = form.popUp(String(localized: "Pinyin:"), options: PinyinScheme.allCases.map { ($0.title, $0) },
+                                get: { model.preferences.pinyinScheme }, set: { model.preferences.pinyinScheme = $0 })
         form.popUp(String(localized: "Characters:"), options: ChineseScript.allCases.map { ($0.title, $0) },
                    get: { model.preferences.chineseScript }, set: { model.preferences.chineseScript = $0 })
 
         form.gap()
         form.row(String(localized: "Fuzzy pinyin:"), fuzzyGrid())
+        // Pinyin's schemes and fuzzy sounds have no part in Zhuyin.
+        form.onRefresh { scheme.isEnabled = model.preferences.chineseKeyboard == .pinyin }
 
         form.gap()
         let dictionary = form.popUp(String(localized: "Dictionary:"), options: [
@@ -61,13 +65,25 @@ final class ChinesePane: SettingsPane {
                     model.preferences.fuzzyPinyin.remove(pair)
                 }
             }
-            form.onRefresh { box.state = model.preferences.fuzzyPinyin.contains(pair) ? .on : .off }
+            form.onRefresh {
+                box.state = model.preferences.fuzzyPinyin.contains(pair) ? .on : .off
+                box.isEnabled = model.preferences.chineseKeyboard == .pinyin
+            }
             return box as NSView
         } }
         let grid = NSGridView(views: boxes.map { $0 + Array(repeating: NSGridCell.emptyContentView, count: 3 - $0.count) })
         grid.rowSpacing = 6
         grid.columnSpacing = 16
         return grid
+    }
+}
+
+extension ChineseKeyboard {
+    var title: String {
+        switch self {
+        case .pinyin: String(localized: "Pinyin")
+        case .zhuyin: String(localized: "Zhuyin")
+        }
     }
 }
 

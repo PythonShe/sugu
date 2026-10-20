@@ -1621,6 +1621,29 @@
         }
       }
     },
+    "Keyboard:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キーボード："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键盘："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵盤："
+          }
+        }
+      }
+    },
     "Language Model": {
       "extractionState": "manual",
       "localizations": {
@@ -2146,6 +2169,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "置頂"
+          }
+        }
+      }
+    },
+    "Pinyin": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ピンイン"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拼音"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拼音"
           }
         }
       }
@@ -3799,6 +3845,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "小鶴雙拼"
+          }
+        }
+      }
+    },
+    "Zhuyin": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注音"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注音"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注音"
           }
         }
       }

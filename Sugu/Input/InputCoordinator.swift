@@ -170,7 +170,7 @@ final class InputCoordinator {
         guard preferences.preferences.showModeIndicator, let client else { return }
         let caret = client.compositionRect()
         guard byUser || caret != .zero else { return }
-        indicator.show(mode, near: caret)
+        indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, near: caret)
     }
 
     // MARK: Menu commands
