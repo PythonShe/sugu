@@ -113,3 +113,11 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Chinese: one word decided by the text before it (D-058)
 - [ ] A larger corpus for the models — the owner decides on the source and its license (D-061)
 
+
+## 13. Shell and Settings (advisor pass 5)
+- [x] Hidden main menu for ⌘W and the Edit commands; Settings miniaturizable (D-068)
+- [x] VoiceOver names for grouped rows, tables, the text-size slider, and downloads (D-068)
+- [x] Confirm download removal and Forget Last Hour; export asks once, in its save panel (D-068)
+- [x] Removing rime-ice selects Wanxiang; one of Chinese and Japanese stays on (D-068)
+- [x] Add Word sheet: trailing buttons, refused words reported (D-068)
+- [ ] Settings coming forward when opened from the input menu while another app is active — check on device
