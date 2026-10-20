@@ -28,7 +28,9 @@ final class LanguageModelPane: SettingsPane {
         for (index, use) in uses.enumerated() {
             let box = form.checkbox(use.0, label: index == 0 ? String(localized: "Use for:") : nil,
                                     get: { model.preferences[keyPath: use.1] }, set: { model.preferences[keyPath: use.1] = $0 })
-            form.onRefresh { box.isEnabled = model.preferences.languageModel != .off }
+            // Conversions come from Private Cloud Compute only (D-081).
+            let level: (LanguageModelLevel) -> Bool = use.1 == \.modelForConversion ? { $0 == .privateCloudCompute } : { $0 != .off }
+            form.onRefresh { box.isEnabled = level(model.preferences.languageModel) }
         }
     }
 }

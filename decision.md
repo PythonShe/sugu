@@ -1433,3 +1433,19 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - D-003: learned words join the candidates for the exact reading typed,
   not for syllable-aligned prefixes; librime's user dictionary covers
   words inside longer sentences.
+
+## D-081 · Model conversions from Private Cloud Compute only (2026-10-20)
+- Probed offscreen (`Sugu --probe-language-model`) with Apple Intelligence
+  ready: Private Cloud Compute answered the combined suggestion (a
+  conversion, or an empty one when the engine's was right, plus the
+  translations) in under a second. The on-device model in the same
+  request left the translations out and gave conversions worse than the
+  engines' (kana, dropped particles, the engine's text repeated); asked
+  for one translation at a time it answered well, in about half a second
+  each.
+- Owner decision, recorded in ADR 0004's amendment: conversions come from
+  Private Cloud Compute only. The session asks for a conversion only at
+  that level; `AppleLanguageAssistant` keeps the combined request for
+  Private Cloud Compute and asks the on-device model, including as the
+  fallback, for each translation separately. The Long compositions
+  checkbox is enabled only at the Private Cloud Compute level.

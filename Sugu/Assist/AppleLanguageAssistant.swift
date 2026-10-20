@@ -55,7 +55,28 @@ final class AppleLanguageAssistant: LanguageAssistant {
         var english: String
     }
 
+    /// Private Cloud Compute answers the conversion and the translations
+    /// in one request. The on-device model is asked only for translations,
+    /// one language at a time: in one request it left them out, and its
+    /// conversions were worse than the engines' (D-081).
     func suggestions(for request: CompositionRequest) async -> CompositionSuggestions {
+        for model in models {
+            if model is SystemLanguageModel { return await translations(of: request, on: model) }
+            if let result = await suggestions(for: request, on: model) { return result }
+        }
+        return CompositionSuggestions()
+    }
+
+    private func translations(of request: CompositionRequest, on model: any LanguageModel) async -> CompositionSuggestions {
+        var result = CompositionSuggestions()
+        for language in request.translations {
+            let texts = await perform(.translate(to: language), on: request.conversion, models: [model])
+            if let text = texts.first { result.translations[language] = text }
+        }
+        return result
+    }
+
+    private func suggestions(for request: CompositionRequest, on model: any LanguageModel) async -> CompositionSuggestions? {
         let language = request.mode == .japanese ? "Japanese" : "Chinese"
         let readingKind = request.mode == .japanese ? "hiragana" : "pinyin"
         var lines = [
@@ -72,8 +93,8 @@ final class AppleLanguageAssistant: LanguageAssistant {
             ? "Leave the translation fields empty."
             : "Translate the conversion into: \(asked.joined(separator: ", ")). Leave other translation fields empty.")
         let instructions = "You help an input method. Answer only with the fields asked for, with no explanations or quotation marks."
-        guard let suggestion = await respond(lines.joined(separator: "\n"), instructions: instructions, generating: Suggestion.self) else {
-            return CompositionSuggestions()
+        guard let suggestion = await respond(lines.joined(separator: "\n"), instructions: instructions, generating: Suggestion.self, models: [model]) else {
+            return nil
         }
         var result = CompositionSuggestions()
         if request.convert, !suggestion.conversion.isEmpty { result.conversions = [suggestion.conversion] }
@@ -97,6 +118,10 @@ final class AppleLanguageAssistant: LanguageAssistant {
     }
 
     func perform(_ task: TextTask, on text: String) async -> [String] {
+        await perform(task, on: text, models: models)
+    }
+
+    private func perform(_ task: TextTask, on text: String, models: [any LanguageModel]) async -> [String] {
         let instructions = "You edit text for the user. Answer only with the resulting text, with no explanations or quotation marks."
         let request = switch task {
         case .translate(let language):
@@ -111,15 +136,15 @@ final class AppleLanguageAssistant: LanguageAssistant {
             "Rewrite the text to be shorter, keeping its language and meaning."
         }
         let prompt = "\(request)\n\nText:\n\(text)"
-        return await respond(prompt, instructions: instructions, generating: Alternatives.self)?.texts
+        return await respond(prompt, instructions: instructions, generating: Alternatives.self, models: models)?.texts
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty } ?? []
     }
 
     // MARK: Models
 
-    /// The first model that answers; nil when none does.
-    private func respond<Content: Generable>(_ prompt: String, instructions: String, generating type: Content.Type) async -> Content? {
+    /// The first of `models` that answers; nil when none does.
+    private func respond<Content: Generable>(_ prompt: String, instructions: String, generating type: Content.Type, models: [any LanguageModel]) async -> Content? {
         for model in models {
             let session = LanguageModelSession(model: model, instructions: instructions)
             do {

@@ -106,7 +106,9 @@ extension InputSession {
             if mode == .japanese, preferences.enabledModes.contains(.chinese) { translations.append(.chinese) }
             translations.append(.english)
         }
-        let convert = preferences.modelForConversion && readable
+        // The on-device model's conversions were worse than the engines'
+        // (D-081); conversions come from Private Cloud Compute only.
+        let convert = preferences.modelForConversion && readable && preferences.languageModel == .privateCloudCompute
         guard convert || !translations.isEmpty else { return nil }
         return CompositionRequest(
             mode: mode, reading: state.reading, conversion: conversion,

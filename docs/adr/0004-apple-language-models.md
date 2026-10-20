@@ -33,7 +33,8 @@ bring-your-own-key providers, which stay out.
      Rewrite Selection (fix grammar, more formal, more casual, shorter),
      run only from the Input menu. On by default once a level is chosen.
    - *Long compositions* — a context-aware conversion of a long Chinese or
-     Japanese composition, offered as a candidate. Off by default.
+     Japanese composition, offered as a candidate. Off by default; at the
+     Private Cloud Compute level only (amendment below).
    - *Translations while composing* — the composition in the other enabled
      languages, offered as candidates. Off by default.
 
@@ -68,6 +69,20 @@ bring-your-own-key providers, which stay out.
 7. **Failures are quiet while typing.** A failed or unavailable model adds
    no candidates and shows nothing; Settings shows availability and, for
    Private Cloud Compute, the quota state.
+
+## Amendment (2026-10-20): conversions from Private Cloud Compute only
+
+Measured on the development Mac once Apple Intelligence was ready, the
+on-device model's conversions of long compositions were worse than the
+engines': it answered in kana, dropped particles, or repeated the engine's
+text. Its translations were good when asked one language at a time, and
+missing when asked together with a conversion. The user decided:
+
+- *On This Mac* offers translations while composing; the *Long
+  compositions* switch is available only at the Private Cloud Compute
+  level, and is ignored at On This Mac.
+- When Private Cloud Compute is unavailable or its quota is used up, the
+  on-device fallback offers translations only.
 
 ## Considered options
 

@@ -95,7 +95,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 ## 11. Apple language models (ADR 0004)
 - [x] Levels, switches, seam, selection commands, composition suggestions (D-043)
 - [x] Entitlement signing through `Config/Local.xcconfig`; offscreen probe
-- [ ] Verify answers once Apple Intelligence is ready on the development Mac
+- [x] Verify answers once Apple Intelligence is ready on the development Mac; conversions from Private Cloud Compute only (D-081)
 - [x] Release signing: optional Developer ID profile in `scripts/release.sh` (D-045)
 
 ## 12. Language model ranking (ADR 0005)

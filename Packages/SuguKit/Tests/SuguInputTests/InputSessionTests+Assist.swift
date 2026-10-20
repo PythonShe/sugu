@@ -38,7 +38,7 @@ extension InputSessionTests {
     }
 
     @Test func longCompositionsGetModelCandidatesAfterTheBest() async throws {
-        let session = makeSession { $0.languageModel = .onDevice; $0.modelForConversion = true; $0.modelForTranslation = true }
+        let session = makeSession { $0.languageModel = .privateCloudCompute; $0.modelForConversion = true; $0.modelForTranslation = true }
         let assistant = FakeAssistant()
         assistant.suggestions = CompositionSuggestions(conversions: ["你好世界！", "你好世界"], translations: [.english: "Hello world", .japanese: "こんにちは世界"])
         session.assistant = assistant
@@ -52,7 +52,7 @@ extension InputSessionTests {
     }
 
     @Test func aReadingTypedAgainBeforeThePauseIsStillAsked() async throws {
-        let session = makeSession { $0.languageModel = .onDevice; $0.modelForConversion = true }
+        let session = makeSession { $0.languageModel = .privateCloudCompute; $0.modelForConversion = true }
         let assistant = FakeAssistant()
         assistant.suggestions = CompositionSuggestions(conversions: ["你好世界！"])
         session.assistant = assistant
@@ -65,7 +65,7 @@ extension InputSessionTests {
     }
 
     @Test func modelCandidatesEndWithTheirComposition() async throws {
-        let session = makeSession { $0.languageModel = .onDevice; $0.modelForConversion = true }
+        let session = makeSession { $0.languageModel = .privateCloudCompute; $0.modelForConversion = true }
         let assistant = FakeAssistant()
         assistant.suggestions = CompositionSuggestions(conversions: ["你好世界！"])
         session.assistant = assistant
@@ -100,6 +100,27 @@ extension InputSessionTests {
         session.assistant = assistant
         session.attach(password)
         for c in "nihaoshijie" { _ = session.handle(Key.char(c)) }
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(assistant.requests.isEmpty)
+    }
+
+    /// On this Mac only translations are asked for: its conversions were
+    /// worse than the engines'.
+    @Test func onDeviceCompositionsAskForTranslationsOnly() async throws {
+        let session = makeSession { $0.languageModel = .onDevice; $0.modelForConversion = true; $0.modelForTranslation = true }
+        let assistant = FakeAssistant()
+        session.assistant = assistant
+        type("nihaoshijie", into: session)
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(assistant.requests.map(\.convert) == [false])
+        #expect(assistant.requests.first?.translations == [.japanese, .english])
+    }
+
+    @Test func onDeviceConversionsAloneAskNothing() async throws {
+        let session = makeSession { $0.languageModel = .onDevice; $0.modelForConversion = true }
+        let assistant = FakeAssistant()
+        session.assistant = assistant
+        type("nihaoshijie", into: session)
         try await Task.sleep(for: .milliseconds(700))
         #expect(assistant.requests.isEmpty)
     }
