@@ -288,5 +288,7 @@ any call made without the owner present. Each entry: what, why, reversibility.
   last, so `RimeEngine` now closes its session when it goes away.
 - `sugu-bench` measures it (`Bench/zh-learned.tsv`): sentences using ten
   taught names and terms go from 0% to 83% top-1, and the main Chinese set
-  stays at 90% after learning.
+  stays at 90% after learning. Cost: Chinese keystroke p99 3.45 → ~3.8 ms,
+  about half from the user-dictionary lookup and half from the toneless
+  syllables; the budget is 5 ms.
 
