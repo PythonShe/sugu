@@ -22,7 +22,7 @@ final class InputMenu {
     func make() -> NSMenu {
         let menu = NSMenu()
         let enabled = preferences.preferences.enabledModes
-        for mode in InputMode.allCases where enabled.contains(mode) || mode == .english {
+        for mode in enabled.filter({ $0 != .english }) + [.english] {
             let item = Self.item(mode.localizedName, command: Self.command(for: mode))
             item.state = coordinator.mode == mode ? .on : .off
             menu.addItem(item)

@@ -1,3 +1,5 @@
+import Foundation
+
 /// Every user-facing option, with the defaults a fresh install uses.
 /// Persisted by `PreferencesStore`; unknown or missing keys fall back to
 /// these defaults, so adding an option never breaks stored settings.
@@ -47,6 +49,25 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var syncLearnedWords = false
 
     public init() {}
+
+    /// The defaults for someone who reads `preferredLanguages` (BCP 47, most
+    /// preferred first): the first Chinese or Japanese among them leads the
+    /// modes, and a Traditional Chinese one sets the script.
+    public init(preferredLanguages: [String]) {
+        self.init()
+        let languages = preferredLanguages.map(Locale.Language.init(identifier:))
+        guard let first = languages.first(where: { ["zh", "ja"].contains($0.languageCode?.identifier) }) else { return }
+        if first.languageCode?.identifier == "ja" {
+            enabledModes = [.japanese, .chinese, .english]
+            return
+        }
+        switch (first.script?.identifier, first.region?.identifier) {
+        case (_, "TW"): chineseScript = .traditionalTaiwan
+        case (_, "HK"), (_, "MO"): chineseScript = .traditionalHongKong
+        case ("Hant", _): chineseScript = .traditional
+        default: break
+        }
+    }
 
     public init(from decoder: any Decoder) throws {
         self.init()

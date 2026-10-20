@@ -4,10 +4,10 @@ import SuguCore
 final class GeneralPane: SettingsPane {
     override func build() {
         let model = model
-        form.checkbox(String(localized: "Chinese"), label: String(localized: "Input modes:"),
-                      get: { model.isEnabled(.chinese) }, set: { model.setEnabled(.chinese, $0) })
-        form.checkbox(String(localized: "Japanese"),
-                      get: { model.isEnabled(.japanese) }, set: { model.setEnabled(.japanese, $0) })
+        for (index, mode) in model.orderedModes.filter({ $0 != .english }).enumerated() {
+            form.checkbox(mode.localizedName, label: index == 0 ? String(localized: "Input modes:") : nil,
+                          get: { model.isEnabled(mode) }, set: { model.setEnabled(mode, $0) })
+        }
         form.popUp(String(localized: "Switch to English with:"), options: [
             (String(localized: "Shift"), EnglishToggle.shiftTap),
             (String(localized: "Caps Lock"), EnglishToggle.capsLock),

@@ -75,7 +75,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 9. v1 gaps (advisor pass 2)
 - [x] Kana input types the kana of each physical key, JIS or ANSI, with voicing marks (D-033)
-- [ ] First run follows the preferred languages: Japanese-first users start in Japanese
+- [x] First run follows the preferred languages: Japanese-first users start in Japanese (D-034)
 - [ ] Traditional Chinese punctuation: 「」『』 for the Taiwan and Hong Kong scripts
 - [ ] Input menu: Chinese script, pause learning, Check for Updates
 - [ ] Candidate window: width cap with truncation, hover highlight

@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- First launch takes the mode order and Chinese characters from the
+  preferred languages; the mode order is kept everywhere (D-034).
 - Kana input types kana by physical key on JIS and ANSI keyboards, with
   voicing marks joining the kana before them (D-033). Advisor pass 2
   listed the remaining v1 gaps (todo §9).

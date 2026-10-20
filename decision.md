@@ -450,3 +450,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
   type from `KBGetLayoutType(LMGetKbdType())` per key.
 - ゛ and ゜ join the kana before the caret when it takes them (か゛ → が,
   は゜ → ぱ, う゛ → ゔ); otherwise they are typed as they are.
+
+## D-034 · First launch follows the preferred languages (2026-10-20)
+- Every install started in Chinese, so someone who types Japanese met
+  pinyin first. A first launch now takes its defaults from
+  `Locale.preferredLanguages`: the first Chinese or Japanese language in
+  the list leads the modes, so a Japanese reader starts in Japanese with
+  Chinese still on; Taiwan, Hong Kong and Macau, or a `Hant` script, set
+  the Chinese characters. Without either language the defaults are as
+  before.
+- The seeded settings are saved at once, so changing the system language
+  later does not move them.
+- The order of `enabledModes` is the user's: the session starts in the
+  first, ⌃⇧Space and the Input menu follow it, the General pane lists the
+  modes in it, and turning a mode off and on keeps its place.

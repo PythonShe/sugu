@@ -102,11 +102,15 @@ final class SettingsModel {
 
     func isEnabled(_ mode: InputMode) -> Bool { preferences.enabledModes.contains(mode) }
 
+    /// The modes in the user's order: the first is the one Sugu starts in.
+    var orderedModes: [InputMode] {
+        preferences.enabledModes + InputMode.allCases.filter { !preferences.enabledModes.contains($0) }
+    }
+
     func setEnabled(_ mode: InputMode, _ enabled: Bool) {
-        var modes = Set(preferences.enabledModes)
-        if enabled { modes.insert(mode) } else { modes.remove(mode) }
-        modes.insert(.english)
-        preferences.enabledModes = InputMode.allCases.filter(modes.contains)
+        // Keeps the order; a mode turned back on returns to its place.
+        let modes = orderedModes.filter { $0 == mode ? enabled : isEnabled($0) || $0 == .english }
+        preferences.enabledModes = modes.filter { $0 != .english } + [.english]
     }
 
     // MARK: Engines

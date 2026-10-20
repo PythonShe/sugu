@@ -19,6 +19,23 @@ struct PreferencesTests {
         #expect(try JSONDecoder().decode(Preferences.self, from: data) == preferences)
     }
 
+    @Test func defaultsFollowThePreferredLanguages() {
+        #expect(Preferences(preferredLanguages: ["en-US", "ja-JP", "zh-Hans-CN"]).enabledModes == [.japanese, .chinese, .english])
+        #expect(Preferences(preferredLanguages: ["zh-Hans-CN", "ja-JP"]).enabledModes == [.chinese, .japanese, .english])
+        #expect(Preferences(preferredLanguages: ["zh-Hant-TW"]).chineseScript == .traditionalTaiwan)
+        #expect(Preferences(preferredLanguages: ["zh-Hant-HK"]).chineseScript == .traditionalHongKong)
+        #expect(Preferences(preferredLanguages: ["zh-Hant"]).chineseScript == .traditional)
+        #expect(Preferences(preferredLanguages: ["en-US"]) == Preferences())
+    }
+
+    @MainActor @Test func firstLaunchKeepsItsDefaults() throws {
+        let suite = "sugu-preferences-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        _ = PreferencesStore(defaults: defaults, preferredLanguages: ["ja-JP"])
+        #expect(PreferencesStore(defaults: defaults, preferredLanguages: ["zh-Hans-CN"]).preferences.enabledModes.first == .japanese)
+    }
+
     @Test func terminalsDefaultToEnglish() {
         let rule = Preferences().rule(for: "com.apple.Terminal")
         #expect(rule.defaultMode == .english)

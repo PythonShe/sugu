@@ -11,13 +11,18 @@ public final class PreferencesStore {
 
     public private(set) var preferences: Preferences
 
-    public init(defaults: UserDefaults = .standard) {
+    /// A first launch starts from the defaults for `preferredLanguages` and
+    /// keeps them, so a later change of system language does not move them.
+    public init(defaults: UserDefaults = .standard, preferredLanguages: [String] = Locale.preferredLanguages) {
         self.defaults = defaults
         if let data = defaults.data(forKey: Self.key),
            let stored = try? JSONDecoder().decode(Preferences.self, from: data) {
             preferences = stored
         } else {
-            preferences = Preferences()
+            preferences = Preferences(preferredLanguages: preferredLanguages)
+            if defaults.data(forKey: Self.key) == nil, let data = try? JSONEncoder().encode(preferences) {
+                defaults.set(data, forKey: Self.key)
+            }
         }
     }
 
