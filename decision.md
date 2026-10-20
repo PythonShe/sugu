@@ -361,3 +361,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   composition, so vim's English rule (ADR 0003 d3) sees it.
 - They are read from the layout's characters, as the text system reads
   them. Without a composition, other ⌃ keys stay the app's; ⌘ always is.
+
+## D-029 · A damaged learned store is set aside (2026-10-20)
+- The store opened with `try?`: a damaged `learned.sqlite` (power loss
+  mid-write, a bad sector, a partial copy from sync tools) left Sugu with
+  no store for good — no learning, no Chinese user dictionary, no import or
+  sync — with nothing to show why.
+- Opening now runs SQLite's `quick_check`. On corruption (`SQLITE_CORRUPT`,
+  `SQLITE_NOTADB`, or a failed check) the file and its journal files are
+  renamed `learned.sqlite.damaged-<date>` in the data folder (Advanced ›
+  Show Data Folder) and a fresh store opens. Other failures — locked, not
+  yet readable before the first unlock, disk full — are not corruption and
+  never move the file.

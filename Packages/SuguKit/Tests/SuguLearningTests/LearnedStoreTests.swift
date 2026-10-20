@@ -90,6 +90,21 @@ struct LearnedStoreTests {
         #expect(store.lookup("zhouan", mode: .chinese).map(\.text) == ["周安"])
     }
 
+    /// A damaged store is set aside and a fresh one opened, so learning
+    /// goes on; a sound one is left alone.
+    @Test func damagedStoreIsSetAside() throws {
+        try makeStore().learn(Commit(text: "你好", reading: "nihao"), mode: .chinese)
+        #expect(try makeStore().lookup("nihao", mode: .chinese).count == 1)
+        let directory = url.deletingLastPathComponent()
+        try Data(repeating: 0x5A, count: 8_192).write(to: url)
+        let store = try makeStore()
+        #expect(store.lookup("nihao", mode: .chinese).isEmpty)
+        store.learn(Commit(text: "世界", reading: "shijie"), mode: .chinese)
+        #expect(try makeStore().lookup("shijie", mode: .chinese).count == 1)
+        let files = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        #expect(files.contains { $0.hasPrefix("learned.sqlite.damaged-") && !$0.hasSuffix("-wal") && !$0.hasSuffix("-shm") })
+    }
+
     @Test func forgetsTheLastHour() throws {
         let store = try makeStore()
         store.learn(Commit(text: "你好", reading: "nihao"), mode: .chinese)

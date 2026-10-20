@@ -11,6 +11,14 @@ final class SQLiteDatabase {
             case .sqlite(let code, let message): "SQLite error \(code): \(message)"
             }
         }
+
+        /// The file is damaged or not a database, as opposed to a failure
+        /// that can pass (locked, protected before first unlock, disk full).
+        var isCorruption: Bool {
+            switch self {
+            case .sqlite(let code, _): code & 0xFF == SQLITE_CORRUPT || code & 0xFF == SQLITE_NOTADB
+            }
+        }
     }
 
     enum Value {
@@ -34,6 +42,13 @@ final class SQLiteDatabase {
     }
 
     deinit { sqlite3_close(handle) }
+
+    /// Throws a corruption error when SQLite's structural check fails.
+    func checkIntegrity() throws {
+        var result = ""
+        try query("PRAGMA quick_check(1)") { result = $0.string(0) }
+        guard result == "ok" else { throw Error.sqlite(code: SQLITE_CORRUPT, message: result) }
+    }
 
     func execute(_ sql: String) throws {
         guard sqlite3_exec(handle, sql, nil, nil, nil) == SQLITE_OK else { throw lastError() }

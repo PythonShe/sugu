@@ -45,12 +45,35 @@ public final class LearnedStore {
         var mutableDirectory = directory
         try? mutableDirectory.setResourceValues(values)
 
-        database = try SQLiteDatabase(url: url)
+        do {
+            database = try Self.open(url)
+        } catch let error as SQLiteDatabase.Error where error.isCorruption {
+            // A damaged store would end learning for good; it is kept
+            // beside a fresh one rather than deleted.
+            try Self.setAside(url, at: clock())
+            database = try Self.open(url)
+        }
         try? fm.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: url.path)
         self.clock = clock
         self.syllabary = syllabary
         try migrate()
         try loadAll()
+    }
+
+    private static func open(_ url: URL) throws -> SQLiteDatabase {
+        let database = try SQLiteDatabase(url: url)
+        try database.checkIntegrity()
+        return database
+    }
+
+    /// Renames the store and its journal files to `<name>.damaged-<date>`.
+    private static func setAside(_ url: URL, at date: Date) throws {
+        let stamp = ISO8601DateFormatter.string(from: date, timeZone: .gmt, formatOptions: [.withFullDate, .withTime])
+        for suffix in ["", "-wal", "-shm"] {
+            let file = URL(fileURLWithPath: url.path + suffix)
+            guard FileManager.default.fileExists(atPath: file.path) else { continue }
+            try FileManager.default.moveItem(at: file, to: URL(fileURLWithPath: url.path + ".damaged-\(stamp)" + suffix))
+        }
     }
 
     private func migrate() throws {
