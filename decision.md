@@ -1316,3 +1316,8 @@ any call made without the owner present. Each entry: what, why, reversibility.
   engine's two best words, so 資格 and 四角 stay ahead of □; names that
   are everyday words alone (から, おなじ, かける) are left out. Not
   learned, like emoji.
+- People's and places' names are marked in the candidate window (恵子
+  人名, 京都 地名), as Google's and ATOK's Japanese input do, from the word
+  classes AzooKey tags (D-033's proper nouns, now by kind). The engine
+  gives the kind; the window controller writes the localized mark, where
+  no reading hint is shown. Organizations and mixed names are not marked.

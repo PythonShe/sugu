@@ -225,6 +225,21 @@ struct RimeEngineTests {
         #expect(engine.state.markedText == "か←")
     }
 
+    /// Names carry their kind, which the candidate window shows.
+    @Test func namesCarryTheirKind() throws {
+        let engine = try makeEngine()
+        engine.insert("kyouto")
+        _ = engine.convert()
+        let kyoto = try #require(engine.state.candidates.first { $0.text == "京都" })
+        #expect(kyoto.name == .place)
+        engine.clear()
+        engine.insert("keiko")
+        _ = engine.convert()
+        #expect(engine.state.candidates.contains { $0.name == .person })
+        #expect(engine.state.candidates.first { $0.text == "稽古" }?.name == nil)
+        engine.clear()
+    }
+
     @Test func firstDisplayIsBestSentence() throws {
         let engine = try makeEngine()
         engine.insert("kyouhaiitenkidesune")

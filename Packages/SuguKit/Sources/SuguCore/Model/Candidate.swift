@@ -21,15 +21,24 @@ public struct Candidate: Sendable, Hashable {
     /// Secondary text shown next to the candidate (reading hint, comment).
     public var annotation: String?
     public var source: Source
-    /// A place, person or organization name, as the engine tagged it.
-    public var isProperNoun: Bool
+    /// What kind of name the candidate is, as the engine tagged it.
+    public var name: Name?
 
-    public init(text: String, annotation: String? = nil, source: Source, isProperNoun: Bool = false) {
+    public enum Name: Sendable, Hashable {
+        case person, place
+        /// An organization's, or a name of no one kind.
+        case other
+    }
+
+    public init(text: String, annotation: String? = nil, source: Source, name: Name? = nil) {
         self.text = text
         self.annotation = annotation
         self.source = source
-        self.isProperNoun = isProperNoun
+        self.name = name
     }
+
+    /// A place, person or organization name.
+    public var isProperNoun: Bool { name != nil }
 
     public var engineIndex: Int? {
         if case .engine(let index) = source { return index }

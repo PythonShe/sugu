@@ -665,8 +665,7 @@ public final class AzooKeyEngine: CompositionEngine {
     /// differs from the text.
     private func candidate(_ candidate: KanaKanjiConverterModule.Candidate, index: Int) -> SuguCore.Candidate {
         SuguCore.Candidate(
-            text: candidate.text, annotation: readingHint(candidate), source: .engine(index: index),
-            isProperNoun: !candidate.data.isEmpty && candidate.data.allSatisfy { Self.properNounClasses.contains($0.lcid) }
+            text: candidate.text, annotation: readingHint(candidate), source: .engine(index: index), name: Self.name(of: candidate)
         )
     }
 
@@ -674,6 +673,17 @@ public final class AzooKeyEngine: CompositionEngine {
     private static let properNounClasses: Set<Int> = Set(
         [CIDData.固有名詞, .人名一般, .人名姓, .人名名, .固有名詞組織, .地名一般].map(\.cid)
     )
+    private static let personClasses: Set<Int> = Set([CIDData.人名一般, .人名姓, .人名名].map(\.cid))
+    private static let placeClasses: Set<Int> = [CIDData.地名一般.cid]
+
+    /// The kind of name a candidate is when all of it is one.
+    private static func name(of candidate: KanaKanjiConverterModule.Candidate) -> SuguCore.Candidate.Name? {
+        let classes = Set(candidate.data.map(\.lcid))
+        guard !classes.isEmpty, classes.isSubset(of: properNounClasses) else { return nil }
+        if classes.isSubset(of: personClasses) { return .person }
+        if classes.isSubset(of: placeClasses) { return .place }
+        return .other
+    }
 
     private func readingHint(_ candidate: KanaKanjiConverterModule.Candidate) -> String? {
         let reading = WidthConversion.hiragana(candidate.data.map(\.ruby).joined())

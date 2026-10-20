@@ -163,5 +163,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] ⌃⇧R reconverts; ⌃I ⌃O resize the clause (D-075)
 - [x] Punctuation typed while converting commits with the conversion (D-075)
 - [x] Symbols by their Japanese names (やじるし →) (D-075)
-- [ ] 人名 and 地名 on the candidates
+- [x] 人名 and 地名 on the candidates (D-075)
 - [ ] 英数 twice turns the last commit into Latin; かな twice back

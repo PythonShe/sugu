@@ -62,10 +62,27 @@ final class CandidateWindowController {
     }
 
     private func present(_ presentation: CandidatePresentation, style: CandidateView.Style, anchor: NSRect) {
+        let presentation = Self.namingNames(in: presentation)
         let size = view.update(presentation, style: style)
         panel.place(size: size, below: anchor, leadingInset: 5)
         if !panel.isVisible { panel.orderFrontRegardless() }
         announce(presentation)
+    }
+
+    /// Marks people's and places' names, as Google's and ATOK's Japanese
+    /// input do (恵子 人名, 京都 地名), where no other note is shown.
+    private static func namingNames(in presentation: CandidatePresentation) -> CandidatePresentation {
+        var presentation = presentation
+        presentation.candidates = presentation.candidates.map { candidate in
+            var candidate = candidate
+            switch candidate.name {
+            case .person?: candidate.annotation = candidate.annotation ?? String(localized: "Person")
+            case .place?: candidate.annotation = candidate.annotation ?? String(localized: "Place")
+            case .other?, nil: break
+            }
+            return candidate
+        }
+        return presentation
     }
 
     private func resolve(_ rect: NSRect) -> NSRect {

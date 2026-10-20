@@ -145,7 +145,7 @@ final class FakeEngine: CompositionEngine {
         state = CompositionState(
             segments: [CompositionSegment(shown, role: converting ? .focused : .input)],
             caret: shown.count,
-            candidates: words.enumerated().map { Candidate(text: $1, source: .engine(index: $0), isProperNoun: properNouns.contains($1)) },
+            candidates: words.enumerated().map { Candidate(text: $1, source: .engine(index: $0), name: properNouns.contains($1) ? .place : nil) },
             highlightedIndex: converting ? highlighted : nil,
             phase: converting ? .converting : .composing,
             reading: input
