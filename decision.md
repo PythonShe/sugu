@@ -1355,7 +1355,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Caps Lock as the English switch reads the light from the session's
   event state (`CGEventSource.flagsState`), as Squirrel does: Sugu's own
   `NSEvent.modifierFlags` misses changes made while another input source
-  had the keyboard. Auto-repeated 英数 and かな are swallowed, so holding
+  had the keyboard. The switch that sync makes on focus counts as one
+  that came with the focus: its label waits, and it is not remembered
+  for the app. Auto-repeated 英数 and かな are swallowed, so holding
   either is one press, not the double press that retypes.
 - A click or scroll in the candidate window no longer counts as a click
   that may have moved the caret (D-042), so the punctuation after a

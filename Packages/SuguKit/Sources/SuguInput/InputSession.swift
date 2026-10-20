@@ -242,8 +242,8 @@ public final class InputSession {
     }
 
     /// English ↔ the last Chinese or Japanese mode.
-    public func toggleEnglish() {
-        setMode(mode == .english ? lastCJKMode : .english)
+    public func toggleEnglish(byUser: Bool = true) {
+        setMode(mode == .english ? lastCJKMode : .english, byUser: byUser)
     }
 
     /// Chinese ↔ Japanese, when both are enabled.

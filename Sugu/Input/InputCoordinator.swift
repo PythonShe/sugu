@@ -39,7 +39,7 @@ final class InputCoordinator {
         let adapter = attach(client, controller: controller)
         session.isSecureInput = isSecureInputHere()
         session.attach(adapter)
-        syncCapsLock()
+        syncCapsLock(byUser: false)
         AppEnvironment.shared.sync?.pullIfDue()
     }
 
@@ -184,7 +184,7 @@ final class InputCoordinator {
 
     private func flagsChanged(_ event: NSEvent) {
         if event.keyCode == VirtualKey.capsLock {
-            syncCapsLock()
+            syncCapsLock(byUser: true, isOn: event.modifierFlags.contains(.capsLock))
             return
         }
         let tapped = shiftTap.flagsChanged(keyCode: event.keyCode, modifiers: KeyTranslator.modifiers(from: event.modifierFlags),
@@ -204,12 +204,11 @@ final class InputCoordinator {
     private var capsLockSelectsEnglish: Bool { preferences.preferences.englishToggle == .capsLock }
 
     /// With the Caps Lock toggle, the light shows English. Read from the
-    /// session, since Sugu sees no flag changes while another input source
-    /// or field has the keyboard.
-    private func syncCapsLock() {
+    /// key's event, or else from the session, since Sugu sees no flag
+    /// changes while another input source or field has the keyboard.
+    private func syncCapsLock(byUser: Bool, isOn: Bool = CGEventSource.flagsState(.combinedSessionState).contains(.maskAlphaShift)) {
         guard capsLockSelectsEnglish else { return }
-        let isOn = CGEventSource.flagsState(.combinedSessionState).contains(.maskAlphaShift)
-        if isOn != (session.mode == .english) { session.toggleEnglish() }
+        if isOn != (session.mode == .english) { session.toggleEnglish(byUser: byUser) }
     }
 
     // MARK: Rendering
@@ -263,6 +262,6 @@ final class InputCoordinator {
 
     func preferencesDidChange(_ preferences: Preferences) {
         session.preferences = preferences
-        syncCapsLock()
+        syncCapsLock(byUser: false)
     }
 }
