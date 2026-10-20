@@ -158,7 +158,7 @@ enum Bench {
 /// A text field that accepts everything and exposes nothing.
 @MainActor
 private final class Field: InputClient {
-    var bundleIdentifier: String? { "io.github.pythonshe.sugu-bench" }
+    var bundleIdentifier: String? { "com.zheng-she.sugu-bench" }
     func commit(_ text: String) {}
     func setMarkedText(_ segments: [CompositionSegment], caret: Int) {}
     func textBeforeCaret(limit: Int) -> String? { nil }

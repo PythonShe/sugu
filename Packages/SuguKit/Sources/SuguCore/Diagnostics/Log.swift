@@ -4,7 +4,7 @@ import os
 /// and exported only by the user. Lifecycle and failures only: never
 /// readings, candidates, learned words, or text from a document.
 public enum Log {
-    public static let subsystem = "io.github.pythonshe.inputmethod.Sugu"
+    public static let subsystem = "com.zheng-she.inputmethod.Sugu"
 
     public static let app = Logger(subsystem: subsystem, category: "app")
     public static let engines = Logger(subsystem: subsystem, category: "engines")

@@ -1,6 +1,6 @@
 name: Sugu
 options:
-  bundleIdPrefix: io.github.pythonshe
+  bundleIdPrefix: com.zheng-she
   deploymentTarget:
     macOS: "14.0"
   developmentLanguage: en
@@ -46,7 +46,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: Sugu
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.pythonshe.inputmethod.Sugu
+        PRODUCT_BUNDLE_IDENTIFIER: com.zheng-she.inputmethod.Sugu
         INFOPLIST_FILE: Sugu/App/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_OBJC_INTEROP_MODE: objcxx
@@ -72,7 +72,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.pythonshe.SuguTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.zheng-she.SuguTests
         SWIFT_OBJC_INTEROP_MODE: objcxx
 schemes:
   Sugu:

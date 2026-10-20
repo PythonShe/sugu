@@ -68,7 +68,7 @@ pkgbuild --analyze --root "$STAGE" "$WORK/components.plist"
 plutil -replace 0.BundleIsRelocatable -bool NO "$WORK/components.plist"
 pkgbuild --root "$STAGE" --component-plist "$WORK/components.plist" \
   --install-location "/Library/Input Methods" --scripts "$ROOT/scripts/pkg" \
-  --identifier io.github.pythonshe.inputmethod.Sugu.pkg --version "$VERSION" "$WORK/Sugu-component.pkg"
+  --identifier com.zheng-she.inputmethod.Sugu.pkg --version "$VERSION" "$WORK/Sugu-component.pkg"
 PKG="$DIST/Sugu-$VERSION.pkg"
 productbuild --package "$WORK/Sugu-component.pkg" --sign "$DEVELOPER_ID_INSTALLER" --timestamp "$PKG"
 notarize "$PKG"
