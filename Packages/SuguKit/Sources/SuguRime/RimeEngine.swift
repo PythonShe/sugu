@@ -1,7 +1,7 @@
 import CRime
 import SuguCore
 
-/// Chinese composition on one librime session. librime owns the raw input,
+/// Chinese composition on one librime session. librime owns the reading,
 /// caret, and partial selection; this type mirrors its context into
 /// `CompositionState` after every change.
 @MainActor

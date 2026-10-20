@@ -20,17 +20,19 @@ reasons behind each choice are in `docs/adr/` (product) and `decision.md`
 | `SuguCore` | Modes, the key model, candidates, composition state, the `CompositionEngine` protocol and `EngineTraits`, punctuation, width and kana conversion, the kana keyboard layout, computed candidates, Latin inference, the pinyin syllabary, preferences, `Log` (unified-log channels) | — |
 | `SuguLearning` | `LearnedStore`: learned and user words in SQLite with an in-memory index, deletions, expiry, pins | Core |
 | `SuguInput` | `InputSession`, the input state machine, with `CandidateAssembler`, `CandidateList`, the `v` expression engine, the `LoadingEngine` that holds letters until librime is ready, `InputClient` and `EngineSource` protocols, `ShiftTapDetector` | Core, Learning |
-| `SuguRime` | librime through the `CRimeShim` C target: schema generation, runtime, `RimeEngine`, OpenCC `ScriptConverter`, the learned-word user dictionary and the pinyin decoder it needs | Core |
-| `SuguAzooKey` | `AzooKeyEngine`: predictions, clause and live conversion over AzooKeyKanaKanjiConverter; Zenzai loaded on a background converter and adopted between compositions | Core |
-| `SuguEngines` | `EngineHub` (the real `EngineSource`: engines prepared at mode change and focus, deployment retries, preferences, script) and `ModelLibrary` (optional downloads) | Input, Rime, AzooKey, Downloads |
+| `SuguLM` | `CharacterLanguageModel`: the bundled character n-gram models that rerank Japanese sentences and respell Chinese ones (ADR 0005) | — |
+| `SuguRime` | librime through the `CRimeShim` C target: schema generation, runtime, `RimeEngine` (pinyin) and `ZhuyinEngine`, OpenCC `ScriptConverter`, `ChineseRespelling` with the `SentenceRespeller`, the learned-word user dictionary and the pinyin decoder | Core, LM |
+| `SuguAzooKey` | `AzooKeyEngine`: predictions, clause and live conversion over AzooKeyKanaKanjiConverter; Zenzai loaded on a background converter and adopted between compositions | Core, LM |
+| `SuguEngines` | `EngineHub` (the real `EngineSource`: engines prepared at mode change and focus, deployment retries, preferences, script) and `ModelLibrary` (optional downloads) | Input, Rime, AzooKey, Learning, Downloads, LM |
 | `SuguDictionaries` | Importers and exporters, Sugu's own dictionary format, folder sync (`SyncFolder`, `DictionarySync`) | Core, Learning |
 | `SuguDownloads` | Pinned, checksum-verified downloads and zip extraction | — |
 | `SuguUpdates` | Sparkle, with system profiling off | Sparkle |
 
 `SuguInput` links no engine: it sees engines only through
-`CompositionEngine` and `EngineSource`, and tests drive it with fakes. Only
-`SuguEngines`, the app and `sugu-bench` link librime and AzooKey, and only
-they need C++ interoperability.
+`CompositionEngine` and `EngineSource`, and tests drive it with fakes.
+`SuguAzooKey` and everything that links it (`SuguEngines`, the app,
+`sugu-tool`, `sugu-bench`) build with C++ interoperability; the rest do
+not.
 
 Executables: `sugu-tool` builds the bundled data and converts readings from
 the terminal; `sugu-bench` drives `InputSession` with the real engines and
@@ -52,7 +54,10 @@ checks accuracy and latency budgets.
    - **staged conversion** (`handleStaged`: AzooKey): typing shows
      predictions, Space converts, arrows move and resize clauses. AzooKey's
      whole-input sentences are reordered by `CharacterLanguageModel`
-     (`SuguLM`) after the left context, unless Zenzai is on.
+     (`SuguLM`) after the left context, unless Zenzai is on;
+   - **sentence** (`handleSentence`: Zhuyin): the sentence stays converted
+     as syllables end with their tones; arrows move the caret through it,
+     and the candidate window opens to choose a word at the caret.
 3. After the engine changes, `refresh()` rebuilds the list:
    `CandidateAssembler` merges the engine's candidates with learned words,
    computed candidates, Latin text and Chinese forms of Japanese names,
@@ -62,7 +67,9 @@ checks accuracy and latency budgets.
    candidates); the shell sets the marked text through `TextInputClient` and
    draws the page in `CandidateView` with Core Text.
 5. A commit inserts text, and, when the engine's traits allow and the app is
-   not excluded, teaches `LearnedStore`; `⌃⌫` can take the last commit back.
+   not excluded, teaches `LearnedStore`; `⌃⌫` can take the last commit back,
+   and 英数 pressed twice retypes a Japanese one as its romaji. Neither
+   edits committed text in terminals (`canEditCommitted`).
 
 ## Data and privacy
 

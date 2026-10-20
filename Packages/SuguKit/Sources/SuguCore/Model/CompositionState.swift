@@ -1,7 +1,7 @@
 /// A run of the marked (pre-edit) text with the role it plays.
 public struct CompositionSegment: Sendable, Equatable {
     public enum Role: Sendable, Equatable {
-        /// Raw input not yet converted (pinyin letters, kana).
+        /// The reading, not yet converted (pinyin letters, kana).
         case input
         /// Converted text that is not the focus of the candidate list.
         case converted

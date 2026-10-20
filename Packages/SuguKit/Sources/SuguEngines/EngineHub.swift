@@ -8,7 +8,8 @@ import SuguLM
 import SuguRime
 
 /// Owns the language engines for the process and keeps them in step with
-/// preferences. Each engine is created on first use of its mode.
+/// preferences. Each engine is created when its mode is entered or a field
+/// gains focus, ahead of the first key.
 @MainActor
 public final class EngineHub: EngineSource {
     public struct Locations: Sendable {

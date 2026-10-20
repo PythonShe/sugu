@@ -50,3 +50,53 @@ _Avoid_: user dictionary (that is what the user adds explicitly), history
 **No-Learn List**:
 Apps where Sugu neither learns from commits nor reads left context.
 _Avoid_: blocklist, private mode
+
+**Reading**:
+The input as typed, before conversion: pinyin letters or Zhuyin codes for
+Chinese, kana for Japanese (romaji typed is kept beside it).
+_Avoid_: raw input, pinyin (for the Japanese sense)
+
+**Chinese Keyboard**:
+How Chinese is typed: pinyin (full or a double-pinyin scheme) or Zhuyin on
+one of its layouts.
+_Avoid_: input source, layout (for the pinyin/Zhuyin choice)
+
+**Script**:
+The character forms Chinese is written in: Simplified, Traditional (with its
+Taiwan or Hong Kong forms), or Japanese kanji.
+_Avoid_: font, variant
+
+**Clause**:
+A span of a Japanese conversion converted as a unit, which the user can move
+between and resize.
+_Avoid_: segment, bunsetsu (in code)
+
+**Prediction**:
+A candidate for more than has been typed, offered while composing Japanese.
+_Avoid_: completion, suggestion
+
+**Live Conversion**:
+Japanese shown converted as it is typed, without pressing Space.
+_Avoid_: auto conversion
+
+**Reconversion**:
+Turning committed text (the selection) back into a composition of its reading.
+_Avoid_: re-edit, undo
+
+**Respelling**:
+Sugu's language model replacing characters of librime's sentence where it
+reads another spelling of the same syllables as clearly better.
+_Avoid_: correction, autocorrect
+
+**Document Vocabulary**:
+Words anywhere in the focused field, read once per focus to rank candidates
+already used there. Held in memory only, and off by default.
+_Avoid_: history, context (that is the Left Context)
+
+**User Word**:
+A word the user adds explicitly; unlike a Learned Word it does not expire.
+_Avoid_: custom word, phrase
+
+**Pinned**:
+A learned word kept from expiry and from forgetting the last hour.
+_Avoid_: favorite, locked

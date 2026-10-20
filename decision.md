@@ -1422,3 +1422,14 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Delete All and Forget Last Hour.
 - rime-wanxiang's English word list stays as shipped, under wanxiang's
   CC-BY-4.0 and credited with wanxiang.
+
+## D-080 · Notes on earlier decisions (2026-10-20)
+- D-001's module list predates `SuguLM` (the character language models,
+  ADR 0005) and `ZhuyinEngine`; `docs/architecture.md` has the current
+  table.
+- D-007: `SuguInput` and its tests build without C++ interoperability;
+  `SuguAzooKey`, `SuguEngines`, the app, `sugu-tool` and `sugu-bench` need
+  it.
+- D-003: learned words join the candidates for the exact reading typed,
+  not for syllable-aligned prefixes; librime's user dictionary covers
+  words inside longer sentences.

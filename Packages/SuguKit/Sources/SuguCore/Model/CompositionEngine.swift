@@ -102,7 +102,7 @@ public protocol CompositionEngine: AnyObject {
 
     /// Commits what is shown: converted clauses, or the best conversion.
     func commitConverted() -> Commit?
-    /// Commits the raw input: letters for Chinese, kana for Japanese.
+    /// Commits the reading as typed: letters for Chinese, kana for Japanese.
     func commitRaw() -> Commit?
     func clear()
     /// Starts a composition from a reading, as after undo-after-commit.

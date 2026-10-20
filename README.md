@@ -13,12 +13,13 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Features
 
-- **Chinese** through [librime](https://github.com/rime/librime) with the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin and the common shuangpin schemes, fuzzy pinyin, Zhuyin on the standard, Eten or IBM layouts, Simplified, Traditional (with Taiwan or Hong Kong punctuation) or Japanese kanji forms (per app if you like), sentences corrected by a character language model built from [Tatoeba](https://tatoeba.org), emoji and symbols after the words that name them (from [CLDR](https://cldr.unicode.org)), an optional grammar model, and rime-ice as an optional download.
+- **Chinese** through [librime](https://github.com/rime/librime) with the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin and the common shuangpin schemes, fuzzy pinyin, Zhuyin on the standard, Eten or IBM layouts, Simplified, Traditional (standard, Taiwan or Hong Kong forms) or Japanese kanji forms (per app if you like), sentences corrected by a character language model built from [Tatoeba](https://tatoeba.org), emoji and symbols after the words that name them (from [CLDR](https://cldr.unicode.org)), an optional grammar model, and rime-ice as an optional download.
 - **Japanese** through [AzooKeyKanaKanjiConverter](https://github.com/azooKey/AzooKeyKanaKanjiConverter): romaji or kana input (JIS or US keyboards), clause-by-clause or live conversion ranked by a character language model built from [Tatoeba](https://tatoeba.org), predictions, typo tolerance, Chinese forms of Japanese names, and the experimental Zenzai neural converter as an optional download.
 - **Modes** switched with Shift or Caps Lock, ⌃⇧Space, or the かな/英数 keys; per-app defaults, English in terminals and password fields.
 - **Learning you control** — an inspector to search, pin and delete learned words, "forget the last hour", per-app opt-out, expiry, undo of the last commit with ⌃⌫, ⇧⌫ to forget a learned candidate, and Add Word from the input menu.
 - **Dictionaries** imported from Google Japanese Input, Microsoft IME, ATOK, Sogou, RIME and macOS text replacements; sync between Macs through a folder you choose.
 - Words already before the caret — or, if you turn it on, anywhere in the field — rank first, without being stored.
+- Habits from other input methods: reconversion of the selection, F6–F10 and the Emacs and Kotoeri control keys, 英数 twice to retype as romaji, `[` `]` to take one character of a word, Google's z-symbols, and symbols by their Japanese names.
 - Dates, numbers and arithmetic as candidates; native candidate window with Liquid Glass on macOS 26; VoiceOver, Increase Contrast and Dark Mode; English, Simplified Chinese, Traditional Chinese and Japanese interface.
 
 ## Install

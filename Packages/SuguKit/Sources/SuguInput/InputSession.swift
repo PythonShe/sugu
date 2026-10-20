@@ -3,8 +3,8 @@ import os
 import SuguCore
 import SuguLearning
 
-/// Supplies engines to the session. Engines load lazily on first use of
-/// their mode; `nil` means the engine is not ready yet.
+/// Supplies engines to the session. Engines are prepared when their mode
+/// is entered or a field gains focus; `nil` means not ready yet.
 @MainActor
 public protocol EngineSource: AnyObject {
     /// The engine for a mode; nil while it is still being set up.
