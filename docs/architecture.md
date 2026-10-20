@@ -80,9 +80,10 @@ checks accuracy and latency budgets.
   sentences; it is regenerated from the store on every change. Sync
   writes one file per Mac to a folder the user picks, carrying deletions so a
   word deleted on one Mac stays deleted everywhere.
-- The bundled Chinese data and the Japanese character language model
-  (ADR 0005) are compiled by `scripts/build-data.sh` into `Data/`; GPL data
-  (rime-ice) and the Zenzai model are user downloads only.
+- The bundled Chinese data, the pinyin word list, and the Japanese and
+  Chinese character language models (ADR 0005) are compiled by
+  `scripts/build-data.sh` into `Data/`; GPL data (rime-ice) and the Zenzai
+  model are user downloads only.
 
 ## Checks
 

@@ -13,6 +13,17 @@ private let dataDirectory = URL(fileURLWithPath: #filePath)
     .appendingPathComponent("Data")
 private let hasData = FileManager.default.fileExists(atPath: dataDirectory.appendingPathComponent("Rime/build/sugu.table.bin").path)
 
+/// A model built from `sentences` alone.
+private func languageModel(_ sentences: [String]) throws -> CharacterLanguageModel {
+    var builder = CharacterLanguageModelBuilder()
+    builder.minimumCount = 1
+    for sentence in sentences { builder.add(sentence) }
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-engine-lm-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: url) }
+    try builder.build().data.write(to: url)
+    return try CharacterLanguageModel(contentsOf: url)
+}
+
 /// librime keeps process-wide state, so every test shares one runtime.
 @MainActor
 private enum Shared {
@@ -81,6 +92,39 @@ struct RimeEngineTests {
         // An imported word carries full pinyin, and still types in double pinyin.
         #expect(try await sentence("wogfsuguytuo", words: [typed], schema: RimeSchema(scheme: .xiaohe)) == "我跟苏古月说")
         try RimeUserDictionary.write("", in: Shared.user)
+    }
+
+    /// The respelled sentence comes first; librime's own candidates follow
+    /// one index further down and still highlight and commit.
+    @Test func theLanguageModelRespellsLibrimesSentence() async throws {
+        try await Shared.runtime.prepare(RimeSchema(), version: "test")
+        let lexicon = dataDirectory.appendingPathComponent("Lexicon")
+        let decoder = try #require(PinyinDecoder(schema: RimeSchema(), syllables: Lexicon.load(Lexicon.syllablesFile, in: lexicon), sharedData: dataDirectory.appendingPathComponent("Rime")))
+        let words = try PinyinWords(contentsOf: lexicon.appendingPathComponent(Lexicon.pinyinWordsFile))
+        let model = try languageModel(["我们一起去吃晚饭吧。", "晚饭吃什么？", "今天的晚饭很好吃。"])
+        let engine = RimeEngine(runtime: Shared.runtime)
+        defer { engine.clear() }
+        engine.insert("womenyiqiquchiwanfanba")
+        let plain = try #require(engine.state.candidates.first?.text)
+        #expect(plain != "我们一起去吃晚饭吧", "librime alone already writes 晚饭; pick another sentence")
+        engine.clear()
+
+        engine.respelling = (SentenceRespeller(model: model, words: words), decoder)
+        engine.insert("womenyiqiquchiwanfanba")
+        #expect(engine.state.candidates.prefix(2).map(\.text) == ["我们一起去吃晚饭吧", plain])
+        #expect(engine.state.highlightedIndex == 0)
+        engine.highlight(1)
+        #expect(engine.state.highlightedIndex == 1)
+        #expect(engine.commitConverted()?.text == plain)
+
+        engine.insert("womenyiqiquchiwanfanba")
+        guard case .committed(let commit) = engine.select(0) else {
+            Issue.record("selecting the respelled sentence did not commit")
+            return
+        }
+        #expect(commit.text == "我们一起去吃晚饭吧")
+        #expect(commit.reading == "womenyiqiquchiwanfanba")
+        #expect(engine.state.isEmpty)
     }
 
     @Test func scriptConverterNormalizesThroughSimplified() throws {
@@ -262,16 +306,6 @@ struct RimeEngineTests {
         #expect(engine.state.segments.first { $0.role == .focused }?.text == "雨が")
     }
 
-    func languageModel(_ sentences: [String]) throws -> CharacterLanguageModel {
-        var builder = CharacterLanguageModelBuilder()
-        builder.minimumCount = 1
-        for sentence in sentences { builder.add(sentence) }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-engine-lm-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: url) }
-        try builder.build().data.write(to: url)
-        return try CharacterLanguageModel(contentsOf: url)
-    }
-
     @Test func theLanguageModelRespellsAWordTheConverterDidNotPropose() throws {
         let engine = try makeEngine()
         engine.insert("yukigatakusanfutteimasu")
@@ -316,5 +350,33 @@ struct RimeEngineTests {
         engine.restore(reading: "わたしはがくせいです")
         #expect(engine.state.phase == .converting)
         #expect(engine.state.segments.map(\.text).joined() == "私は学生です")
+    }
+}
+
+@MainActor
+@Suite struct SentenceRespellerTests {
+    private let words = PinyinWords(lines: [
+        "我们\two men\t500", "去\tqu\t400", "吃\tchi\t400", "完\twan\t300", "晚\twan\t200",
+        "饭\tfan\t300", "吃完\tchi wan\t100", "晚饭\twan fan\t100",
+    ])
+    private let reading = [["wo", "men", "qu", "chi", "wan", "fan"]]
+
+    private func respeller() throws -> SentenceRespeller {
+        try SentenceRespeller(model: languageModel(["我们去吃晚饭吧。", "晚饭吃什么？", "今天的晚饭很好吃。"]), words: words)
+    }
+
+    @Test func respellsWhatTheModelReadsAsClearlyBetter() throws {
+        #expect(try respeller().respelled("我们去吃完饭", readings: reading, after: "") == "我们去吃晚饭")
+        #expect(try respeller().respelled("我们去吃晚饭", readings: reading, after: "") == nil)
+    }
+
+    @Test func keepsTheUsersWords() throws {
+        let respeller = try respeller()
+        respeller.userWords = ["吃完饭"]
+        #expect(respeller.respelled("我们去吃完饭", readings: reading, after: "") == nil)
+    }
+
+    @Test func leavesTextOutsideTheWordList() throws {
+        #expect(try respeller().respelled("我们去吃完面", readings: [["wo", "men", "qu", "chi", "wan", "mian"]], after: "") == nil)
     }
 }

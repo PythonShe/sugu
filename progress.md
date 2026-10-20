@@ -3,6 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Chinese sentences respelled where the character model reads another
+  spelling as clearly better (ADR 0005 decision 8, D-053): top-1 91% →
+  97% on a 150-sentence bench, learned words 83% → 92%, no sentence
+  broken; footprint +12 MB, keystroke p99 4.0 ms.
 - Japanese words respelled when the model prefers another spelling of the
   same reading (ADR 0005 decision 7, D-052): top-1 85% → 89%, the same
   gain on both halves of the bench. Weight tuning and a second corpus

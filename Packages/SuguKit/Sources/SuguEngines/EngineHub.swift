@@ -87,6 +87,9 @@ public final class EngineHub: EngineSource {
     /// rewritten, so a burst of commits rewrites it once.
     private let chineseWordsDelay: Duration
     private var decoders: (schema: RimeSchema, scheme: PinyinDecoder, fullPinyin: PinyinDecoder?)?
+    /// Respells Chinese sentences (ADR 0005), for the schema it decodes
+    /// keys of; nil when the model or word list is not bundled.
+    private var chineseRespelling: (schema: RimeSchema, respeller: SentenceRespeller, decoder: PinyinDecoder)?
     /// Set when the last Chinese deployment failed, for the settings window.
     public private(set) var chineseError: (any Error)? {
         didSet { if (chineseError == nil) != (oldValue == nil) { onChineseStatusChange?() } }
@@ -122,6 +125,9 @@ public final class EngineHub: EngineSource {
             guard runtime.isReady else { warmUp(.chinese); return nil }
             if let chinese { return chinese }
             let engine = RimeEngine(runtime: runtime, script: chineseScript)
+            if let chineseRespelling, chineseRespelling.schema == runtime.schema {
+                engine.respelling = (chineseRespelling.respeller, chineseRespelling.decoder)
+            }
             chinese = engine
             chineseWordsNeedReload = false
             return engine
@@ -201,6 +207,7 @@ public final class EngineHub: EngineSource {
             do {
                 if rebuild { runtime.discardBuild() }
                 try await runtime.prepare(schema, version: version)
+                await loadChineseRespelling(for: schema)
                 Log.engines.notice("Chinese ready in \(ContinuousClock.now - started, privacy: .public)\(rebuild ? " after a rebuild" : "", privacy: .public)")
                 chineseError = nil
                 retry = nil
@@ -224,6 +231,36 @@ public final class EngineHub: EngineSource {
             // Settings may have changed while deploying.
             if runtime.schema != self.schema { warmUp(.chinese) }
         }
+    }
+
+    /// Loads the Chinese model and word list, and the schema's key decoder,
+    /// off the main thread; a new schema needs only its decoder.
+    private func loadChineseRespelling(for schema: RimeSchema) async {
+        if chineseRespelling?.schema == schema { return }
+        let locations = locations
+        let respeller: SentenceRespeller
+        if let loaded = chineseRespelling?.respeller {
+            respeller = loaded
+        } else {
+            let loaded = await Task.detached(priority: .utility) { () -> (CharacterLanguageModel, PinyinWords)? in
+                guard let modelURL = locations.languageModel(.chinese), FileManager.default.fileExists(atPath: modelURL.path) else { return nil }
+                do {
+                    return (try CharacterLanguageModel(contentsOf: modelURL), try PinyinWords(contentsOf: locations.lexicon.appendingPathComponent(Lexicon.pinyinWordsFile)))
+                } catch {
+                    Log.engines.error("Chinese language model did not load: \(String(describing: error), privacy: .public)")
+                    return nil
+                }
+            }.value
+            guard let (model, words) = loaded else { return }
+            respeller = SentenceRespeller(model: model, words: words)
+            if let store { respeller.userWords = Set(store.allWords(mode: .chinese).map(\.text)) }
+        }
+        let cachedDecoder = decoders.flatMap { $0.schema == schema ? $0.scheme : nil }
+        let decoder = if let cachedDecoder { cachedDecoder } else {
+            await Task.detached(priority: .utility) { Self.makeDecoders(for: schema, locations: locations)?.1 }.value
+        }
+        guard let decoder else { chineseRespelling = nil; return }
+        chineseRespelling = (schema, respeller, decoder)
     }
 
     public func isFailing(_ mode: InputMode) -> Bool {
@@ -260,6 +297,7 @@ public final class EngineHub: EngineSource {
             let locations = locations
             let cached = decoders.flatMap { $0.schema == schema ? ($0.schema, $0.scheme, $0.fullPinyin) : nil }
             let learned = store.allWords(mode: .chinese)
+            chineseRespelling?.respeller.userWords = Set(learned.map(\.text))
             // Writes land in order: an older table never replaces a newer one.
             let previous = chineseWordsWrite
             let write = Task.detached(priority: .utility) { () -> ChineseWordsWrite in

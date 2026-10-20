@@ -750,3 +750,36 @@ any call made without the owner present. Each entry: what, why, reversibility.
   1.3 to 2.7 ms at the median and 2.7 to 6.0 ms at p99 on the bench,
   where most words are new to the cache; typing is unchanged, and with
   live conversion keystroke p99 is 4.4 ms.
+
+## D-053 · Respelling librime's Chinese sentences (2026-10-20)
+- librime returns one sentence, so there is nothing to rerank; the misses
+  are one word away from it (吃完饭 for 吃晚饭, 药失望 for 钥匙忘). The
+  sentence is split into words of a list built from wanxiang's zi and
+  jichu dictionaries (every character, and words of two or three
+  syllables weighted 1,000 or more: 121 thousand entries), by the
+  likeliest split for the syllables the typed keys decode to. Each span
+  of up to three syllables may become another spelling of them, as one
+  listed word or several (the six likeliest per reading, at most 400
+  spellings), scored by the character model on the span and the
+  characters after it that it conditions, plus 0.3 times the change in
+  the list's log probability; it must beat librime's words by 4.
+- Fitted in a simulation on the first 50 bench sentences, then checked
+  on 50 more and on 50 written for the check. In the bench: 45 → 48,
+  47 → 49, 44 → 49 (91% → 97%), no sentence broken, learned words
+  83% → 92% (林知夏的生日是). Raw dictionary weights summed across words
+  broke about 40 sentences, and a greedy split broke 上市; log
+  probabilities and the likeliest split fixed both. Left: 游泳, 大雪,
+  咸, 老师, where the model has no evidence.
+- The respelled sentence is a candidate ahead of librime's, which keep
+  their order one index down; choosing it commits it and clears
+  librime's composition. Not after a partial selection, and not for
+  Traditional or Japanese kanji forms, which the model and list do not
+  cover.
+- The Chinese model is now built from Tatoeba's Mandarin sentences
+  converted to Simplified with OpenCC, the bench sentences left out.
+- Memory: as strings the list took 45 MB; it is read in one streaming
+  pass into 64-bit hashed keys and one array of the kept spellings,
+  11 MB, and the respeller's caches are keyed by hash too. Footprint in
+  the bench 91 → 104 MB, resident 198 MB of which most is clean mapped
+  dictionary and model pages; keystroke p50 0.2 → 0.7 ms, p99 3.9 → 4.0
+  ms.

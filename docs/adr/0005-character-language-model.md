@@ -15,8 +15,8 @@ does it.
    tokenizer and cover any word the dictionary has. Built from Tatoeba
    (CC BY 2.0 FR) at a versioned OPUS snapshot pinned by checksum in
    `scripts/versions.sh`; n-grams of three or more characters seen once are
-   pruned. The model is bundled (16.4 MB for Japanese, 1.4 million
-   entries), memory-mapped, and attributed in the notices. Corpora under share-alike or unclear terms
+   pruned. The models are bundled (16.4 MB for Japanese, 5.5 MB for
+   Chinese), memory-mapped, and attributed in the notices. Corpora under share-alike or unclear terms
    (Wikipedia, ReazonSpeech, web crawls without a stated license) are not
    used.
 
@@ -41,13 +41,13 @@ does it.
    written afterwards to check it, from 78% to 84%; learned names stay
    first; keystroke p99 is unchanged.
 
-6. **Not for Chinese yet.** librime builds one sentence and offers no
+6. **No grammar for librime.** librime builds one sentence and offers no
    alternatives to rerank. A small octagram grammar built from Tatoeba's
    Mandarin sentences scored 94% against 90% on the first 50 bench
    sentences, but on 50 more it broke as many common words as it fixed
    (老师 → 老是, 医生 → 一生) at every scale tried: 92 thousand sentences
-   are too few for collocation counts. Chinese keeps the dictionary's
-   ranking, with the wanxiang grammar model as the download.
+   are too few for collocation counts inside librime's search. The
+   wanxiang grammar model stays the download.
 
 7. **Respelling within a sentence.** The engine proposes at most five
    sentences, and the right one is often missing when it differs in a
@@ -59,13 +59,27 @@ does it.
    words, and text that spells one, keep their spelling. Top-1 went from
    85% to 89%, by two sentences on each half of the bench.
 
+8. **Respelling Chinese sentences.** librime's sentence is read as words
+   of the dictionary's list (two or three syllables, weight at least
+   1,000, and every single character), and each span of up to three
+   syllables may be rewritten as another spelling of the same syllables,
+   one word or several, when the character model, given the text before
+   the span and after it, reads it as more natural by a clear margin
+   (4 in natural log probability, with the list's own word probabilities
+   at weight 0.3). The respelled sentence is shown first and librime's
+   own follows it; learned words and text that spells one keep their
+   spelling. Simplified script only, as the model and list are. Top-1
+   went from 91% to 97% on 150 sentences and learned words from 83% to
+   92%, with no sentence broken; on 50 sentences written before the
+   method was tried on them, 44 to 49.
+
 ## Later phases
 
 - A personal model from what the user commits, kept in the learned store
   with the same gates as learned words, blended with the bundled one; it
   can also feed Zenzai's personalization.
-- Chinese: the same ranking over librime's candidates where it helps
-  without the grammar model download.
+- Chinese: respelling for Traditional script, through the converter
+  librime's output already passes.
 
 ## Considered options
 

@@ -12,6 +12,16 @@ public final class RimeEngine: CompositionEngine {
     /// How many candidates are read from librime per update; the rest are
     /// fetched only when the user pages past them.
     private var candidateLimit: Int
+    /// Respells librime's sentence where the language model reads it better;
+    /// the decoder reads typed keys as syllables in the schema's scheme.
+    public var respelling: (respeller: SentenceRespeller, decoder: PinyinDecoder)?
+    /// librime's sentence respelled, shown ahead of librime's candidates;
+    /// librime's own indices are one further down while it is.
+    private var respelled: String?
+    /// Whether the respelled sentence, rather than a librime candidate, is
+    /// highlighted; typing highlights it again.
+    private var respelledHighlighted = true
+    private var leftContext = ""
 
     public let traits = EngineTraits(hasConversionPhase: false, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
@@ -78,6 +88,7 @@ public final class RimeEngine: CompositionEngine {
 
     public func insert(_ text: String) {
         guard ensureSession() else { return }
+        respelledHighlighted = true
         for scalar in text.unicodeScalars where scalar.isASCII {
             _ = api.process_key?(session, Int32(scalar.value), 0)
         }
@@ -105,6 +116,11 @@ public final class RimeEngine: CompositionEngine {
 
     public func highlight(_ index: Int) {
         guard session != 0 else { return }
+        if respelled != nil {
+            respelledHighlighted = index == 0
+            if index == 0 { refresh(); return }
+        }
+        let index = librimeIndex(index)
         ensureLoaded(upTo: index)
         _ = api.highlight_candidate?(session, index)
         refresh()
@@ -112,6 +128,8 @@ public final class RimeEngine: CompositionEngine {
 
     public func select(_ index: Int) -> SelectionResult {
         guard session != 0 else { return .continued }
+        if index == 0, let commit = commitRespelled() { return .committed(commit) }
+        let index = librimeIndex(index)
         ensureLoaded(upTo: index)
         let reading = currentInput()
         _ = api.select_candidate?(session, index)
@@ -125,11 +143,12 @@ public final class RimeEngine: CompositionEngine {
 
     public func commitConverted() -> Commit? {
         guard session != 0, !state.isEmpty else { return nil }
+        if respelledHighlighted, let commit = commitRespelled() { return commit }
         let reading = currentInput()
         // Select the highlighted candidate of each remaining segment.
         var guardCount = 0
         while api.get_input?(session) != nil, !currentInput().isEmpty, guardCount < 64 {
-            let index = state.highlightedIndex ?? 0
+            let index = librimeIndex(state.highlightedIndex ?? 0)
             _ = api.select_candidate?(session, index)
             if let text = takeCommit() {
                 refresh()
@@ -151,22 +170,42 @@ public final class RimeEngine: CompositionEngine {
 
     public func clear() {
         if session != 0 { api.clear_composition?(session) }
+        respelled = nil
+        respelledHighlighted = true
         state = .empty
     }
 
     public func restore(reading: String) {
         guard ensureSession() else { return }
+        respelledHighlighted = true
         api.clear_composition?(session)
         _ = api.set_input?(session, reading)
         refresh()
     }
 
-    public func setLeftContext(_ text: String) {}
+    public func setLeftContext(_ text: String) {
+        leftContext = text
+    }
+
+    /// Commits the respelled sentence, which librime never proposed, so
+    /// librime's composition is cleared rather than committed.
+    private func commitRespelled() -> Commit? {
+        guard let respelled else { return nil }
+        let reading = currentInput()
+        clear()
+        return Commit(text: respelled, reading: reading)
+    }
+
+    /// librime's index for a shown index.
+    private func librimeIndex(_ index: Int) -> Int {
+        respelled == nil ? index : max(0, index - 1)
+    }
 
     // MARK: Reading librime state
 
     private func send(_ keycode: Int32) {
         guard session != 0 else { return }
+        respelledHighlighted = true
         _ = api.process_key?(session, keycode, 0)
         refresh()
     }
@@ -220,16 +259,36 @@ public final class RimeEngine: CompositionEngine {
         let caret = text(0..<Int(composition.cursor_pos)).count
 
         let menu = context.menu
-        let highlighted = Int(menu.page_no) * Int(menu.page_size) + Int(menu.highlighted_candidate_index)
+        var highlighted = Int(menu.page_no) * Int(menu.page_size) + Int(menu.highlighted_candidate_index)
+        var candidates = readCandidates()
+        respelled = confirmed.isEmpty ? candidates.first.flatMap { respell($0.text) } : nil
+        if let respelled {
+            candidates = [Candidate(text: respelled, source: .engine(index: 0))] + candidates.map {
+                Candidate(text: $0.text, annotation: $0.annotation, source: .engine(index: ($0.engineIndex ?? 0) + 1))
+            }
+            highlighted = respelledHighlighted ? 0 : highlighted + 1
+        }
 
         state = CompositionState(
             segments: segments,
             caret: caret,
-            candidates: readCandidates(),
+            candidates: candidates,
             highlightedIndex: highlighted,
             phase: .composing,
             reading: currentInput()
         )
+    }
+
+    /// librime's sentence for the whole input respelled, when the language
+    /// model reads another spelling as clearly better. The model and word
+    /// list are simplified Chinese.
+    private func respell(_ sentence: String) -> String? {
+        guard let respelling, script == .simplified else { return nil }
+        // Readings that type all the input as one syllable per character;
+        // none when the candidate covers only part of it.
+        let readings = respelling.decoder.syllables(typedAs: currentInput(), count: sentence.count)
+        guard !readings.isEmpty else { return nil }
+        return respelling.respeller.respelled(sentence, readings: readings, after: leftContext)
     }
 
     private func readCandidates() -> [Candidate] {

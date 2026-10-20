@@ -103,7 +103,8 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Japanese: words respelled when the model prefers another spelling (D-052)
 - [x] Live conversion no longer traps after Esc from a conversion (D-051)
 - [ ] Personal n-grams from commits in the learned store, blended with the bundled model
-- [ ] Chinese: a ranking source that holds on held-out sentences (Tatoeba's grammar did not, D-050)
+- [x] Chinese: librime's sentence respelled where the model reads another spelling as clearly better (D-053; Tatoeba's grammar did not hold, D-050)
+- [ ] Chinese respelling for Traditional script
 - [x] Bench: 101 Japanese and 100 Chinese sentences (D-050)
 - [x] Chinese keystroke tail: librime on compositions past 25 letters, not Sugu (D-049)
 - [ ] Zenzai personalization from the personal model

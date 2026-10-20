@@ -45,7 +45,7 @@ let package = Package(
         .target(name: "SuguCore", swiftSettings: swiftSettings),
         .target(
             name: "SuguRime",
-            dependencies: ["SuguCore", "CRimeShim", "librime"],
+            dependencies: ["SuguCore", "SuguLM", "CRimeShim", "librime"],
             swiftSettings: swiftSettings
         ),
         .target(

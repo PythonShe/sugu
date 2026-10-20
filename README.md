@@ -13,7 +13,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Features
 
-- **Chinese** through [librime](https://github.com/rime/librime) with the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin and the common shuangpin schemes, fuzzy pinyin, Simplified, Traditional (with Taiwan or Hong Kong punctuation) or Japanese kanji forms (per app if you like), an optional grammar model, and rime-ice as an optional download.
+- **Chinese** through [librime](https://github.com/rime/librime) with the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin and the common shuangpin schemes, fuzzy pinyin, Simplified, Traditional (with Taiwan or Hong Kong punctuation) or Japanese kanji forms (per app if you like), Simplified sentences corrected by a character language model built from [Tatoeba](https://tatoeba.org), an optional grammar model, and rime-ice as an optional download.
 - **Japanese** through [AzooKeyKanaKanjiConverter](https://github.com/azooKey/AzooKeyKanaKanjiConverter): romaji or kana input (JIS or US keyboards), clause-by-clause or live conversion ranked by a character language model built from [Tatoeba](https://tatoeba.org), predictions, typo tolerance, Chinese forms of Japanese names, and the experimental Zenzai neural converter as an optional download.
 - **Modes** switched with Shift or Caps Lock, ⌃⇧Space, or the かな/英数 keys; per-app defaults, English in terminals and password fields.
 - **Learning you control** — an inspector to search, pin and delete learned words, "forget the last hour", per-app opt-out, expiry, and undo of the last commit with ⌃⌫.
@@ -50,4 +50,4 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' bu
 
 ## License
 
-[Apache-2.0](LICENSE). Sugu includes third-party software and data under their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt); the Chinese dictionary is rime-wanxiang by amzxyz (CC-BY-4.0), and the Japanese language model is computed from sentences by the contributors of Tatoeba (CC BY 2.0 FR). rime-ice (GPL-3.0) and the Zenzai model (CC-BY-SA-4.0) are never bundled and are downloaded only at the user's request.
+[Apache-2.0](LICENSE). Sugu includes third-party software and data under their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt); the Chinese dictionary is rime-wanxiang by amzxyz (CC-BY-4.0), and the language models are computed from sentences by the contributors of Tatoeba (CC BY 2.0 FR). rime-ice (GPL-3.0) and the Zenzai model (CC-BY-SA-4.0) are never bundled and are downloaded only at the user's request.
