@@ -1,7 +1,8 @@
 import AppKit
 import SuguCore
 
-/// Briefly shows the new mode next to the caret after a mode change.
+/// Briefly shows the new mode next to the caret after a mode change, or
+/// another setting a key switched.
 @MainActor
 final class ModeIndicatorController {
     static let visibleDuration: Duration = .milliseconds(900)
@@ -21,8 +22,12 @@ final class ModeIndicatorController {
     private var dismissal: Task<Void, Never>?
 
     func show(_ mode: InputMode, keyboard: ChineseKeyboard, near rect: NSRect) {
-        label.stringValue = Self.symbol(for: mode, keyboard: keyboard)
-        label.setAccessibilityLabel(mode.localizedName)
+        show(Self.symbol(for: mode, keyboard: keyboard), named: mode.localizedName, near: rect)
+    }
+
+    func show(_ symbol: String, named name: String, near rect: NSRect) {
+        label.stringValue = symbol
+        label.setAccessibilityLabel(name)
         let side: CGFloat = 30
         label.sizeToFit()
         label.frame = NSRect(x: 0, y: (side - label.frame.height) / 2, width: side, height: label.frame.height)
@@ -32,7 +37,7 @@ final class ModeIndicatorController {
         panel.orderFrontRegardless()
         if NSWorkspace.shared.isVoiceOverEnabled {
             NSAccessibility.post(element: label, notification: .announcementRequested, userInfo: [
-                .announcement: mode.localizedName,
+                .announcement: name,
                 .priority: NSAccessibilityPriorityLevel.high.rawValue,
             ])
         }

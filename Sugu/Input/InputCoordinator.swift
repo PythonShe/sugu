@@ -15,6 +15,8 @@ final class InputCoordinator {
     private let indicator: ModeIndicatorController
     private var client: TextInputClient?
     private var shiftTap = ShiftTapDetector()
+    /// The width ⌃. goes back to from half width.
+    private var widthBeforeHalf = PunctuationWidth.automatic
     /// The last key event, to drop the duplicates some hosts deliver.
     private var lastKey: (timestamp: TimeInterval, keyCode: UInt16, handled: Bool)?
 
@@ -122,7 +124,24 @@ final class InputCoordinator {
             client?.commit(text)
             return true
         }
+        if session.mode == .chinese, key.modifiers.contains(.control), key.modifiers.isDisjoint(with: [.command, .option, .shift]),
+           key.charactersIgnoringModifiers == "." {
+            switchPunctuationWidth()
+            return true
+        }
         return session.handle(key)
+    }
+
+    /// ⌃. switches Chinese punctuation to half width and back, as in Sogou,
+    /// Microsoft Pinyin and McBopomofo.
+    private func switchPunctuationWidth() {
+        let current = preferences.preferences.punctuationWidth
+        if current != .half { widthBeforeHalf = current }
+        let next = current == .half ? widthBeforeHalf : .half
+        preferences.update { $0.punctuationWidth = next }
+        guard let client else { return }
+        let half = next == .half
+        indicator.show(half ? "," : "，", named: half ? String(localized: "Half Width") : String(localized: "Full Width"), near: client.compositionRect())
     }
 
     private func flagsChanged(_ event: NSEvent) {

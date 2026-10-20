@@ -1268,3 +1268,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Zhuyin word's codes, since the sheet takes pinyin. With no selection,
   or a long one, the sheet opens empty; focus goes to the field still
   to fill.
+- ⌃. in Chinese switches punctuation to half width and back to the
+  width set before (automatic or full), as in Sogou, Microsoft Pinyin and
+  McBopomofo; it changes the setting itself, so Settings follow, and the
+  mode indicator shows , or ， at the caret. The shell takes the key
+  before the session, with or without a composition. ⌃⇧F for the script
+  is left out: the input menu and Settings have it, and it would take a
+  common app shortcut.
