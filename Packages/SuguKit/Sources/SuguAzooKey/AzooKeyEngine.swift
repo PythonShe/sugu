@@ -54,7 +54,7 @@ public final class AzooKeyEngine: CompositionEngine {
     private var loadedRefiner: HomophoneRefiner?
     /// Ranks the converter's sentences by how naturally they read
     /// (ADR 0005); nil ranks by the converter's costs alone.
-    public var languageModel: CharacterLanguageModel?
+    public var languageModel: BlendedLanguageModel?
     /// The Zenzai model the converter has loaded, if any.
     private var loadedZenzai: URL?
     private var configuration: Configuration

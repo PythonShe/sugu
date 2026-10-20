@@ -8,7 +8,8 @@ extension InputSession {
         let handled = handleKey(key)
         if !handled {
             // The app has the key: it types the character, or moves the caret.
-            lastTyped = key.isShortcut ? nil : key.printable
+            // Nothing typed in secure input is kept, even as context.
+            noteTyped(key.isShortcut || isSecureInput ? nil : key.printable.map(String.init))
         }
         return handled
     }

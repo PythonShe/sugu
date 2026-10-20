@@ -33,6 +33,14 @@ struct LearnedResult: Codable {
     var mainSet = LanguageResult()
 }
 
+/// Habits carried from sentences typed earlier to new ones.
+struct PhraseResult: Codable {
+    var before: LanguageResult
+    var after = LanguageResult()
+    var mainSet = LanguageResult()
+    var contextSet = LanguageResult()
+}
+
 /// The same readings typed after different text.
 struct ContextResult: Codable {
     var without: LanguageResult
@@ -67,6 +75,7 @@ struct Report: Codable {
     var memory = Memory(footprintMB: 0, residentMB: 0)
     /// Sentences using words the user taught, by language (zh, ja).
     var learned: [String: LearnedResult] = [:]
+    var phrases: [String: PhraseResult] = [:]
     /// Readings typed after text that decides them, by language.
     var context: [String: ContextResult] = [:]
 
@@ -104,6 +113,14 @@ struct Report: Codable {
                                    name, result.without.topOneRate * 100, result.with.topOneRate * 100))
             if !result.with.failures.isEmpty {
                 sections.append("  misses with it:\n" + result.with.failures.map { "    \($0)" }.joined(separator: "\n"))
+            }
+        }
+        for (name, result) in phrases.sorted(by: { $0.key > $1.key }) {
+            sections.append(String(format: "Personal n-grams (%@): top-1 %.0f%% before learning, %.0f%% after; after learning, main set %.0f%%, context set %.0f%%",
+                                   name, result.before.topOneRate * 100, result.after.topOneRate * 100,
+                                   result.mainSet.topOneRate * 100, result.contextSet.topOneRate * 100))
+            if !result.after.failures.isEmpty {
+                sections.append("  misses after learning:\n" + result.after.failures.map { "    \($0)" }.joined(separator: "\n"))
             }
         }
         return (sections + [

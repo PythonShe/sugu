@@ -40,7 +40,7 @@ final class HomophoneRefiner {
     /// their connections plus the model's log probability after `history`.
     /// Words from the user's dictionary and learned words stay, also where
     /// the converter spelled one out of several words.
-    func refined(_ sentence: KanaKanjiConverterModule.Candidate, after history: String, model: CharacterLanguageModel) -> KanaKanjiConverterModule.Candidate {
+    func refined(_ sentence: KanaKanjiConverterModule.Candidate, after history: String, model: BlendedLanguageModel) -> KanaKanjiConverterModule.Candidate {
         guard !sentence.data.isEmpty, sentence.data.map(\.word).joined() == sentence.text else { return sentence }
         var words: [DicdataElement] = []
         // Whether each word stands in for one of another class, which it is

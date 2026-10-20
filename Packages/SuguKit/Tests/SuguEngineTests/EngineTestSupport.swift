@@ -14,14 +14,21 @@ let engineDataDirectory = URL(fileURLWithPath: #filePath)
 let hasEngineData = FileManager.default.fileExists(atPath: engineDataDirectory.appendingPathComponent("Rime/build/sugu.table.bin").path)
 
 /// A model built from `sentences` alone.
-func testLanguageModel(_ sentences: [String]) throws -> CharacterLanguageModel {
+@MainActor
+func testLanguageModel(_ sentences: [String], personal: PersonalNGrams? = nil) throws -> BlendedLanguageModel {
     var builder = CharacterLanguageModelBuilder()
     builder.minimumCount = 1
     for sentence in sentences { builder.add(sentence) }
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-engine-lm-\(UUID().uuidString)")
     defer { try? FileManager.default.removeItem(at: url) }
     try builder.build().data.write(to: url)
-    return try CharacterLanguageModel(contentsOf: url)
+    return BlendedLanguageModel(base: try CharacterLanguageModel(contentsOf: url), personal: personal)
+}
+
+/// The bundled model for a mode, from `Data/LM`.
+@MainActor
+func bundledLanguageModel(_ name: String) throws -> BlendedLanguageModel {
+    BlendedLanguageModel(base: try CharacterLanguageModel(contentsOf: engineDataDirectory.appendingPathComponent("LM/\(name).lm")))
 }
 
 /// librime keeps process-wide state, so every test shares one runtime.

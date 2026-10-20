@@ -15,6 +15,9 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         let model = model
         form.checkbox(String(localized: "Learn from typing"),
                       get: { model.preferences.learningEnabled }, set: { model.preferences.learningEnabled = $0 })
+        let phrases = form.checkbox(String(localized: "Learn phrases"),
+                                    get: { model.preferences.learnsPhrases }, set: { model.preferences.learnsPhrases = $0 })
+        form.onRefresh { phrases.isEnabled = model.preferences.learningEnabled }
         form.popUp(String(localized: "Forget unused words:"), options: [
             (String(localized: "After 30 Days"), 30),
             (String(localized: "After 90 Days"), 90),
@@ -46,12 +49,12 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         wordsEditor.setAccessibilityLabel(SettingsForm.name(wordsLabel))
 
         let forget = form.makeButton(String(localized: "Forget Last Hour…")) { [weak self] in
-            self?.confirm(String(localized: "Forget the words learned in the last hour?"), action: String(localized: "Forget"), destructive: true) {
+            self?.confirm(String(localized: "Forget what was learned in the last hour?"), action: String(localized: "Forget"), destructive: true) {
                 model.forgetLastHour()
             }
         }
         let deleteAll = form.makeButton(String(localized: "Delete All…")) { [weak self] in
-            self?.confirm(String(localized: "Delete all learned and added words?"), action: String(localized: "Delete All"), destructive: true) {
+            self?.confirm(String(localized: "Delete all learned and added words, and learned phrases?"), action: String(localized: "Delete All"), destructive: true) {
                 model.deleteAllWords()
             }
         }

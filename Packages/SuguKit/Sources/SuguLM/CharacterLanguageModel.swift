@@ -55,6 +55,12 @@ public final class CharacterLanguageModel: Sendable {
         }
     }
 
+    /// The natural log probability of one scalar after up to `order - 1`
+    /// scalars of context.
+    func logProbability(of scalar: UInt32, after context: [UInt32]) -> Float {
+        data.withUnsafeBytes { logProbability(of: scalar, after: context, in: $0) }
+    }
+
     static func scalars(_ text: String) -> [UInt32] {
         text.precomposedStringWithCompatibilityMapping.unicodeScalars.map(\.value)
     }

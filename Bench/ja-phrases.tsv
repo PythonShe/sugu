@@ -1,0 +1,20 @@
+# Habits: rows starting with + are sentences the user typed earlier, whose
+# character n-grams Sugu learns (D-079); the others are text before the
+# caret, typed reading, and the expected conversion, in new sentences that
+# share those habits. Written 2026-10-20.
++絵を描くのが好きです。
++ピアノを弾くのが趣味です。
++お祝いにプレゼントを贈ります。
++この薬はよく効きます。
++彼は足が速い。
++紅茶が熱いです。
++厚い本を読んでいます。
++社会のために努めています。
+スケッチブックに花の絵を	kakimashita	描きました
+ピアノ教室に通っていて、毎日	hiiteimasu	弾いています
+先生の誕生日に花束を	okurimasu	贈ります
+風邪薬がよく	kikimashita	効きました
+あの選手は走るのが	hayai	速い
+熱湯を注いだばかりなので、	atsuidesuyo	熱いですよ
+この辞書は二千ページもあって	totemoatsui	とても厚い
+地域の発展に	tsutometeimasu	努めています

@@ -62,7 +62,7 @@ let package = Package(
         ),
         .target(
             name: "SuguLearning",
-            dependencies: ["SuguCore"],
+            dependencies: ["SuguCore", "SuguLM"],
             swiftSettings: swiftSettings,
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
@@ -101,12 +101,12 @@ let package = Package(
         .testTarget(name: "SuguCoreTests", dependencies: ["SuguCore"], swiftSettings: swiftSettings),
         .testTarget(
             name: "SuguInputTests",
-            dependencies: ["SuguInput", "SuguCore", "SuguLearning"],
+            dependencies: ["SuguInput", "SuguCore", "SuguLearning", "SuguLM"],
             swiftSettings: swiftSettings
         ),
         .testTarget(
             name: "SuguLearningTests",
-            dependencies: ["SuguLearning", "SuguCore"],
+            dependencies: ["SuguLearning", "SuguCore", "SuguLM"],
             swiftSettings: swiftSettings
         ),
         .testTarget(

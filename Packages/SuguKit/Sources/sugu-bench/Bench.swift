@@ -109,7 +109,40 @@ enum Bench {
             result.mainSet = measure(session, mode: mode, cases: try load(bench.appendingPathComponent("\(name).tsv")))
             report.learned[name] = result
         }
+
+        // Sentences the user typed earlier, learned as n-grams only, then
+        // readings after new text that share their habits (D-079): before,
+        // after, and the main and context sets again after.
+        for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] where mode != .chinese || !zhuyin {
+            let set = bench.appendingPathComponent("\(name)-phrases.tsv")
+            guard FileManager.default.fileExists(atPath: set.path) else { continue }
+            let (sentences, cases) = try loadPhrases(set)
+            var result = PhraseResult(before: measure(session, mode: mode, cases: cases, field: field))
+            for sentence in sentences {
+                var commit = Commit(text: sentence, reading: sentence, mayBeWord: false)
+                commit.context = ""
+                store.learn(commit, mode: mode)
+            }
+            result.after = measure(session, mode: mode, cases: cases, field: field)
+            result.mainSet = measure(session, mode: mode, cases: try load(bench.appendingPathComponent("\(name).tsv")))
+            let context = bench.appendingPathComponent("\(name)-context.tsv")
+            if FileManager.default.fileExists(atPath: context.path) {
+                result.contextSet = measure(session, mode: mode, cases: try load(context), field: field)
+            }
+            report.phrases[name] = result
+        }
         return report
+    }
+
+    /// Sentences to learn (rows starting with +) and the cases sharing them.
+    static func loadPhrases(_ url: URL) throws -> (sentences: [String], cases: [Case]) {
+        let lines = try String(contentsOf: url, encoding: .utf8).split(whereSeparator: \.isNewline).filter { !$0.hasPrefix("#") }
+        let sentences = lines.filter { $0.hasPrefix("+") }.map { String($0.dropFirst()) }
+        let cases = lines.filter { !$0.hasPrefix("+") }.compactMap { line -> Case? in
+            let fields = line.split(separator: "\t").map(String.init)
+            return fields.count == 3 ? Case(typed: fields[1], expected: fields[2], context: fields[0]) : nil
+        }
+        return (sentences, cases)
     }
 
     /// Words to teach (rows starting with +) and the sentences using them.

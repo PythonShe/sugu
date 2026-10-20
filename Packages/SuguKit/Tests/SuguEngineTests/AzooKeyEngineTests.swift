@@ -202,7 +202,7 @@ import SuguRime
         #expect(engine.convert())
         let plain = engine.state.segments.map(\.text).joined()
         engine.clear()
-        engine.languageModel = try CharacterLanguageModel(contentsOf: url)
+        engine.languageModel = BlendedLanguageModel(base: try CharacterLanguageModel(contentsOf: url))
         engine.insert("amegafurisoudesu")
         #expect(engine.convert())
         #expect(engine.state.segments.map(\.text).joined() == "雨が降りそうです")
@@ -237,7 +237,7 @@ import SuguRime
         #expect(engine.convert())
         #expect(engine.state.segments.map(\.text).joined() != "彼女はピアノを弾きます", "the converter alone already writes 弾き; pick another sentence")
         engine.clear()
-        engine.languageModel = try CharacterLanguageModel(contentsOf: engineDataDirectory.appendingPathComponent("LM/ja.lm"))
+        engine.languageModel = try bundledLanguageModel("ja")
         engine.insert("kanojohapianowohikimasu")
         #expect(engine.convert())
         #expect(engine.state.segments.map(\.text).joined() == "彼女はピアノを弾きます")
@@ -247,7 +247,7 @@ import SuguRime
     /// model prefers it: the same word, so only the model decides.
     @Test(.enabled(if: hasEngineData)) func aWordJoinedToItsParticleMayBeWrittenInKana() throws {
         let engine = try makeEngine()
-        engine.languageModel = try CharacterLanguageModel(contentsOf: engineDataDirectory.appendingPathComponent("LM/ja.lm"))
+        engine.languageModel = try bundledLanguageModel("ja")
         engine.insert("yukigatakusanfutteimasu")
         #expect(engine.convert())
         #expect(engine.state.segments.map(\.text).joined() == "雪がたくさん降っています")
@@ -257,7 +257,7 @@ import SuguRime
     /// too, conditioned on the text before it.
     @Test(.enabled(if: hasEngineData)) func aSingleClauseIsRankedAfterTheTextBeforeIt() throws {
         let engine = try makeEngine()
-        engine.languageModel = try CharacterLanguageModel(contentsOf: engineDataDirectory.appendingPathComponent("LM/ja.lm"))
+        engine.languageModel = try bundledLanguageModel("ja")
         for (context, expected) in [("寒いのでコートを", "着ます"), ("明日の朝またここに", "来ます")] {
             engine.setLeftContext(context)
             engine.insert("kimasu")

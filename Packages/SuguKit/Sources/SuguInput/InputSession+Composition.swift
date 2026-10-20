@@ -193,8 +193,8 @@ extension InputSession {
         transformed = nil
         list.clear()
         showsConversionWindow = false
+        let record = withContext(record ?? Commit(text: text, reading: reading))
         insertCommitted(text)
-        let record = record ?? Commit(text: text, reading: reading)
         let learned = learn && self.learn(record)
         self.undoable = undoable ? engine.map { PendingUndo(text: text, commit: record, engine: $0, mode: mode, learned: learned) } : nil
         let typedAsRomaji = mode == .japanese && !typed.isEmpty && typed != text && typed.unicodeScalars.allSatisfy { (0x21...0x7E).contains($0.value) }
@@ -206,10 +206,18 @@ extension InputSession {
     /// follows and as part of the field's vocabulary.
     private func insertCommitted(_ text: String) {
         client?.commit(text)
-        lastTyped = text.last
+        noteTyped(text)
         if !vocabulary.isEmpty {
             vocabulary = String((vocabulary + text).suffix(Self.vocabularyLimit * 2))
         }
+    }
+
+    /// The commit with the text Sugu typed before it, which its n-grams are
+    /// learned after, while those are learned.
+    private func withContext(_ commit: Commit) -> Commit {
+        var commit = commit
+        commit.context = preferences.learnsPhrases ? typedBefore : nil
+        return commit
     }
 
     /// Teaches the store a commit, where this field and mode learn;
@@ -224,6 +232,7 @@ extension InputSession {
     /// Commits the start of a composition that goes on (a long Zhuyin
     /// sentence); the field shows the rest as marked text next.
     func commitHead(_ head: Commit) {
+        let head = withContext(head)
         insertCommitted(head.text)
         if active?.traits.learnsCommits == true { _ = learn(head) }
         undoable = nil
@@ -241,7 +250,8 @@ extension InputSession {
         guard client.textBeforeCaret(limit: shown.count) == shown,
               client.deleteBeforeCaret(count: shown.count) else { return false }
         client.commit(replacement)
-        lastTyped = replacement.last
+        noteDeleted(shown.count)
+        noteTyped(replacement)
         // The Japanese was not meant; neither was what it taught.
         if retypable.learned, let store {
             if asRomaji { store.unlearn(retypable.commit, mode: .japanese) } else { store.learn(retypable.commit, mode: .japanese) }
@@ -261,6 +271,7 @@ extension InputSession {
         let text = undoable.text
         guard client.textBeforeCaret(limit: text.count) == text,
               client.deleteBeforeCaret(count: text.count) else { return false }
+        noteDeleted(text.count)
         self.undoable = nil
         // The commit was a mistake; so was what it taught.
         if undoable.learned, let store {

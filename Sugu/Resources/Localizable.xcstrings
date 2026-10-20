@@ -867,25 +867,25 @@
         }
       }
     },
-    "Delete all learned and added words?": {
+    "Delete all learned and added words, and learned phrases?": {
       "extractionState": "manual",
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "学習した単語と追加した単語をすべて削除しますか？"
+            "value": "学習した単語と追加した単語、学習したフレーズをすべて削除しますか？"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "要删除所有学到的词和添加的词吗？"
+            "value": "要删除所有学到的词和添加的词，以及学到的短语吗？"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "要刪除所有學到的詞和加入的詞嗎？"
+            "value": "要刪除所有學到的詞和加入的詞，以及學到的片語嗎？"
           }
         }
       }
@@ -1233,28 +1233,6 @@
         }
       }
     },
-    "Forget the words learned in the last hour?": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直近1時間に学習した単語を消去しますか？"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "要忘记最近一小时学到的词吗？"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "要忘記最近一小時學到的詞嗎？"
-          }
-        }
-      }
-    },
     "Forget unused words:": {
       "extractionState": "manual",
       "localizations": {
@@ -1274,6 +1252,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "忘記不常用的詞："
+          }
+        }
+      }
+    },
+    "Forget what was learned in the last hour?": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直近1時間に学習した内容を消去しますか？"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要忘记最近一小时学到的内容吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要忘記最近一小時學到的內容嗎？"
           }
         }
       }
@@ -1848,6 +1849,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "從輸入中學習"
+          }
+        }
+      }
+    },
+    "Learn phrases": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フレーズを学習"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "学习短语"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "學習片語"
           }
         }
       }

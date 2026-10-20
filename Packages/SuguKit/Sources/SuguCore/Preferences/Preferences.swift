@@ -49,6 +49,8 @@ public struct Preferences: Codable, Sendable, Equatable {
     // MARK: Learning
     public var learningEnabled = true
     public var learnedWordExpiryDays = 180
+    /// Learn the user's character n-grams and rank with them (D-079).
+    public var learnsPhrases = true
     public var noLearnApps: [String] = Preferences.defaultNoLearnApps
 
     // MARK: Sync
@@ -118,6 +120,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.appRules, into: &appRules)
         load(.learningEnabled, into: &learningEnabled)
         load(.learnedWordExpiryDays, into: &learnedWordExpiryDays)
+        load(.learnsPhrases, into: &learnsPhrases)
         load(.noLearnApps, into: &noLearnApps)
         load(.syncFolderPath, into: &syncFolderPath)
         load(.syncLearnedWords, into: &syncLearnedWords)

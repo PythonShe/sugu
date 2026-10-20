@@ -136,7 +136,7 @@ struct WordKey {
 /// choice, and librime offers no other whole sentence to choose from.
 @MainActor
 public final class SentenceRespeller {
-    let model: CharacterLanguageModel
+    public let model: BlendedLanguageModel
     let words: PinyinWords
     /// Weight of the word list's probabilities against the model's.
     static let dictionaryWeight: Float = 0.3
@@ -163,6 +163,8 @@ public final class SentenceRespeller {
     /// Log probabilities of text in context, kept across keystrokes: most
     /// of a sentence is the same as at the keystroke before.
     private var scores: [UInt64: Float] = [:]
+    /// The model's version the scores are for.
+    private var scoredVersion = 0
     private var spellingCache: [UInt64: [PinyinWords.Spelling]] = [:]
     /// Texts of the user's learned words; characters inside one keep their
     /// spelling.
@@ -180,7 +182,7 @@ public final class SentenceRespeller {
     /// Characters of the text before a sentence that the model conditions on.
     public var contextLength: Int { model.order - 1 }
 
-    public init(model: CharacterLanguageModel, words: PinyinWords) {
+    public init(model: BlendedLanguageModel, words: PinyinWords) {
         self.model = model
         self.words = words
     }
@@ -198,6 +200,10 @@ public final class SentenceRespeller {
         let characters = Array(text)
         guard let pieces = readings.lazy.compactMap({ self.segment(characters, $0) }).first else { return nil }
         let kept = userWordCharacters(in: characters)
+        if model.version != scoredVersion {
+            scores = [:]
+            scoredVersion = model.version
+        }
         let history = String(history.suffix(contextLength))
         let margin = pieces.count == 1 && !history.isEmpty ? Self.wordMargin : Self.margin
         var result = pieces

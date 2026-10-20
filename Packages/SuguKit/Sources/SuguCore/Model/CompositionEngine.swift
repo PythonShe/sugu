@@ -21,6 +21,10 @@ public struct Commit: Sendable, Equatable {
     /// Whether the whole commit may be learned as a word; not when it holds
     /// text typed as is, such as punctuation in a Zhuyin sentence.
     public var mayBeWord: Bool
+    /// The text Sugu typed just before this commit, up to a few characters,
+    /// which the commit's n-grams are learned after (D-079); nil when they
+    /// are not learned. Never text read from the document.
+    public var context: String?
 
     public struct Clause: Sendable, Equatable {
         public var reading: String

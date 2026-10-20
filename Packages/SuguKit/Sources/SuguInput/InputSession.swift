@@ -108,10 +108,15 @@ public final class InputSession {
     /// The Japanese commit 英数 twice retypes as its romaji, or the romaji
     /// かな twice turns back.
     var retypable: Retypable?
-    /// The character just before the caret when Sugu knows it: the last it
-    /// committed or let through. Some hosts report the field late, so this
-    /// is trusted over reading it; nil once the caret may have moved.
-    var lastTyped: Character?
+    /// The text just before the caret as far as Sugu knows it: what it
+    /// committed or let through since it last lost track, up to
+    /// `typedBeforeLimit` characters. Some hosts report the field late, so
+    /// this is trusted over reading it; empty once the caret may have moved.
+    var typedBefore = ""
+    /// As much as the language models condition on.
+    static let typedBeforeLimit = 4
+    /// The character just before the caret when Sugu knows it.
+    var lastTyped: Character? { typedBefore.last }
     /// Apple's language models (ADR 0004); nil where unavailable.
     public var assistant: (any LanguageAssistant)?
     /// Model suggestions for a reading, and the translation languages asked.
@@ -180,7 +185,7 @@ public final class InputSession {
         punctuator.reset()
         undoable = nil
         retypable = nil
-        lastTyped = nil
+        typedBefore = ""
         vocabulary = ""
         readsVocabulary = true
         let bundleID = client.bundleIdentifier
@@ -226,7 +231,17 @@ public final class InputSession {
 
     /// The caret may have moved without a key (a click in the field).
     public func caretMayHaveMoved() {
-        lastTyped = nil
+        typedBefore = ""
+    }
+
+    /// Notes text put before the caret; nil when the caret may have moved.
+    func noteTyped(_ text: String?) {
+        typedBefore = text.map { String((typedBefore + $0).suffix(Self.typedBeforeLimit)) } ?? ""
+    }
+
+    /// Notes that `count` characters before the caret were deleted.
+    func noteDeleted(_ count: Int) {
+        typedBefore = String(typedBefore.dropLast(count))
     }
 
     /// A Shift tap: switches to English, and a Chinese composition of typed

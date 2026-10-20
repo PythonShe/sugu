@@ -64,6 +64,11 @@ public final class EngineHub: EngineSource {
         self.chineseWordsDelay = chineseWordsDelay
         self.chineseScript = preferences.chineseScript
         self.runtime = RimeRuntime(directories: .init(shared: locations.rimeShared, user: locations.rimeUser))
+        // Chinese n-grams are learned in Simplified, the script the
+        // respeller scores in.
+        store?.nGramText = { [weak self] text, mode in
+            mode == .chinese ? self?.converter(for: .simplified)?.convert(text) ?? text : text
+        }
         // Brings the file in line with the store from launch.
         updateChineseWords()
     }
@@ -86,7 +91,7 @@ public final class EngineHub: EngineSource {
             if let japanese { return japanese }
             let started = ContinuousClock.now
             let engine = AzooKeyEngine(configuration: japaneseConfiguration)
-            engine.languageModel = loadLanguageModel(.japanese)
+            engine.languageModel = loadLanguageModel(.japanese).map { BlendedLanguageModel(base: $0, personal: personalNGrams(for: .japanese)) }
             Log.engines.notice("Japanese ready in \(ContinuousClock.now - started, privacy: .public)")
             japanese = engine
             if let store { engine.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) }) }
@@ -226,7 +231,7 @@ public final class EngineHub: EngineSource {
                 }
             }.value
             guard let (model, words) = loaded else { return }
-            respeller = SentenceRespeller(model: model, words: words)
+            respeller = SentenceRespeller(model: BlendedLanguageModel(base: model, personal: personalNGrams(for: .chinese)), words: words)
             if let store { respeller.userWords = simplifiedTexts(of: store.allWords(mode: .chinese)) }
         }
         let cachedDecoder = decoders.flatMap { $0.schema == schema ? $0.scheme : nil }
@@ -361,6 +366,15 @@ public final class EngineHub: EngineSource {
             japanese.update(japaneseConfiguration)
             loadZenzai()
         }
+        if previous.learnsPhrases != preferences.learnsPhrases {
+            japanese?.languageModel?.personal = personalNGrams(for: .japanese)
+            chineseRespelling?.respeller.model.personal = personalNGrams(for: .chinese)
+        }
+    }
+
+    /// The user's n-grams for a mode's model, while they are used.
+    private func personalNGrams(for mode: InputMode) -> PersonalNGrams? {
+        preferences.learnsPhrases ? store?.personalNGrams(for: mode) : nil
     }
 
     // MARK: Configuration

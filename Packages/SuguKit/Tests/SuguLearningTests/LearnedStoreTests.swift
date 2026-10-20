@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import SuguCore
+import SuguLM
 @testable import SuguLearning
 
 /// A clock the tests move by hand.
@@ -53,8 +54,23 @@ struct LearnedStoreTests {
         let store = try makeStore()
         var version = 0
         try SQLiteDatabase(url: url).query("PRAGMA user_version") { version = Int($0.int(0)) }
-        #expect(version == 1)
+        #expect(version == 2)
         #expect(store.lookup("きょう", mode: .japanese).map(\.text) == ["今日"])
+    }
+
+    /// A store from before n-grams gains their tables and keeps its words.
+    @Test func aStoreBeforeNGramsGainsThem() throws {
+        do {
+            let store = try makeStore()
+            store.learn(Commit(text: "今日", reading: "きょう"), mode: .japanese)
+        }
+        try SQLiteDatabase(url: url).execute("DROP TABLE ngrams; DROP TABLE ngram_events; PRAGMA user_version = 1")
+        let store = try makeStore()
+        var commit = Commit(text: "描く", reading: "かく")
+        commit.context = "絵を"
+        store.learn(commit, mode: .japanese)
+        #expect(store.lookup("きょう", mode: .japanese).map(\.text) == ["今日"])
+        #expect(store.personalNGrams(for: .japanese).count(of: "を描") == 1)
     }
 
     @Test func emojiAreNotLearned() throws {
@@ -210,5 +226,118 @@ struct LearnedStoreLockTests {
         store.learn(Commit(text: "世界", reading: "shijie"), mode: .chinese)
         let reopened = try LearnedStore(url: url)
         #expect(reopened.lookup("shijie", mode: .chinese).map(\.text) == ["世界"])
+    }
+}
+
+/// The user's n-grams (D-079).
+@MainActor
+struct LearnedStoreNGramTests {
+    let clock = TestClock()
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sugu-tests-\(UUID().uuidString)")
+        .appendingPathComponent("learned.sqlite")
+
+    func makeStore() throws -> LearnedStore {
+        let clock = clock
+        return try LearnedStore(url: url, clock: { clock.now })
+    }
+
+    private func commit(_ text: String, after context: String?) -> Commit {
+        var commit = Commit(text: text, reading: text)
+        commit.context = context
+        return commit
+    }
+
+    @Test func learnsTheCommitsNGramsAfterItsContextAndKeepsThem() throws {
+        let store = try makeStore()
+        store.learn(commit("描きました", after: "絵を"), mode: .japanese)
+        let grams = store.personalNGrams(for: .japanese)
+        #expect(grams.count(of: "を描") == 1)
+        #expect(grams.count(of: "絵を描き") == 1)
+        #expect(grams.count(of: "絵を") == 0)
+        #expect(store.personalNGrams(for: .chinese).isEmpty)
+        let reopened = try makeStore()
+        #expect(reopened.personalNGrams(for: .japanese).count(of: "を描") == 1)
+        #expect(reopened.hasNGrams)
+    }
+
+    @Test func aCommitWithoutContextOrInEnglishTeachesNoNGrams() throws {
+        let store = try makeStore()
+        store.learn(commit("描きました", after: nil), mode: .japanese)
+        store.learn(commit("hello", after: "say "), mode: .english)
+        #expect(store.personalNGrams(for: .japanese).isEmpty)
+        #expect(store.personalNGrams(for: .english).isEmpty)
+        #expect(!store.hasNGrams)
+    }
+
+    @Test func undoTakesBackOneUse() throws {
+        let store = try makeStore()
+        store.learn(commit("异议", after: "任何"), mode: .chinese)
+        store.learn(commit("异议", after: "任何"), mode: .chinese)
+        store.unlearn(commit("异议", after: "任何"), mode: .chinese)
+        #expect(store.personalNGrams(for: .chinese).count(of: "何异议") == 1)
+        store.unlearn(commit("异议", after: "任何"), mode: .chinese)
+        #expect(store.personalNGrams(for: .chinese).isEmpty)
+        #expect(try makeStore().personalNGrams(for: .chinese).isEmpty)
+    }
+
+    @Test func forgetLastHourDeleteAllAndExpiryReachTheNGrams() throws {
+        let store = try makeStore()
+        store.learn(commit("异议", after: "任何"), mode: .chinese)
+        clock.advance(hours: 3)
+        store.learn(commit("异议", after: "任何"), mode: .chinese)
+        store.learn(commit("描く", after: "絵を"), mode: .japanese)
+        store.forget()
+        #expect(store.personalNGrams(for: .chinese).count(of: "异议") == 1)
+        #expect(store.personalNGrams(for: .japanese).isEmpty)
+        #expect(try makeStore().personalNGrams(for: .chinese).count(of: "异议") == 1)
+
+        clock.advance(days: 31)
+        store.learn(commit("描く", after: "絵を"), mode: .japanese)
+        store.expire(olderThan: 30)
+        #expect(store.personalNGrams(for: .chinese).isEmpty)
+        #expect(store.personalNGrams(for: .japanese).count(of: "を描") == 1)
+
+        store.deleteAll()
+        #expect(store.personalNGrams(for: .japanese).isEmpty)
+        #expect(!store.hasNGrams)
+        #expect(!(try makeStore().hasNGrams))
+    }
+
+    /// Text that reads the same is one n-gram; runs too long for the
+    /// model are not kept.
+    @Test func nGramsAreNormalizedAndBounded() throws {
+        let store = try makeStore()
+        store.learn(commit("好，", after: ""), mode: .chinese)
+        store.learn(commit("好,", after: ""), mode: .chinese)
+        store.unlearn(commit("好，", after: ""), mode: .chinese)
+        #expect(store.personalNGrams(for: .chinese).count(of: "好,") == 1)
+        store.unlearn(commit("好,", after: ""), mode: .chinese)
+        #expect(!store.hasNGrams)
+        #expect(try makeStore().personalNGrams(for: .chinese).isEmpty)
+        store.learn(commit("👍🏽👍🏽👍🏽", after: ""), mode: .chinese)
+        #expect(store.personalNGrams(for: .chinese).count(of: "👍🏽") == 3)
+        store.unlearn(commit("👍🏽👍🏽👍🏽", after: ""), mode: .chinese)
+        #expect(!store.hasNGrams)
+    }
+
+    @Test func learnsInTheFormTheModelsRead() throws {
+        let store = try makeStore()
+        store.nGramText = { text, mode in mode == .chinese ? text.replacingOccurrences(of: "異議", with: "异议") : text }
+        store.learn(commit("異議", after: "任何"), mode: .chinese)
+        #expect(store.personalNGrams(for: .chinese).count(of: "异议") == 1)
+        #expect(store.personalNGrams(for: .chinese).count(of: "異議") == 0)
+    }
+
+    @Test func theLeastRecentlyUsedNGramsGoPastTheLimit() throws {
+        let store = try makeStore()
+        store.maximumNGrams = 10
+        store.learn(commit("一二三四五六", after: ""), mode: .chinese)
+        clock.advance(hours: 1)
+        store.learn(commit("甲乙丙", after: ""), mode: .chinese)
+        let grams = store.personalNGrams(for: .chinese)
+        #expect(grams.count(of: "甲乙丙") == 1)
+        #expect(grams.count(of: "一二") == 0)
+        #expect(try makeStore().personalNGrams(for: .chinese).count(of: "一二") == 0)
     }
 }

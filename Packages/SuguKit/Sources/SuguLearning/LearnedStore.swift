@@ -1,6 +1,7 @@
 import Foundation
 import os
 import SuguCore
+import SuguLM
 
 /// Sugu's single store of learned and user words, over both engines.
 ///
@@ -17,12 +18,21 @@ public final class LearnedStore {
     /// How long a deletion is remembered for sync.
     public static let deletionRetention: TimeInterval = 365 * 86_400
 
-    private let database: SQLiteDatabase
-    private let clock: @Sendable () -> Date
+    let database: SQLiteDatabase
+    let clock: @Sendable () -> Date
     private let syllabary: PinyinSyllabary?
     private var words: [Int64: LearnedWord] = [:]
     private var index: [IndexKey: [Int64]] = [:]
     private var deletions: [WordKey: WordDeletion] = [:]
+    /// The user's n-grams by mode, kept in memory for the language models.
+    var nGrams: [InputMode: PersonalNGrams] = [:]
+    /// Distinct n-grams stored, by mode.
+    var nGramRows: [InputMode: Int] = [:]
+    /// Distinct n-grams kept per mode; the least recently used go first.
+    public var maximumNGrams = 100_000
+    /// Puts committed text in the form the language models read: Chinese
+    /// in Simplified. Text is learned as it is without one.
+    public var nGramText: ((String, InputMode) -> String)?
 
     private struct IndexKey: Hashable {
         var mode: InputMode
@@ -110,6 +120,22 @@ public final class LearnedStore {
             PRIMARY KEY (mode, reading, text)
         );
         """,
+        """
+        CREATE TABLE IF NOT EXISTS ngrams (
+            mode TEXT NOT NULL,
+            gram TEXT NOT NULL,
+            count INTEGER NOT NULL,
+            last_used REAL NOT NULL,
+            PRIMARY KEY (mode, gram)
+        );
+        CREATE INDEX IF NOT EXISTS ngrams_last_used ON ngrams(mode, last_used);
+        CREATE TABLE IF NOT EXISTS ngram_events (
+            mode TEXT NOT NULL,
+            gram TEXT NOT NULL,
+            at REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ngram_events_at ON ngram_events(at);
+        """,
     ]
 
     private func migrate() throws {
@@ -146,6 +172,7 @@ public final class LearnedStore {
                                         deletedAt: Date(timeIntervalSinceReferenceDate: row.double(4)))
             deletions[WordKey(mode: mode, reading: deletion.reading, text: deletion.text)] = deletion
         }
+        try loadNGrams()
     }
 
     // MARK: Reading
@@ -214,6 +241,7 @@ public final class LearnedStore {
                 for (reading, text) in Self.pairs(learnedFrom: commit) {
                     try recordUse(reading: reading, text: text, mode: mode, kind: .learned, at: now)
                 }
+                try learnNGrams(of: commit, mode: mode, at: now)
                 try database.run("DELETE FROM events WHERE at < ?", [.real(now.addingTimeInterval(-7_200).timeIntervalSinceReferenceDate)])
             }
         } catch {
@@ -242,6 +270,7 @@ public final class LearnedStore {
                         try database.run("DELETE FROM events WHERE rowid = (SELECT MAX(rowid) FROM events WHERE word_id = ?)", [.integer(id)])
                     }
                 }
+                try unlearnNGrams(of: commit, mode: mode)
             }
         } catch {
             Log.learning.error("Unlearning not saved: \(String(describing: error), privacy: .public)")
@@ -466,20 +495,26 @@ public final class LearnedStore {
         try? database.query("SELECT word_id, COUNT(*) FROM events WHERE at >= ? GROUP BY word_id", [.real(cutoff)]) { row in
             recent[row.int(0)] = Int(row.int(1))
         }
-        try? database.transaction {
-            for (id, uses) in recent {
-                guard var word = words[id] else { continue }
-                word.count = max(0, word.count - uses)
-                if word.count == 0, word.kind == .learned, !word.pinned {
-                    try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
-                    removeFromMemory(id)
-                    try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: clock()))
-                } else {
-                    try database.run("UPDATE words SET count = ? WHERE id = ?", [.integer(Int64(word.count)), .integer(id)])
-                    words[id] = word
+        do {
+            try database.transaction {
+                for (id, uses) in recent {
+                    guard var word = words[id] else { continue }
+                    word.count = max(0, word.count - uses)
+                    if word.count == 0, word.kind == .learned, !word.pinned {
+                        try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
+                        removeFromMemory(id)
+                        try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: clock()))
+                    } else {
+                        try database.run("UPDATE words SET count = ? WHERE id = ?", [.integer(Int64(word.count)), .integer(id)])
+                        words[id] = word
+                    }
                 }
+                try database.run("DELETE FROM events WHERE at >= ?", [.real(cutoff)])
+                try forgetNGrams(since: cutoff)
             }
-            try database.run("DELETE FROM events WHERE at >= ?", [.real(cutoff)])
+        } catch {
+            Log.learning.error("Forgetting not saved: \(String(describing: error), privacy: .public)")
+            try? loadAll()
         }
         notify()
     }
@@ -492,11 +527,26 @@ public final class LearnedStore {
         let stale = words.values.filter { $0.kind == .learned && !$0.pinned && $0.lastUsed < cutoff }.map(\.id)
         // Expiry is local: another Mac may have used the word since.
         remove(ids: stale, propagate: false)
+        do {
+            try expireNGrams(before: cutoff)
+        } catch {
+            Log.learning.error("Expiry not saved: \(String(describing: error), privacy: .public)")
+            try? loadAll()
+        }
         return stale.count
     }
 
+    /// Deletes every learned and added word, and the n-grams learned with
+    /// them.
     public func deleteAll(mode: InputMode? = nil) {
         delete(ids: words.values.filter { mode == nil || $0.mode == mode }.map(\.id))
+        do {
+            try deleteNGrams(mode: mode)
+        } catch {
+            Log.learning.error("Deletion not saved: \(String(describing: error), privacy: .public)")
+            try? loadAll()
+        }
+        notify()
     }
 
     // MARK: Memory index
@@ -513,7 +563,7 @@ public final class LearnedStore {
         if index[key]?.isEmpty == true { index[key] = nil }
     }
 
-    private func notify() {
+    func notify() {
         NotificationCenter.default.post(name: Self.didChangeNotification, object: self)
     }
 }
