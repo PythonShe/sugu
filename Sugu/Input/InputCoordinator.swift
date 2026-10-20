@@ -154,7 +154,7 @@ final class InputCoordinator {
             candidateWindow.hide()
             return
         }
-        candidateWindow.show(presentation, mode: display.mode, near: client.compositionRect(), preferences: preferences.preferences)
+        candidateWindow.show(presentation, mode: display.mode, near: client.compositionRect(at: display.candidateAnchor), preferences: preferences.preferences)
     }
 
     private func modeDidChange(to mode: InputMode) {

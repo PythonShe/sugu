@@ -36,4 +36,13 @@ public struct SessionDisplay: Sendable, Equatable {
     public static func idle(_ mode: InputMode) -> SessionDisplay {
         SessionDisplay(mode: mode, segments: [], caret: 0, candidates: nil)
     }
+
+    /// Where in the composition, in characters, the candidates belong: the
+    /// focused clause, or else the text after the fixed clauses or
+    /// librime's confirmed words; the candidate window opens under it.
+    public var candidateAnchor: Int {
+        let target = segments.firstIndex { $0.role == .focused } ?? segments.firstIndex { $0.role != .converted }
+        guard let target else { return 0 }
+        return segments[..<target].map(\.text.count).reduce(0, +)
+    }
 }

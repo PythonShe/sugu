@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- The candidate window opens under the focused clause rather than the
+  composition's first character (D-062).
 - A fuzzer types random keys through the input session (`sugu-bench
   --fuzz`, in CI). It found a trap in AzooKey on a caret move; the same
   input now never reaches the converter twice in a row (D-060).

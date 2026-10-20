@@ -61,3 +61,20 @@ struct CandidateListTests {
         #expect(list.currentPage.rows.isEmpty)
     }
 }
+
+struct CandidateAnchorTests {
+    func display(_ segments: [(String, CompositionSegment.Role)]) -> SessionDisplay {
+        SessionDisplay(mode: .japanese, segments: segments.map { CompositionSegment($0.0, role: $0.1) }, caret: 0, candidates: nil)
+    }
+
+    @Test func candidatesBelongToTheFocusedClause() {
+        #expect(display([("今日は", .converted), ("いい", .focused), ("天気ですね", .converted)]).candidateAnchor == 3)
+    }
+
+    @Test func candidatesFollowFixedClausesOrConfirmedWords() {
+        #expect(display([("我们", .converted), ("yiqi", .input)]).candidateAnchor == 2)
+        #expect(display([("かんじ", .input)]).candidateAnchor == 0)
+        #expect(display([]).candidateAnchor == 0)
+    }
+}
+

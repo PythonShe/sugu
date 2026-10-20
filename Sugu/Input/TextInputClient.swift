@@ -12,9 +12,10 @@ final class TextInputClient: InputClient {
     /// The marked text Sugu last set; nil when there is none. Clearing
     /// marked text that was never set replaces the selection in some apps.
     private var marked: (segments: [CompositionSegment], caret: Int)?
-    /// Where the composition starts on screen, read once per marked text:
-    /// moving the highlight through predictions leaves it in place.
-    private var markedRect: NSRect?
+    /// Where a character of the marked text is on screen, read once per
+    /// marked text and character: moving the highlight through
+    /// predictions leaves it in place.
+    private var markedRect: (character: Int, rect: NSRect)?
 
     private static let notFound = NSRange(location: NSNotFound, length: NSNotFound)
 
@@ -105,13 +106,19 @@ final class TextInputClient: InputClient {
         return client.attributedSubstring(from: selected)?.string
     }
 
-    /// The rectangle of the composition's first character in screen
-    /// coordinates; zero when the field does not report one.
-    func compositionRect() -> NSRect {
-        if let markedRect { return markedRect }
+    /// The rectangle of the composition's character at `character` (its
+    /// first when the field reports none there) in screen coordinates;
+    /// zero when the field does not report one.
+    func compositionRect(at character: Int = 0) -> NSRect {
+        if let markedRect, markedRect.character == character { return markedRect.rect }
+        // The field counts UTF-16 units from the start of the marked text.
+        let offset = marked.map { $0.segments.map(\.text).joined().prefix(character).utf16.count } ?? 0
         var rect = NSRect.zero
-        _ = client.attributes(forCharacterIndex: 0, lineHeightRectangle: &rect)
-        if marked != nil, rect != .zero { markedRect = rect }
+        _ = client.attributes(forCharacterIndex: offset, lineHeightRectangle: &rect)
+        if rect == .zero, offset > 0 {
+            _ = client.attributes(forCharacterIndex: 0, lineHeightRectangle: &rect)
+        }
+        if marked != nil, rect != .zero { markedRect = (character, rect) }
         return rect
     }
 }

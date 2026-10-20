@@ -919,3 +919,20 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Wikipedia corpora are out (share-alike sources). Left for the owner:
   whether web-crawled sentences under CC BY may train a bundled model.
 
+## D-062 · The candidate window follows the focused clause (2026-10-20)
+- The window opened under the composition's first character whatever
+  the candidates were for: converting the third clause of a long
+  sentence, or a Chinese composition after librime confirmed words, left
+  it far from the text it offered to replace, and on a wrapped line on
+  the line before. Apple's input methods place it under the focused
+  clause.
+- `SessionDisplay.candidateAnchor` names the character: the focused
+  clause, or else the first segment that is not fixed (the text after
+  fixed clauses, librime's active segment). The field reports its
+  rectangle by UTF-16 offset into the marked text; a field that reports
+  none there gives the first character's, as before. The rectangle is
+  read once per marked text and anchor, so paging through predictions
+  leaves the window still. Found by an advisor survey (pass 4).
+- Not checked on screen: the owner's Mac is not driven while they work;
+  the anchor is unit-tested and the shell builds.
+
