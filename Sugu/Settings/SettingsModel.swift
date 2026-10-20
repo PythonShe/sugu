@@ -194,9 +194,5 @@ final class SettingsModel {
 
     func checkForUpdates() { environment.updater.checkForUpdates() }
 
-    var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
-        return "\(short) (\(build))"
-    }
+    var version: String { "\(Bundle.main.shortVersion) (\(Bundle.main.buildVersion))" }
 }

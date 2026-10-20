@@ -82,7 +82,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "sugu-tool",
-            dependencies: ["SuguInput", "SuguRime", "SuguAzooKey", "SuguCore"],
+            dependencies: ["SuguRime", "SuguAzooKey", "SuguCore"],
             swiftSettings: cxxSwiftSettings
         ),
         .executableTarget(

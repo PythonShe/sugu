@@ -19,7 +19,7 @@ public struct DictionaryEntry: Sendable, Hashable {
     public static func mode(forReading reading: String) -> InputMode? {
         let trimmed = reading.filter { $0 != " " && $0 != "'" }
         guard !trimmed.isEmpty else { return nil }
-        if trimmed.unicodeScalars.allSatisfy({ (0x3041...0x30FF).contains($0.value) || $0.value == 0x30FC }) {
+        if trimmed.unicodeScalars.allSatisfy(\.isKana) {
             return .japanese
         }
         if trimmed.allSatisfy({ $0.isASCIILetter }) { return .chinese }

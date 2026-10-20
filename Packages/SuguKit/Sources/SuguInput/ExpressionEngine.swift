@@ -58,7 +58,7 @@ final class ExpressionEngine: CompositionEngine {
     func resizeFocus(by delta: Int) {}
 
     func select(_ index: Int) -> SelectionResult {
-        guard let candidate = state.candidates[safeIndex: index] else { return .continued }
+        guard let candidate = state.candidates[safe: index] else { return .continued }
         let commit = Commit(text: candidate.text, reading: text)
         clear()
         return .committed(commit)
@@ -108,8 +108,4 @@ final class ExpressionEngine: CompositionEngine {
             reading: text
         )
     }
-}
-
-extension Array {
-    subscript(safeIndex index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }

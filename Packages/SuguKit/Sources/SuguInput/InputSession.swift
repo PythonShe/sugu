@@ -623,7 +623,7 @@ public final class InputSession {
               let engine = provider.engine(for: mode) else { return }
         let reading: String
         if mode == .japanese {
-            reading = WidthConversion.hiragana(selected).allSatisfy({ $0.isHiragana }) ? WidthConversion.hiragana(selected) : (store?.reading(for: selected, mode: mode) ?? selected)
+            reading = WidthConversion.hiragana(selected).isHiraganaReading ? WidthConversion.hiragana(selected) : (store?.reading(for: selected, mode: mode) ?? selected)
         } else {
             guard let known = store?.reading(for: selected, mode: mode) else { return }
             reading = known
@@ -788,9 +788,5 @@ private extension Character {
     var selectionDigit: Int? {
         guard isASCIIDigitCharacter else { return nil }
         return asciiDigitValue
-    }
-
-    var isHiragana: Bool {
-        unicodeScalars.allSatisfy { (0x3041...0x309F).contains($0.value) || $0.value == 0x30FC }
     }
 }

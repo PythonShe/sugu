@@ -3,8 +3,9 @@
 Sugu is an open-source, privacy-first input method for macOS for Japanese and
 Chinese composition. Single-component repo — Swift / AppKit / InputMethodKit.
 `AGENTS.md` is a verbatim copy of `CLAUDE.md`; after editing either, re-copy it
-over the other in the same commit. Decisions live in `docs/adr/`; domain
-language in `CONTEXT.md`.
+over the other in the same commit. Product decisions live in `docs/adr/`;
+implementation decisions in `decision.md`, the work plan in `todo.md`, and the
+build log in `progress.md`; domain language in `CONTEXT.md`.
 
 ## 0. Tech Stack & Dev Commands
 
@@ -29,7 +30,7 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu \
 
 - The shell owns UI, IMK wiring, and mode switching between Chinese,
   Japanese, and English inside a single input source.
-- Conversion comes from the engines behind a `CandidateEngine`-style protocol;
+- Conversion comes from the engines behind the `CompositionEngine` protocol;
   engine types stay behind that boundary.
 - Learned words live in Sugu's own store behind one interface over both
   engines; text read from the document is never persisted.

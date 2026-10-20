@@ -148,10 +148,6 @@ final class MemoryModes: ModeMemory {
     func remember(_ mode: InputMode, for bundleIdentifier: String) { modes[bundleIdentifier] = mode }
 }
 
-extension Array {
-    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
-}
-
 /// Key events as the shell would produce them.
 enum Key {
     static func char(_ c: Character, _ modifiers: KeyModifiers = []) -> KeyInput {

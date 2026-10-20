@@ -26,7 +26,7 @@ jobs:
             .vendor
             Frameworks
             Data
-          key: deps-${{ runner.os }}-${{ hashFiles('scripts/versions.sh', 'scripts/build-librime.sh', 'scripts/build-data.sh', 'Packages/SuguKit/Sources/sugu-tool/**', 'Packages/SuguKit/Sources/SuguRime/**') }}
+          key: deps-${{ runner.os }}-${{ hashFiles('scripts/versions.sh', 'scripts/build-librime.sh', 'scripts/build-data.sh', 'Packages/SuguKit/Sources/sugu-tool/**', 'Packages/SuguKit/Sources/SuguRime/**', 'Packages/SuguKit/Sources/SuguCore/Lexicon/**') }}
 
       - name: Check
         env:

@@ -242,3 +242,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   screen during this build. It is left open until it can run on a machine
   nobody is using; the bench sets and scoring are ready for it.
 
+
+## D-024 · Maintainability track (2026-10-20)
+- An advisor review of the whole repository found the app/package split and
+  the `CompositionEngine`/`InputClient` seams sound, and named where a
+  maintainer would struggle: `InputSession` branching on mode and engine
+  type, its size, `EngineHub`/`ModelLibrary` living in the session module,
+  untested clause navigation and app-target logic, and duplicated helpers.
+  These are worked as todo §8, each change behind the existing tests.
+- Pause-gated candidates (ADR 0003 d16) show after a pause only. "When the
+  top candidate is uncertain" needs a confidence the engines do not expose
+  (librime and AzooKey return ranked lists without comparable scores), so
+  that trigger is not built.

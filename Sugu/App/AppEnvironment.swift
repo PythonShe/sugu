@@ -29,7 +29,7 @@ final class AppEnvironment {
             locations: locations.engines,
             preferences: preferences,
             store: store,
-            version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+            version: Bundle.main.shortVersion
         )
         let latin = LatinInference(
             syllables: Lexicon.load(Lexicon.syllablesFile, in: locations.bundledLexicon),

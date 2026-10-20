@@ -16,11 +16,24 @@ extension Unicode.Scalar {
         }
     }
 
+    /// Hiragana, including ゝゞ.
+    public var isHiragana: Bool { (0x3041...0x309F).contains(value) }
+
+    /// Hiragana or katakana, including ー.
+    public var isKana: Bool { (0x3041...0x30FF).contains(value) }
+
     public var isASCIILetterOrDigit: Bool {
         switch value {
         case 0x30...0x39, 0x41...0x5A, 0x61...0x7A: return true
         default: return false
         }
+    }
+}
+
+extension StringProtocol {
+    /// A Japanese reading as Sugu stores it: hiragana and ー only.
+    public var isHiraganaReading: Bool {
+        !isEmpty && unicodeScalars.allSatisfy { $0.isHiragana || $0.value == 0x30FC }
     }
 }
 

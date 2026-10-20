@@ -442,7 +442,3 @@ public final class AzooKeyEngine: CompositionEngine {
         )
     }
 }
-
-extension Array {
-    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
-}
