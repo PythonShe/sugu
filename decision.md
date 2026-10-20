@@ -464,3 +464,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - The order of `enabledModes` is the user's: the session starts in the
   first, ⌃⇧Space and the Input menu follow it, the General pane lists the
   modes in it, and turning a mode off and on keeps its place.
+
+## D-035 · Traditional Chinese punctuation (2026-10-20)
+- Quotes followed Simplified usage whatever the characters. With
+  Traditional characters (any of the three Traditional choices, globally or
+  per app) `"` types 「」 and `'` types 『』, as Taiwan and Hong Kong write
+  them, and `$` types ＄ rather than ￥. Simplified and Japanese forms
+  keep “” ‘’ and ￥.

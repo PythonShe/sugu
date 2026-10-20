@@ -3,6 +3,7 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Traditional Chinese quotes with 「」『』 (D-035).
 - First launch takes the mode order and Chinese characters from the
   preferred languages; the mode order is kept everywhere (D-034).
 - Kana input types kana by physical key on JIS and ANSI keyboards, with

@@ -25,6 +25,16 @@ struct TextTests {
         #expect(KanaLayout.applying(KanaLayout.semiVoicedMark, to: "か") == nil)
     }
 
+    @Test func traditionalQuotesUseCornerBrackets() {
+        var punctuator = ChinesePunctuator(width: .full)
+        punctuator.script = .traditionalTaiwan
+        #expect(punctuator.output(for: "\"", after: nil) == "「")
+        #expect(punctuator.output(for: "'", after: "好") == "『")
+        #expect(punctuator.output(for: "'", after: "好") == "』")
+        #expect(punctuator.output(for: "\"", after: "。") == "」")
+        #expect(punctuator.output(for: "$", after: nil) == "＄")
+    }
+
     @Test func automaticPunctuationWidth() {
         var punctuator = ChinesePunctuator()
         #expect(punctuator.output(for: ",", after: "好") == "，")

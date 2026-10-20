@@ -180,6 +180,12 @@ public enum ChineseScript: String, Codable, Sendable, CaseIterable {
     case traditionalHongKong
     /// Japanese kanji forms (shinjitai), for Chinese words in Japanese text.
     case japanese
+
+    /// Traditional Chinese, as written in Taiwan and Hong Kong, quotes with
+    /// corner brackets.
+    public var usesCornerQuotes: Bool {
+        self == .traditional || self == .traditionalTaiwan || self == .traditionalHongKong
+    }
 }
 
 /// Pinyin spelling schemes. Double-pinyin layouts map each syllable to two

@@ -41,6 +41,9 @@ public enum JapanesePunctuationStyle: String, Codable, Sendable, CaseIterable {
 /// of paired quotes.
 public struct ChinesePunctuator: Sendable {
     public var width: PunctuationWidth
+    /// Traditional Chinese quotes with corner brackets (「」 and 『』) and
+    /// writes the dollar sign for `$`; Simplified uses “” ‘’ and ￥.
+    public var script: ChineseScript = .simplified
     private var doubleQuoteOpen = false
     private var singleQuoteOpen = false
 
@@ -64,13 +67,16 @@ public struct ChinesePunctuator: Sendable {
         if useHalf, Self.widthSensitive.contains(character) {
             return String(character)
         }
+        let corners = script.usesCornerQuotes
         switch character {
         case "\"":
             doubleQuoteOpen.toggle()
-            return doubleQuoteOpen ? "“" : "”"
+            return doubleQuoteOpen ? (corners ? "「" : "“") : (corners ? "」" : "”")
         case "'":
             singleQuoteOpen.toggle()
-            return singleQuoteOpen ? "‘" : "’"
+            return singleQuoteOpen ? (corners ? "『" : "‘") : (corners ? "』" : "’")
+        case "$" where corners:
+            return "＄"
         default:
             return Self.fullWidth[character] ?? String(character)
         }

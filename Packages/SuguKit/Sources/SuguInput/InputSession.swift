@@ -118,9 +118,14 @@ public final class InputSession {
         if !preferences.enabledModes.contains(mode) {
             setMode(preferences.enabledModes.first ?? .english)
         }
-        engines.setChineseScript(chineseScript)
+        applyChineseScript()
         // Candidates on screen follow a script change at once.
         if active != nil { refresh() }
+    }
+
+    private func applyChineseScript() {
+        engines.setChineseScript(chineseScript)
+        punctuator.script = chineseScript
     }
 
     /// The focused app's Chinese script, or the global one.
@@ -139,7 +144,7 @@ public final class InputSession {
         vocabulary = readVocabulary()
         let bundleID = client.bundleIdentifier
         let rule = preferences.rule(for: bundleID)
-        engines.setChineseScript(chineseScript)
+        applyChineseScript()
         if let mode = rule.defaultMode {
             setMode(mode, remember: false)
         } else if preferences.rememberModePerApp, let bundleID, let remembered = modeMemory?.mode(for: bundleID) {
