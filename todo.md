@@ -67,5 +67,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Vocabulary per CONTEXT.md: `EngineProvider` → `EngineSource`, `isSuggestion` → `isPrediction`, `switchLanguage` → `switchCJKMode`, "Language" column → "Mode"
 - [x] `SuguEngines` target: `EngineHub` + `ModelLibrary` out of `SuguInput`
 - [x] Engine traits on `CompositionEngine`; `InputSession` asks the engine, not the mode or its type
-- [ ] Split `InputSession` along its seams; `CandidateList` and `PendingUndo` types
+- [x] Split `InputSession` along its seams; `CandidateList` and `PendingUndo` types
 - [ ] Tests: AzooKey clause navigation, session navigation and paging, `ShiftTapDetector` and `DictionarySync` moved into the package and tested
