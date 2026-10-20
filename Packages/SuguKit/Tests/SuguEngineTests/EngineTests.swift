@@ -432,6 +432,16 @@ struct RimeEngineTests {
         #expect(try respeller().respelled("我们去吃晚饭", readings: reading, after: "") == nil)
     }
 
+    /// One word typed after text: the text decides, by a smaller margin;
+    /// alone, librime's word stands.
+    @Test func aWordFollowsTheTextBeforeIt() throws {
+        let words = PinyinWords(lines: ["大学\tda xue\t500", "大雪\tda xue\t300"])
+        let model = try languageModel(["昨天下了一场大雪。", "今年的第一场大雪。", "他在大学学习。", "大学很大。"])
+        let respeller = SentenceRespeller(model: model, words: words)
+        #expect(respeller.respelled("大学", readings: [["da", "xue"]], after: "昨天晚上下了一场") == "大雪")
+        #expect(respeller.respelled("大学", readings: [["da", "xue"]], after: "") == nil)
+    }
+
     @Test func keepsTheUsersWords() throws {
         let respeller = try respeller()
         respeller.userWords = ["吃完饭"]

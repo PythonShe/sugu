@@ -855,3 +855,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Left as the model's limits: 熱い after 熱湯を注いだ and 弾いて after ピアノ
   教室 sit beyond five characters.
 
+## D-058 · One Chinese word after text that decides it (2026-10-20)
+- When all that was typed is one listed word and text comes before it,
+  another spelling needs a margin of 1 instead of 4. librime orders
+  words by frequency alone; the text before is evidence it lacks. A
+  smaller margin for whole sentences broke sentences (D-057); a word
+  alone has only other words to lose to.
+- Without text before, the margin stays 4: at a margin of 1 a lone
+  youyong became 游泳 over librime's 有用, which is the model's taste for
+  Tatoeba's sentences, not evidence.
+- Chinese context pairs 45% → 60% with the text before, unchanged
+  without it (the same misses); main set 97%, learned words 92%. 0.5
+  gives the same as 1; 2 gives 55%. Left: 大雪 after 一场 gains 1.7 from
+  the model but loses more than that on the word list's frequencies.
+

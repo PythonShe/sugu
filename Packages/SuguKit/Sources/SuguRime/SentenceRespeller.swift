@@ -143,6 +143,11 @@ public final class SentenceRespeller {
     /// How much more natural a respelling must read, in natural log
     /// probability, before it replaces librime's words.
     static let margin: Float = 4
+    /// The margin when all that was typed is one listed word and text comes
+    /// before it: librime ranks words by frequency alone, and the text
+    /// before is evidence it lacks (一场大雪, 喜欢骑车). Alone, the model's
+    /// preference adds nothing, and librime's order stands.
+    static let wordMargin: Float = 1
     /// Syllables in the longest span respelled at once.
     static let longestSpan = 3
     private static let enumerationLimit = 400
@@ -183,6 +188,7 @@ public final class SentenceRespeller {
         guard let pieces = readings.lazy.compactMap({ self.segment(characters, $0) }).first else { return nil }
         let kept = userWordCharacters(in: characters)
         let history = String(history.suffix(contextLength))
+        let margin = pieces.count == 1 && !history.isEmpty ? Self.wordMargin : Self.margin
         var result = pieces
         var index = 0
         while index < result.count {
@@ -195,7 +201,7 @@ public final class SentenceRespeller {
                 let before = history + result[..<index].map(\.text).joined()
                 let after = String(result[(index + span)...].map(\.text).joined().prefix(model.order - 1))
                 let base = original.map(\.logProbability).reduce(0, +)
-                let threshold = score(text, between: before, and: after) + Self.margin
+                let threshold = score(text, between: before, and: after) + margin
                 var choice: (spelling: PinyinWords.Spelling, score: Float)?
                 for spelling in spellings(of: syllables) where spelling.text != text {
                     let trial = score(spelling.text, between: before, and: after) + Self.dictionaryWeight * (spelling.logProbability - base)

@@ -69,7 +69,8 @@ does it.
    one word or several, when the character model, given the text before
    the span and after it, reads it as more natural by a clear margin
    (4 in natural log probability, with the list's own word probabilities
-   at weight 0.3). The respelled sentence is shown first and librime's
+   at weight 0.3; 1 when all that was typed is one word and text comes
+   before it). The respelled sentence is shown first and librime's
    own follows it; learned words and text that spells one keep their
    spelling. The model and list are Simplified: a sentence in Traditional
    or Japanese forms is respelled in Simplified and only the characters

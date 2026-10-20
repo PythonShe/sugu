@@ -109,5 +109,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Chinese keystroke tail: librime on compositions past 25 letters, not Sugu (D-049)
 - [ ] Zenzai personalization from the personal model
 - [x] Bench pairs decided by the text before the caret; one-clause Japanese conversions ranked (D-057)
-- [ ] Chinese: short words decided by the text before (librime's whole-input candidates ranked by the model, D-057)
+- [x] Chinese: one word decided by the text before it (D-058)
 

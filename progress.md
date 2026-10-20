@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- One Chinese word typed after text that decides it is respelled by a
+  smaller margin (D-058): context pairs 45% → 60%, nothing else moves.
 - The bench measures conversions after text that decides them (D-057).
   It found that a one-clause Japanese conversion was never ranked by the
   model; fixed: context pairs 38% → 71%, main set 91%.
