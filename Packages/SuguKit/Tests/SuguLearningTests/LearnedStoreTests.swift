@@ -33,6 +33,22 @@ struct LearnedStoreTests {
         #expect(store.lookup("きょうは", mode: .chinese).isEmpty)
     }
 
+    /// The store records its schema version, and a store made before
+    /// versions existed is brought to it with its words.
+    @Test func storeCarriesItsSchemaVersion() throws {
+        do {
+            let store = try makeStore()
+            store.learn(Commit(text: "今日", reading: "きょう"), mode: .japanese)
+        }
+        let database = try SQLiteDatabase(url: url)
+        try database.execute("PRAGMA user_version = 0")
+        let store = try makeStore()
+        var version = 0
+        try SQLiteDatabase(url: url).query("PRAGMA user_version") { version = Int($0.int(0)) }
+        #expect(version == 1)
+        #expect(store.lookup("きょう", mode: .japanese).map(\.text) == ["今日"])
+    }
+
     @Test func ignoresUnconvertedText() throws {
         let store = try makeStore()
         store.learn(Commit(text: "nihao", reading: "nihao"), mode: .chinese)

@@ -78,8 +78,12 @@ public final class LearnedStore {
         }
     }
 
-    private func migrate() throws {
-        try database.execute("""
+    /// The schema, one step per version: a store at version n runs the
+    /// steps after its nth, in one transaction, and records the count as
+    /// its version. Steps only add, so a store a newer Sugu wrote still
+    /// reads here.
+    private static let schema = [
+        """
         CREATE TABLE IF NOT EXISTS words (
             id INTEGER PRIMARY KEY,
             mode TEXT NOT NULL,
@@ -105,7 +109,20 @@ public final class LearnedStore {
             deleted_at REAL NOT NULL,
             PRIMARY KEY (mode, reading, text)
         );
-        """)
+        """,
+    ]
+
+    private func migrate() throws {
+        var version = 0
+        try database.query("PRAGMA user_version") { version = Int($0.int(0)) }
+        if version > Self.schema.count {
+            Log.learning.notice("Learned store from a newer Sugu (schema \(version, privacy: .public)), used as it is")
+        } else if version < Self.schema.count {
+            try database.transaction {
+                for step in Self.schema[version...] { try database.execute(step) }
+                try database.execute("PRAGMA user_version = \(Self.schema.count)")
+            }
+        }
         _ = try database.run("DELETE FROM deletions WHERE deleted_at < ?",
                              [.real(clock().addingTimeInterval(-Self.deletionRetention).timeIntervalSinceReferenceDate)])
     }
@@ -200,6 +217,7 @@ public final class LearnedStore {
                 try database.run("DELETE FROM events WHERE at < ?", [.real(now.addingTimeInterval(-7_200).timeIntervalSinceReferenceDate)])
             }
         } catch {
+            Log.learning.error("Learning not saved: \(String(describing: error), privacy: .public)")
             try? loadAll()
         }
         notify()
@@ -226,6 +244,7 @@ public final class LearnedStore {
                 }
             }
         } catch {
+            Log.learning.error("Unlearning not saved: \(String(describing: error), privacy: .public)")
             try? loadAll()
         }
         notify()

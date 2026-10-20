@@ -936,3 +936,16 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Not checked on screen: the owner's Mac is not driven while they work;
   the anchor is unit-tested and the shell builds.
 
+## D-063 · The learned store has a schema version (2026-10-20)
+- The store created its tables if missing and nothing else, so the first
+  release that changes them would have met old files with no way to
+  tell them apart, and learning would fail with its errors swallowed.
+  It now keeps SQLite's `user_version`: the schema is a list of steps, a
+  store runs the steps past its version in one transaction, and records
+  the count. Version 1 is today's tables; files from before versions
+  existed have them and come to version 1 unchanged.
+- Steps only add (tables, columns, indexes), so a store a newer Sugu
+  wrote is read as it is after a downgrade rather than set aside.
+- A learn or unlearn that fails is logged before the store reloads from
+  disk. Found by an advisor survey (pass 4).
+
