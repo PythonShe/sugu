@@ -23,7 +23,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Install
 
-Requires macOS 14 or later. Download `Sugu-<version>.pkg` from the [releases](https://github.com/PythonShe/sugu/releases), open it, then add Sugu in **System Settings › Keyboard › Input Sources**. Sugu checks for updates itself; this can be turned off in its settings.
+Requires macOS 14 or later. Download `Sugu-<version>.pkg` from the [releases](https://github.com/PythonShe/sugu/releases), open it, and Sugu is selected in the input menu. It is listed under Chinese, Simplified in **System Settings › Keyboard › Input Sources**. Sugu checks for updates itself; this can be turned off in its settings.
 
 ## Building
 

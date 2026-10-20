@@ -57,6 +57,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - One IMK input source with no `ComponentInputModeDict` modes, so macOS
   never lists more than one Sugu entry. Modes are internal (ADR 0003 d1) and
   appear as checkable items in the input menu.
+- Reconsidered after review: registering the three modes as input modes
+  would put the mode in the menu-bar icon, but macOS then lists each mode
+  as its own entry and ⌃Space cycles through them, which is the
+  input-source switching ADR 0003 d1 keeps out. The caret indicator and the
+  input menu's checkmarks show the mode instead.
 - Bundle ID `io.github.pythonshe.inputmethod.Sugu` (IMK requires
   `inputmethod` in the identifier).
 
@@ -207,8 +212,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Nothing is uploaded; the appcast and archive go to the GitHub release that
   `SUFeedURL` points at.
 - The package's postinstall stops a running Sugu and runs
-  `Sugu --register` as the console user, which registers and enables the
-  input source (`TISRegisterInputSource`/`TISEnableInputSource`).
+  `Sugu --register` as the console user, which registers, enables and
+  selects the input source (`TISRegisterInputSource`, `TISEnableInputSource`,
+  `TISSelectInputSource`), so it is in use when the installer finishes.
 - Sparkle 2.10.0 lives in the `SuguUpdates` package target, so Xcode and
   SwiftPM resolve one dependency graph and agree on `Package.resolved`.
   The public key is a build setting set only by the release script; builds

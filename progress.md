@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Installing selects Sugu (`--register` also calls `TISSelectInputSource`);
+  README updated. Menu-bar mode icons via input modes considered and kept
+  out (D-005).
 - Secure input left on by another process (seen live: loginwindow while
   the screen is locked) no longer turns Sugu off everywhere (D-031).
 - Unified-log diagnostics and Export Diagnostics in Advanced (D-030); the
