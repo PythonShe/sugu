@@ -14,7 +14,7 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
         form.gap()
         editor.addColumn("app", title: String(localized: "App"), width: 150)
         editor.addColumn("mode", title: String(localized: "Mode"), width: 100)
-        editor.addColumn("script", title: String(localized: "Chinese Script"), width: 120)
+        editor.addColumn("script", title: String(localized: "Chinese Characters"), width: 120)
         editor.addColumn("escape", title: String(localized: "Esc to English"), width: 90)
         editor.table.dataSource = self
         editor.table.delegate = self
@@ -35,10 +35,13 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
     }
 
     private func addApps() {
-        for bundleID in AppInfo.choose() where model.preferences.appRules[bundleID] == nil {
-            model.preferences.appRules[bundleID] = AppRule()
+        AppInfo.choose(in: view.window) { [weak self] bundleIDs in
+            guard let self else { return }
+            for bundleID in bundleIDs where model.preferences.appRules[bundleID] == nil {
+                model.preferences.appRules[bundleID] = AppRule()
+            }
+            reload()
         }
-        reload()
     }
 
     private func removeSelected() {
@@ -72,7 +75,7 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
         case "script":
             let popUp = cellPopUp(titles: scripts.map { $0?.title ?? String(localized: "Default") },
                                   selected: scripts.firstIndex(of: rule.chineseScript) ?? 0)
-            popUp.setAccessibilityLabel(String(localized: "Chinese Script"))
+            popUp.setAccessibilityLabel(String(localized: "Chinese Characters"))
             form.bind(popUp) { [weak self] control in
                 guard let self, let index = (control as? NSPopUpButton)?.indexOfSelectedItem else { return }
                 model.preferences.appRules[bundleID]?.chineseScript = scripts[index]
@@ -93,7 +96,6 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
 
     private func cellPopUp(titles: [String], selected: Int) -> NSPopUpButton {
         let popUp = NSPopUpButton(frame: .zero, pullsDown: false)
-        popUp.controlSize = .small
         popUp.isBordered = false
         popUp.addItems(withTitles: titles)
         popUp.selectItem(at: selected)

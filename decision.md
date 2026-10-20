@@ -1369,3 +1369,24 @@ any call made without the owner present. Each entry: what, why, reversibility.
   hosts return nothing for a range past the end), and per-app defaults
   to English beyond terminals (Squirrel's Xcode, Spotlight) — a product
   choice, not a fault.
+
+## D-077 · Sugu's own windows (advisor pass 11) (2026-10-20)
+- Confirmations of what cannot be undone (Delete All, Forget Last Hour,
+  Reset, removing a download) keep the destructive button's style but
+  give Return to Cancel, as the HIG asks for data loss.
+- Settings reopen on the pane last shown (user defaults, `SettingsPane`);
+  a request for a pane (Learned Words…, Add Word…) still opens that one.
+- The app chooser in Apps and Learning is a sheet on the Settings window,
+  like every other panel there.
+- The mode label scales with the candidate text size and draws the
+  Increase Contrast outline the candidate window has; the outline is
+  `FloatingPanel`'s, shared by both.
+- One term per setting: "Chinese Characters" in the Apps table as in the
+  input menu; "Try Again" for downloads as for the Chinese engine.
+  "Show" (acknowledgements) opens a document and needs no ellipsis.
+  Traditional Chinese uses ⋯ throughout, as Apple's does.
+- Table pop-ups use the regular size, matching the table's text. A
+  dictionary import reports its count beside the button instead of in an
+  alert. A hidden Window menu gives ⌘M. The source link is a borderless
+  link button, so Full Keyboard Access can press it. Save panels get the
+  bare name and add the extension from the content type.

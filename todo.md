@@ -175,3 +175,11 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] A click in the candidate window does not count as moving the caret (D-076)
 - [x] Password-only system apps count as secure input (D-076)
 - [ ] Check on device: the login window and Wi-Fi sheets see no composition, Alacritty takes punctuation, hidePalettes on screen lock, a click elsewhere commits in TextEdit and Chrome
+
+## 20. Sugu's own windows (advisor pass 11, D-077)
+- [x] Return cancels destructive confirmations (D-077)
+- [x] Settings reopen on the pane last shown (D-077)
+- [x] The app chooser is a sheet (D-077)
+- [x] The mode label follows the candidate text size and Increase Contrast (D-077)
+- [x] One term per setting, "Show" without an ellipsis, zh-Hant's ⋯ (D-077)
+- [x] Table pop-ups at the table's text size; import result shown in place; ⌘M; the source link works from the keyboard; save panels add their own extension (D-077)

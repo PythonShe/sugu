@@ -140,15 +140,20 @@ enum AppInfo {
         return cell
     }
 
-    /// Lets the user pick applications; returns their bundle identifiers.
+    /// Lets the user pick applications in a sheet on `window`, then hands
+    /// over their bundle identifiers.
     @MainActor
-    static func choose() -> [String] {
+    static func choose(in window: NSWindow?, then add: @escaping ([String]) -> Void) {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
+        panel.canChooseDirectories = false
         panel.allowsMultipleSelection = true
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        guard panel.runModal() == .OK else { return [] }
-        return panel.urls.compactMap { Bundle(url: $0)?.bundleIdentifier }
+        let finish = { (response: NSApplication.ModalResponse) in
+            guard response == .OK else { return }
+            add(panel.urls.compactMap { Bundle(url: $0)?.bundleIdentifier })
+        }
+        if let window { panel.beginSheetModal(for: window, completionHandler: finish) } else { finish(panel.runModal()) }
     }
 }
 

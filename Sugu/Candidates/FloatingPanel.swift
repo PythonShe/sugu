@@ -38,6 +38,16 @@ final class FloatingPanel: NSPanel {
         }
     }
 
+    /// Outlines a panel's content with Increase Contrast on, where the
+    /// material alone does not set it apart.
+    static func strokeContrastBorder(in bounds: NSRect) {
+        guard NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast else { return }
+        NSColor.separatorColor.setStroke()
+        let border = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: cornerRadius, yRadius: cornerRadius)
+        border.lineWidth = 1
+        border.stroke()
+    }
+
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 

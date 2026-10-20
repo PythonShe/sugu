@@ -3,10 +3,13 @@ import UniformTypeIdentifiers
 
 final class DictionariesPane: SettingsPane {
     private var includeLearnedInExport = false
+    private let importResult = NSTextField(labelWithString: "")
 
     override func build() {
         let model = model
-        form.button(String(localized: "Import…"), label: String(localized: "Import:"), action: { [weak self] in self?.importDictionaries() })
+        let importButton = form.makeButton(String(localized: "Import…")) { [weak self] in self?.importDictionaries() }
+        importResult.textColor = .secondaryLabelColor
+        form.row(String(localized: "Import:"), NSStackView(views: [importButton, importResult]))
 
         form.gap()
         form.checkbox(String(localized: "Include learned words"), label: String(localized: "Export:"),
@@ -55,9 +58,7 @@ final class DictionariesPane: SettingsPane {
                 guard let self else { return }
                 do {
                     let added = try self.model.importDictionaries(panel.urls)
-                    let alert = NSAlert()
-                    alert.messageText = String(localized: "Added \(added) words.")
-                    alert.beginSheetModal(for: window)
+                    self.importResult.stringValue = String(localized: "Added \(added) words.")
                 } catch {
                     self.presentError(message: String(localized: "The dictionary could not be read."))
                 }
@@ -68,7 +69,7 @@ final class DictionariesPane: SettingsPane {
     private func exportDictionary() {
         guard let window = view.window else { return }
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = String(localized: "Sugu Dictionary") + ".txt"
+        panel.nameFieldStringValue = String(localized: "Sugu Dictionary")
         panel.allowedContentTypes = [.plainText]
         let data = model.exportDictionary(includeLearned: includeLearnedInExport)
         panel.beginSheetModal(for: window) { [weak self] response in

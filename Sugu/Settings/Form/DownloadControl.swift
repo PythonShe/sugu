@@ -72,7 +72,7 @@ final class DownloadControl: NSStackView {
         case .installed:
             button.title = String(localized: "Remove")
         case .failed(let failure):
-            button.title = String(localized: "Retry")
+            button.title = String(localized: "Try Again")
             detail.stringValue = failure.message
             detail.textColor = .systemRed
         }

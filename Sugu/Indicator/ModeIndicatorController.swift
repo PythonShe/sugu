@@ -7,10 +7,12 @@ import SuguCore
 final class ModeIndicatorController {
     static let visibleDuration: Duration = .milliseconds(900)
 
+    /// The candidate window's text size, which the label follows.
+    var textSize: CGFloat = 16
+
     private let label = NSTextField(labelWithString: "")
     private lazy var panel: FloatingPanel = {
-        let content = NSView()
-        label.font = .systemFont(ofSize: 15, weight: .medium)
+        let content = BorderedView()
         label.textColor = .labelColor
         label.alignment = .center
         label.autoresizingMask = [.width, .minYMargin, .maxYMargin]
@@ -28,7 +30,8 @@ final class ModeIndicatorController {
     func show(_ symbol: String, named name: String, near rect: NSRect) {
         label.stringValue = symbol
         label.setAccessibilityLabel(name)
-        let side: CGFloat = 30
+        label.font = .systemFont(ofSize: (textSize * 0.95).rounded(), weight: .medium)
+        let side = (textSize * 1.9).rounded()
         label.sizeToFit()
         label.frame = NSRect(x: 0, y: (side - label.frame.height) / 2, width: side, height: label.frame.height)
         let anchor = rect == .zero ? NSRect(origin: NSEvent.mouseLocation, size: .zero) : rect
@@ -88,5 +91,12 @@ extension InputMode {
         case .japanese: String(localized: "Japanese")
         case .english: String(localized: "English")
         }
+    }
+}
+
+/// The label's backing, outlined with Increase Contrast on.
+private final class BorderedView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        FloatingPanel.strokeContrastBorder(in: bounds)
     }
 }

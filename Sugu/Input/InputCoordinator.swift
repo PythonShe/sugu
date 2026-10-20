@@ -25,6 +25,7 @@ final class InputCoordinator {
         self.preferences = preferences
         self.candidateWindow = candidateWindow
         self.indicator = indicator
+        indicator.textSize = preferences.preferences.candidateFontSize
         session.onChange = { [unowned self] in render($0.display) }
         session.onModeChange = { [unowned self] mode, byUser in modeDidChange(to: mode, byUser: byUser) }
         candidateWindow.onSelect = { [unowned session] row in session.selectCandidate(onPage: row) }
@@ -262,6 +263,7 @@ final class InputCoordinator {
 
     func preferencesDidChange(_ preferences: Preferences) {
         session.preferences = preferences
+        indicator.textSize = preferences.candidateFontSize
         syncCapsLock(byUser: false)
     }
 }

@@ -28,13 +28,14 @@ final class AdvancedPane: SettingsPane {
         let version = NSTextField(labelWithString: model.version)
         version.isSelectable = true
         form.row(String(localized: "Version:"), version)
-        let link = NSTextField(labelWithAttributedString: NSAttributedString(string: "github.com/PythonShe/sugu", attributes: [
-            .link: URL(string: "https://github.com/PythonShe/sugu")!,
-        ]))
-        link.isSelectable = true
-        link.allowsEditingTextAttributes = true
+        let link = form.makeButton("github.com/PythonShe/sugu") {
+            NSWorkspace.shared.open(URL(string: "https://github.com/PythonShe/sugu")!)
+        }
+        link.isBordered = false
+        link.contentTintColor = .linkColor
+        link.setAccessibilityRole(.link)
         form.row(String(localized: "Source code:"), link)
-        form.button(String(localized: "Show…"), label: String(localized: "Acknowledgements:")) { [weak self] in self?.showNotices() }
+        form.button(String(localized: "Show"), label: String(localized: "Acknowledgements:")) { [weak self] in self?.showNotices() }
     }
 
     private func exportSettings() {
@@ -47,7 +48,7 @@ final class AdvancedPane: SettingsPane {
             return
         }
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = String(localized: "Sugu Settings") + ".json"
+        panel.nameFieldStringValue = String(localized: "Sugu Settings")
         panel.allowedContentTypes = [.json]
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
@@ -71,7 +72,7 @@ final class AdvancedPane: SettingsPane {
             return
         }
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = String(localized: "Sugu Diagnostics") + ".txt"
+        panel.nameFieldStringValue = String(localized: "Sugu Diagnostics")
         panel.allowedContentTypes = [.plainText]
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK, let url = panel.url else { return }

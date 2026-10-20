@@ -519,7 +519,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "檢查更新…"
+            "value": "檢查更新⋯"
           }
         }
       }
@@ -571,28 +571,6 @@
     },
     "Chinese Characters": {
       "extractionState": "manual",
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中国語の字形"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中文字形"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中文字形"
-          }
-        }
-      }
-    },
-    "Chinese Script": {
       "localizations": {
         "ja": {
           "stringUnit": {
@@ -1250,7 +1228,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "忘記最近一小時…"
+            "value": "忘記最近一小時⋯"
           }
         }
       }
@@ -1939,6 +1917,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "微軟雙拼"
+          }
+        }
+      }
+    },
+    "Minimize": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "しまう"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最小化"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "縮到最小"
           }
         }
       }
@@ -2701,29 +2702,6 @@
         }
       }
     },
-    "Retry": {
-      "extractionState": "manual",
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "再試行"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重试"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重試"
-          }
-        }
-      }
-    },
     "Rewrite Selection": {
       "extractionState": "manual",
       "localizations": {
@@ -2908,6 +2886,29 @@
         }
       }
     },
+    "Show": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表示"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示"
+          }
+        }
+      }
+    },
     "Show candidates after a pause": {
       "extractionState": "manual",
       "localizations": {
@@ -3019,29 +3020,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "顯示讀音"
-          }
-        }
-      }
-    },
-    "Show…": {
-      "extractionState": "manual",
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "表示…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示⋯"
           }
         }
       }
@@ -3891,6 +3869,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "萬象"
+          }
+        }
+      }
+    },
+    "Window": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウインドウ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "窗口"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "視窗"
           }
         }
       }

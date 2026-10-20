@@ -43,7 +43,6 @@ final class CandidateView: NSView {
     private var rows: [Row] = []
     private var baseline: CGFloat = 0
     private var pager: (previous: NSRect, next: NSRect)?
-    private var increasedContrast = false
     private var scrollDistance: CGFloat = 0
     private var scrollTurned = false
     private var hoveredIndex: Int?
@@ -64,7 +63,6 @@ final class CandidateView: NSView {
     func update(_ presentation: CandidatePresentation, style: Style) -> NSSize {
         self.presentation = presentation
         self.style = style
-        increasedContrast = NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
 
         let textFont = NSFont.systemFont(ofSize: style.fontSize)
         let labelFont = NSFont.monospacedDigitSystemFont(ofSize: (style.fontSize * 0.75).rounded(), weight: .regular)
@@ -182,12 +180,7 @@ final class CandidateView: NSView {
             drawChevron(vertical ? "chevron.up" : "chevron.left", in: pager.previous, enabled: presentation.hasPreviousPage)
             drawChevron(vertical ? "chevron.down" : "chevron.right", in: pager.next, enabled: presentation.hasNextPage)
         }
-        if increasedContrast {
-            NSColor.separatorColor.setStroke()
-            let border = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: FloatingPanel.cornerRadius, yRadius: FloatingPanel.cornerRadius)
-            border.lineWidth = 1
-            border.stroke()
-        }
+        FloatingPanel.strokeContrastBorder(in: bounds)
     }
 
     private func draw(_ line: CTLine, at point: NSPoint, color: NSColor, in context: CGContext) {

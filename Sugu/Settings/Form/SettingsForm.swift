@@ -232,7 +232,12 @@ extension NSAlert {
         alert.messageText = message
         let button = alert.addButton(withTitle: title)
         button.hasDestructiveAction = destructive
-        alert.addButton(withTitle: String(localized: "Cancel"))
+        let cancel = alert.addButton(withTitle: String(localized: "Cancel"))
+        if destructive {
+            // Return keeps what would be lost.
+            button.keyEquivalent = ""
+            cancel.keyEquivalent = "\r"
+        }
         guard let window else {
             if alert.runModal() == .alertFirstButtonReturn { perform() }
             return

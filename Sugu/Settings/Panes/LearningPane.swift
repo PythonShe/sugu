@@ -62,9 +62,11 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         appsEditor.table.headerView = nil
         appsEditor.table.dataSource = self
         appsEditor.table.delegate = self
-        appsEditor.onAdd = {
-            for bundleID in AppInfo.choose() where !model.preferences.noLearnApps.contains(bundleID) {
-                model.preferences.noLearnApps.append(bundleID)
+        appsEditor.onAdd = { [weak self] in
+            AppInfo.choose(in: self?.view.window) { bundleIDs in
+                for bundleID in bundleIDs where !model.preferences.noLearnApps.contains(bundleID) {
+                    model.preferences.noLearnApps.append(bundleID)
+                }
             }
         }
         appsEditor.onRemove = { [weak self] in

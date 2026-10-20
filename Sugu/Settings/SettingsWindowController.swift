@@ -14,7 +14,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
-    private let tabs = NSTabViewController()
+    private let tabs = SettingsTabs()
     private let model: SettingsModel
 
     init(model: SettingsModel) {
@@ -33,6 +33,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             item.image = NSImage(systemSymbolName: pane.symbol, accessibilityDescription: pane.title)
             tabs.addTabViewItem(item)
         }
+        if let saved = UserDefaults.standard.object(forKey: SettingsTabs.paneKey) as? Int,
+           let index = tabs.tabViewItems.firstIndex(where: { $0.identifier as? Int == saved }) {
+            tabs.selectedTabViewItemIndex = index
+        }
+        tabs.remembersPane = true
         window.contentViewController = tabs
         window.center()
         window.setFrameAutosaveName("Settings")
@@ -75,6 +80,19 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         model.isVisible = false
+    }
+}
+
+/// The panes' tab controller, which reopens on the pane last shown.
+private final class SettingsTabs: NSTabViewController {
+    static let paneKey = "SettingsPane"
+    /// Off while the panes are added, which selects the first.
+    var remembersPane = false
+
+    override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
+        super.tabView(tabView, didSelect: tabViewItem)
+        guard remembersPane, let pane = tabViewItem?.identifier as? Int else { return }
+        UserDefaults.standard.set(pane, forKey: Self.paneKey)
     }
 }
 
