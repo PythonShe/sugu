@@ -4,7 +4,8 @@ import SuguInput
 /// The settings window: a toolbar of panes, each a grid of native controls.
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
-    enum Pane: Int, CaseIterable {
+    /// The raw values name the panes' toolbar items, which must be strings.
+    enum Pane: String, CaseIterable {
         case general, chinese, japanese, apps, learning, dictionaries, languageModel, advanced
 
         /// The panes this Mac shows: language models need macOS 27.
@@ -33,8 +34,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             item.image = NSImage(systemSymbolName: pane.symbol, accessibilityDescription: pane.title)
             tabs.addTabViewItem(item)
         }
-        if let saved = UserDefaults.standard.object(forKey: SettingsTabs.paneKey) as? Int,
-           let index = tabs.tabViewItems.firstIndex(where: { $0.identifier as? Int == saved }) {
+        if let saved = UserDefaults.standard.string(forKey: SettingsTabs.paneKey),
+           let index = tabs.tabViewItems.firstIndex(where: { $0.identifier as? String == saved }) {
             tabs.selectedTabViewItemIndex = index
         }
         tabs.remembersPane = true
@@ -63,7 +64,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func show(_ pane: Pane?) {
-        if let pane, let index = tabs.tabViewItems.firstIndex(where: { $0.identifier as? Int == pane.rawValue }) {
+        if let pane, let index = tabs.tabViewItems.firstIndex(where: { $0.identifier as? String == pane.rawValue }) {
             tabs.selectedTabViewItemIndex = index
         }
         model.isVisible = true
@@ -91,7 +92,7 @@ private final class SettingsTabs: NSTabViewController {
 
     override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         super.tabView(tabView, didSelect: tabViewItem)
-        guard remembersPane, let pane = tabViewItem?.identifier as? Int else { return }
+        guard remembersPane, let pane = tabViewItem?.identifier as? String else { return }
         UserDefaults.standard.set(pane, forKey: Self.paneKey)
     }
 }

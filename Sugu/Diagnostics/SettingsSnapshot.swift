@@ -2,7 +2,8 @@
 import AppKit
 
 /// Renders every settings pane to PNG files without showing a window, in
-/// light and dark appearance, for reviewing layout during development:
+/// light and dark appearance, for reviewing layout during development, after
+/// building the settings window as the menu does (CI runs this):
 ///   Sugu.app/Contents/MacOS/Sugu --snapshot-settings <dir>
 @MainActor
 enum SettingsSnapshot {
@@ -10,6 +11,8 @@ enum SettingsSnapshot {
         _ = NSApplication.shared
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let model = SettingsModel(environment: .shared)
+        // The tab controller builds the window's toolbar from the panes.
+        SettingsWindowController(model: model).window?.contentView?.layoutSubtreeIfNeeded()
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for pane in SettingsWindowController.Pane.available {
                 let controller = SettingsWindowController.makePane(pane, model: model)

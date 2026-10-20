@@ -32,6 +32,12 @@ if grep -rlis "CC BY-SA\|CC-BY-SA\|ShareAlike" "${PRODUCTS:?}/Sugu.app/Contents/
 fi
 
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' test -quiet
+# The settings window and every pane, built offscreen by the debug app.
+DEBUG_PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Debug \
+  -showBuildSettings 2>/dev/null | awk '$1 == "BUILT_PRODUCTS_DIR" { print $3 }')"
+SNAPSHOTS="$(mktemp -d)"
+"${DEBUG_PRODUCTS:?}/Sugu.app/Contents/MacOS/Sugu" --snapshot-settings "$SNAPSHOTS"
+rm -rf "${SNAPSHOTS:?}"
 swift test --package-path Packages/SuguKit
 swift run --package-path Packages/SuguKit -c release sugu-bench \
   --data Data --bench Bench --json "${SUGU_BENCH_JSON:-/dev/null}" --check
