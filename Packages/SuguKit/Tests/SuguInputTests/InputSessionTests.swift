@@ -270,6 +270,8 @@ struct InputSessionTests {
         let session = makeSession()
         let f1 = KeyInput(keyCode: 122, characters: "\u{F704}")
         type("nihao", into: session)
+        #expect(session.handle(Key.f7))
+        #expect(client.markedText == "nihao")
         #expect(!session.handle(f1))
         #expect(client.document == "你好")
         session.setMode(.japanese)

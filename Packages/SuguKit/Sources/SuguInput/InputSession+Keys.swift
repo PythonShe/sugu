@@ -346,7 +346,8 @@ extension InputSession {
         case VirtualKey.f10: text = typed
         default: return nil
         }
-        guard let text else { return nil }
+        // F6–F8 (and ⌃J ⌃K ⌃;) have no form in Chinese; they do nothing.
+        guard let text else { return true }
         transformed = text
         list.highlight = nil
         publish()
