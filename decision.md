@@ -1449,3 +1449,20 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Private Cloud Compute and asks the on-device model, including as the
   fallback, for each translation separately. The Long compositions
   checkbox is enabled only at the Private Cloud Compute level.
+
+## D-082 · Leipzig corpora measured, not adopted (2026-10-20)
+- The terms page (wortschatz.uni-leipzig.de/en/usage) puts the download
+  corpora under CC BY; the archives carry no license file. Wikipedia
+  corpora were left out, their text being CC BY-SA upstream.
+- Measured with `jpn_newscrawl_2019_300K` and `zho_news_2020_300K` added
+  to Tatoeba (kana-free sentences for Chinese, sentences with kana for
+  Japanese), against the current models:
+  Chinese top-1 97% → 97%; Japanese 92% → 91%; learned words after
+  learning 92% → 83% (zh) and 100% → 90% (ja); context 60% → 60% (zh),
+  71% → 71% (ja), with the same misses; models 5.5 + 16.4 MB → 60.5 +
+  58.0 MB, resident memory 175 → 272 MB; Japanese conversion p99 12.8 →
+  25.4 ms.
+- News text lacks the everyday collocations the context misses need
+  (D-061), and weighs the model toward news vocabulary over the user's
+  words. Not adopted; the bundled models stay on Tatoeba. Personal
+  n-grams (D-079) are the way to the user's own collocations.
