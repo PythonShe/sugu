@@ -56,7 +56,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 7. Proof & delivery
 - [x] `sugu-bench`: accuracy harness (top-1, keystrokes/char) + latency/memory measurement (D-018)
-- [ ] CI workflow: build, tests, budgets
+- [x] CI workflow: build, tests, budgets (`scripts/ci.sh`; manual trigger, D-019)
 - [ ] Packaging: signed/notarized `.pkg` scripts, Sparkle (profile off), dev install script
 - [ ] README, third-party notices/attribution, ADR updates
 - [~] Code review passes (reviewer agents) and fixes — first pass fixed (11 findings + 3 minor); second pass after packaging

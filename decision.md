@@ -176,3 +176,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Zenzai (zenz-v3.1 small) raises Japanese top-1 to 80% at +60 MB footprint
   (resident 270 MB) and ~2× keystroke time, so it stays experimental and
   opt-in (D-007).
+
+## D-019 · CI runs on demand while the repository is private (2026-10-20)
+- `scripts/ci.sh` is the single full check (dependencies, Release build,
+  package tests, `sugu-bench --check`); `.github/workflows/ci.yml` runs it
+  on `workflow_dispatch` only, because macOS runner minutes are billed for
+  private repositories. Adding `push`/`pull_request` triggers turns it on
+  for every change. Native dependencies and data are cached by the hash of
+  the scripts and versions that produce them.

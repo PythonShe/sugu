@@ -1,0 +1,42 @@
+# Runs scripts/ci.sh. Manual only while the repository is private, where
+# macOS runner minutes are billed (decision.md D-019); add `push` and
+# `pull_request` triggers to run it on every change.
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+
+      - name: Install build tools
+        run: brew install xcodegen cmake ninja
+
+      - name: Restore native dependencies and data
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vendor
+            Frameworks
+            Data
+          key: deps-${{ runner.os }}-${{ hashFiles('scripts/versions.sh', 'scripts/build-librime.sh', 'scripts/build-data.sh', 'Packages/SuguKit/Sources/sugu-tool/**', 'Packages/SuguKit/Sources/SuguRime/**') }}
+
+      - name: Check
+        env:
+          SUGU_BENCH_JSON: bench.json
+        run: scripts/ci.sh
+
+      - name: Keep benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench
+          path: bench.json
+          if-no-files-found: ignore
