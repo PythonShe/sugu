@@ -289,6 +289,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
   compositions (about 1 ms) until it has read the latest file:
   librime shares one open dictionary among sessions and frees it with the
   last, so `RimeEngine` now closes its session when it goes away.
+- librime parses the text file on the main thread when a session opens,
+  about 1 ms per thousand lines (20,000 words: 24 ms). The file holds the
+  best 3,000 words by the store's score (pinned, user words, then use);
+  the rest still match by their whole reading. The session opens right
+  after deployment rather than on the first key.
 - `sugu-bench` measures it (`Bench/zh-learned.tsv`): sentences using ten
   taught names and terms go from 0% to 83% top-1, and the main Chinese set
   stays at 90% after learning. Cost: Chinese keystroke p99 3.45 → ~3.8 ms,

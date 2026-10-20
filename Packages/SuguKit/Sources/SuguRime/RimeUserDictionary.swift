@@ -35,18 +35,27 @@ public enum RimeUserDictionary {
     /// Readings per word, at most: more mean the reading was ambiguous.
     static let maximumReadings = 2
 
-    /// The table: word, syllables and use count per line. Words of one
+    /// Words written, at most. librime parses the file on the main thread
+    /// whenever a session opens, about 1 ms per thousand lines; the rest
+    /// still match by their whole reading.
+    static let maximumWords = 3_000
+
+    /// The table, from `words` in order of priority: word, syllables and
+    /// use count per line. Words of one
     /// character are left out, so a single choice does not reorder a
     /// common syllable in every sentence; so are words whose keys do not
     /// read as one syllable per character under the scheme in use, or,
     /// for imported pinyin, under full pinyin.
     public static func table(for words: [Word], decoder: PinyinDecoder, fullPinyin: PinyinDecoder?) -> String {
         var lines = Set<String>()
+        var written = 0
         for word in words where (2...maximumLength).contains(word.text.count) && word.text.allSatisfy(\.isHan) {
+            guard written < maximumWords else { break }
             var readings = decoder.syllables(typedAs: word.reading, count: word.text.count, limit: maximumReadings)
             if readings.isEmpty, let fullPinyin {
                 readings = fullPinyin.syllables(typedAs: word.reading, count: word.text.count, limit: maximumReadings)
             }
+            if !readings.isEmpty { written += 1 }
             for syllables in readings {
                 lines.insert("\(word.text)\t\(syllables.joined(separator: " "))\t\(commits(uses: word.count))")
             }

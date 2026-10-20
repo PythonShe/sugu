@@ -162,6 +162,10 @@ public final class EngineHub: EngineSource {
                 try await runtime.prepare(schema, version: version)
                 chineseError = nil
                 failedSchema = nil
+                // Opening the session reads the user dictionary; done here,
+                // not on the first keystroke.
+                _ = engine(for: .chinese)
+                chinese?.openSession()
                 updateChineseWords(after: .zero)
             } catch {
                 chineseError = error
@@ -195,12 +199,16 @@ public final class EngineHub: EngineSource {
             let schema = schema
             let locations = locations
             let cached = decoders.flatMap { $0.schema == schema ? ($0.schema, $0.scheme, $0.fullPinyin) : nil }
-            let words = store.allWords(mode: .chinese).map { RimeUserDictionary.Word(reading: $0.reading, text: $0.text, count: $0.count) }
+            let learned = store.allWords(mode: .chinese)
             // Writes land in order: an older table never replaces a newer one.
             let previous = chineseWordsWrite
             let write = Task.detached(priority: .utility) { () -> ChineseWordsWrite in
                 _ = await previous?.value
                 guard let decoders = cached ?? Self.makeDecoders(for: schema, locations: locations) else { return ChineseWordsWrite() }
+                // The best words first, should there be more than the file holds.
+                let now = Date()
+                let words = learned.map { ($0.score(at: now), $0) }.sorted { $0.0 > $1.0 }
+                    .map { RimeUserDictionary.Word(reading: $0.1.reading, text: $0.1.text, count: $0.1.count) }
                 let table = RimeUserDictionary.table(for: words, decoder: decoders.1, fullPinyin: decoders.2)
                 return ChineseWordsWrite(decoders: decoders, written: (try? RimeUserDictionary.write(table, in: locations.rimeUser)) ?? false)
             }

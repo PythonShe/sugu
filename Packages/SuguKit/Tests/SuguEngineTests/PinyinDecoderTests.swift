@@ -55,6 +55,13 @@ struct PinyinDecoderTests {
         #expect(rows == ["张三丰\tzhang san feng\t400000000", "林知夏\tlin zhi xia\t200000000"].sorted().map { Substring($0) })
     }
 
+    @Test func userDictionaryKeepsTheFirstWordsWhenFull() throws {
+        let decoder = try decoder()
+        let words = (0..<(RimeUserDictionary.maximumWords + 10)).map { _ in RimeUserDictionary.Word(reading: "linzhixia", text: "林知夏", count: 1) }
+            + [RimeUserDictionary.Word(reading: "chenyuchuan", text: "陈屿川", count: 1)]
+        #expect(!RimeUserDictionary.table(for: words, decoder: decoder, fullPinyin: nil).contains("陈屿川"))
+    }
+
     /// librime adds one to the count as a 32-bit integer.
     @Test func useCountsStayInLibrimeRange() {
         #expect(RimeUserDictionary.commits(uses: 0) == 200_000_000)

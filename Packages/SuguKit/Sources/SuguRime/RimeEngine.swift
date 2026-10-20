@@ -39,6 +39,11 @@ public final class RimeEngine: CompositionEngine {
         return true
     }
 
+    /// Opens the librime session ahead of the first key.
+    public func openSession() {
+        _ = ensureSession()
+    }
+
     /// Reopens the session so librime reads the user dictionary again,
     /// unless a composition is in progress; returns whether it reopened.
     /// librime shares one open dictionary among sessions and closes it
