@@ -189,6 +189,22 @@ struct RimeEngineTests {
         #expect(commit.reading == "わたしはがくせい")
     }
 
+    @Test func liveConversionShowsAndCommitsTheBestSentence() throws {
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
+        var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
+        configuration.liveConversion = true
+        let engine = AzooKeyEngine(configuration: configuration)
+        engine.insert("watashihagakuseidesuk")
+        #expect(engine.state.segments.map(\.text).joined() == "私は学生ですk")
+        engine.deleteBackward()
+        engine.moveCaret(.left)
+        #expect(engine.state.segments.map(\.text).joined() == "わたしはがくせいです")
+        engine.moveCaret(.end)
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text == "私は学生です")
+        #expect(commit.reading == "わたしはがくせいです")
+    }
+
     @Test func restoredReadingsConvertAgain() throws {
         let engine = try makeEngine()
         engine.restore(reading: "わたしはがくせいです")

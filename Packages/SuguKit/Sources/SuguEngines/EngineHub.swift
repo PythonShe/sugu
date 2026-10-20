@@ -314,6 +314,7 @@ public final class EngineHub: EngineSource {
             warmUp(.chinese)
         }
         if let japanese, previous.kanaInput != preferences.kanaInput || previous.japanesePredictions != preferences.japanesePredictions
+            || previous.liveConversion != preferences.liveConversion
             || previous.typoCorrection != preferences.typoCorrection || previous.zenzaiEnabled != preferences.zenzaiEnabled {
             japanese.update(japaneseConfiguration)
             loadZenzai()
@@ -339,6 +340,7 @@ public final class EngineHub: EngineSource {
         var configuration = AzooKeyEngine.Configuration(workingDirectory: locations.azooKey)
         configuration.kanaInput = preferences.kanaInput
         configuration.predictions = preferences.japanesePredictions
+        configuration.liveConversion = preferences.liveConversion
         configuration.typoCorrection = preferences.typoCorrection
         configuration.zenzaiModel = preferences.zenzaiEnabled && isZenzaiModelInstalled && zenzaiLoaded == locations.zenzaiModel ? locations.zenzaiModel : nil
         try? FileManager.default.createDirectory(at: locations.azooKey, withIntermediateDirectories: true)

@@ -81,4 +81,4 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Candidate window: width cap with truncation, hover highlight (D-037)
 - [x] ~~Undo after commit: verify the deletion in hosts that ignore the replacement range~~ — declined (D-038)
 - [ ] Zhuyin, if wanxiang or librime algebra supports it under a compatible license
-- [ ] Japanese live conversion, as a preference
+- [x] Japanese live conversion, as a preference (D-039)

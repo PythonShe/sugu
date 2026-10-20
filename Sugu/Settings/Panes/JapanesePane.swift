@@ -16,7 +16,9 @@ final class JapanesePane: SettingsPane {
                       get: { model.preferences.fullWidthSpace }, set: { model.preferences.fullWidthSpace = $0 })
 
         form.gap()
-        form.checkbox(String(localized: "Show predictions while typing"), label: String(localized: "Conversion:"),
+        form.checkbox(String(localized: "Use live conversion"), label: String(localized: "Conversion:"),
+                      get: { model.preferences.liveConversion }, set: { model.preferences.liveConversion = $0 })
+        form.checkbox(String(localized: "Show predictions while typing"),
                       get: { model.preferences.japanesePredictions }, set: { model.preferences.japanesePredictions = $0 })
         form.checkbox(String(localized: "Correct typos"),
                       get: { model.preferences.typoCorrection }, set: { model.preferences.typoCorrection = $0 })

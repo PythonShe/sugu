@@ -23,6 +23,7 @@ let report = try await Bench.run(data: URL(fileURLWithPath: data), bench: URL(fi
     // Variants for comparing configurations.
     if arguments.contains("--no-predictions") { preferences.japanesePredictions = false }
     if arguments.contains("--no-typo-correction") { preferences.typoCorrection = false }
+    if arguments.contains("--live-conversion") { preferences.liveConversion = true }
 }
 print(report.summary)
 if let json = option("--json") {

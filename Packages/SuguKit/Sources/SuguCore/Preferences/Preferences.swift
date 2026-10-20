@@ -29,6 +29,7 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var kanaInput = false
     public var japanesePunctuation: JapanesePunctuationStyle = .touten
     public var japanesePredictions = true
+    public var liveConversion = false
     public var typoCorrection = true
     public var fullWidthSpace = false
     public var zenzaiEnabled = false
@@ -95,6 +96,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.kanaInput, into: &kanaInput)
         load(.japanesePunctuation, into: &japanesePunctuation)
         load(.japanesePredictions, into: &japanesePredictions)
+        load(.liveConversion, into: &liveConversion)
         load(.typoCorrection, into: &typoCorrection)
         load(.fullWidthSpace, into: &fullWidthSpace)
         load(.zenzaiEnabled, into: &zenzaiEnabled)

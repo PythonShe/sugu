@@ -506,3 +506,21 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Undo already runs only where the field can be read and the text before
   the caret is exactly the commit (D-012); hosts that cannot be read get
   ⌃⌫ as a plain key.
+
+## D-039 · Japanese live conversion, as a preference (2026-10-20)
+- With Use live conversion on (Settings › Japanese, off by default), the
+  composition shows the converter's best sentence instead of kana while
+  typing, as the Mac's Japanese input method does by default; romaji not
+  yet kana stays as typed at the end (私は学生ですk). Enter, focus loss or
+  a key that ends the composition commits what is shown; Space opens
+  clause conversion on the same sentence; with the caret moved inside the
+  input, the kana being edited is shown.
+- Off by default: Sugu's Japanese shows kana with predictions and
+  converts on Space (D-011). With live conversion the predictions still
+  list below the field.
+- A live commit is one clause (reading → sentence), learned only when
+  short enough to be a word, as an unedited Space-and-Enter commit is.
+- Cost: one more conversion per key. `sugu-bench --live-conversion`:
+  Japanese keystroke p99 3.7 ms (2.8 ms without), within the 5 ms budget;
+  top-1 moved 78% → 76% on one sentence (十分 → 10分), from AzooKey's
+  lattice cache being reused across the extra requests.

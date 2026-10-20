@@ -2893,6 +2893,29 @@
         }
       }
     },
+    "Use live conversion": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブ変換を使用"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用实时转换"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用即時轉換"
+          }
+        }
+      }
+    },
     "Use the grammar model": {
       "extractionState": "manual",
       "localizations": {

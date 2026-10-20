@@ -12,6 +12,9 @@ public final class AzooKeyEngine: CompositionEngine {
     public struct Configuration: Sendable, Equatable {
         public var kanaInput = false
         public var predictions = true
+        /// Shows the converter's best sentence in place of the kana while
+        /// typing; Enter commits it.
+        public var liveConversion = false
         public var typoCorrection = true
         /// Zenzai model file; nil keeps neural conversion off.
         public var zenzaiModel: URL?
@@ -51,6 +54,8 @@ public final class AzooKeyEngine: CompositionEngine {
     private var focusLength: Int?
     private var predictions: [KanaKanjiConverterModule.Candidate] = []
     private var followingText = ""
+    /// What live conversion shows for the unfixed input; nil shows kana.
+    private var liveText: String?
     /// Text after the first clause of the best sentence, keyed by that
     /// clause's kana length.
     private var bestFollowing: (length: Int, text: String)?
@@ -280,7 +285,11 @@ public final class AzooKeyEngine: CompositionEngine {
             clear()
             return commit
         }
-        guard !fixed.isEmpty else { return commitRaw() }
+        if configuration.liveConversion {
+            finishRomaji()
+            liveText = liveConversion()
+        }
+        guard !fixed.isEmpty || liveText != nil else { return commitRaw() }
         let commit = makeCommit(trailing: nil)
         clear()
         return commit
@@ -304,6 +313,7 @@ public final class AzooKeyEngine: CompositionEngine {
         highlighted = 0
         focusLength = nil
         followingText = ""
+        liveText = nil
         converter.stopComposition()
         state = .empty
     }
@@ -359,7 +369,7 @@ public final class AzooKeyEngine: CompositionEngine {
                 clauses.append(.init(reading: remainder.convertTarget, text: followingText.isEmpty ? remainder.convertTarget : followingText))
             }
         } else if !composing.isEmpty {
-            clauses.append(.init(reading: composing.convertTarget, text: composing.convertTarget))
+            clauses.append(.init(reading: composing.convertTarget, text: liveText ?? composing.convertTarget))
         }
         return Commit(
             text: clauses.map(\.text).joined(),
@@ -474,6 +484,20 @@ public final class AzooKeyEngine: CompositionEngine {
         return reading == candidate.text || reading.isEmpty ? nil : reading
     }
 
+    /// The best sentence for the unfixed input, with romaji not yet kana
+    /// left as typed; nil while the caret is inside the input, which shows
+    /// the kana being edited.
+    private func liveConversion() -> String? {
+        let target = composing.convertTarget
+        guard !target.isEmpty, composing.convertTargetCursorPosition == target.count else { return nil }
+        let pending = target.reversed().prefix { $0.isASCII }.count
+        guard pending < target.count else { return nil }
+        var kana = composing
+        _ = kana.moveCursorFromCursorPosition(count: -pending)
+        let result = converter.requestCandidates(kana.prefixToCursorPosition(), options: options(predictions: false))
+        return result.mainResults.first.map { $0.text + target.suffix(pending) }
+    }
+
     private func refreshComposing() {
         converting = false
         if composing.isEmpty && fixed.isEmpty {
@@ -486,12 +510,14 @@ public final class AzooKeyEngine: CompositionEngine {
         } else {
             predictions = []
         }
+        liveText = configuration.liveConversion ? liveConversion() : nil
         var segments = fixed.map { CompositionSegment($0.text, role: .converted) }
-        if !composing.convertTarget.isEmpty { segments.append(CompositionSegment(composing.convertTarget, role: .input)) }
+        let shown = liveText ?? composing.convertTarget
+        if !shown.isEmpty { segments.append(CompositionSegment(shown, role: .input)) }
         let fixedLength = fixed.map(\.text.count).reduce(0, +)
         state = CompositionState(
             segments: segments,
-            caret: fixedLength + composing.convertTargetCursorPosition,
+            caret: fixedLength + (liveText?.count ?? composing.convertTargetCursorPosition),
             candidates: predictions.enumerated().map { candidate($1, index: $0) },
             highlightedIndex: nil,
             phase: .composing,
