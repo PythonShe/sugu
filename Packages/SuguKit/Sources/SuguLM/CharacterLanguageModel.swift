@@ -73,13 +73,22 @@ public final class CharacterLanguageModel: Sendable {
         return backoff + unseen
     }
 
+    /// Interpolation search: the keys are hashes, spread evenly, so the
+    /// position a key's value predicts lands within a few entries of it, and
+    /// each step touches memory near the answer rather than halving the file.
     private func find(_ key: UInt64, in bytes: UnsafeRawBufferPointer) -> Int? {
-        var low = 0, high = count
-        while low < high {
-            let middle = (low + high) / 2
-            let probe = bytes.loadUnaligned(fromByteOffset: Self.headerSize + middle * 8, as: UInt64.self)
+        func entry(_ index: Int) -> UInt64 {
+            bytes.loadUnaligned(fromByteOffset: Self.headerSize + index * 8, as: UInt64.self)
+        }
+        var low = 0, high = count - 1
+        while low <= high {
+            let lowKey = entry(low), highKey = entry(high)
+            guard key >= lowKey, key <= highKey else { return nil }
+            let fraction = highKey == lowKey ? 0 : Double(key - lowKey) / Double(highKey - lowKey)
+            let middle = low + min(high - low, Int(fraction * Double(high - low)))
+            let probe = entry(middle)
             if probe == key { return middle }
-            if probe < key { low = middle + 1 } else { high = middle }
+            if probe < key { low = middle + 1 } else { high = middle - 1 }
         }
         return nil
     }

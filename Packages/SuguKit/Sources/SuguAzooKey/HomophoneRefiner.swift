@@ -71,6 +71,13 @@ final class HomophoneRefiner {
             let previous = index > 0 ? words[index - 1].rcid : CIDData.BOS.cid
             let next = index + 1 < words.count ? words[index + 1].lcid : CIDData.EOS.cid
             let base = cost(of: [word], between: previous, and: next)
+            // The model reads each character after the four before it, so a
+            // spelling changes only its own characters' scores and those of
+            // the four after it.
+            let before = (history.isEmpty ? Self.start : history) + words[..<index].map(\.word).joined()
+            let after = String(words[(index + 1)...].map(\.word).joined().prefix(model.order - 1))
+            func local(_ text: String) -> Float { model.logProbability(of: text + after, after: String(before.suffix(model.order - 1))) }
+            let baseLocal = local(word.word)
             var choice: (elements: [DicdataElement], value: PValue, score: Float)?
             var candidates = spellings(of: word.ruby)
             if standIns[index] {
@@ -79,10 +86,8 @@ final class HomophoneRefiner {
             }
             for spelling in candidates where spelling.map(\.word).joined() != word.word {
                 if standIns[index], spelling[0].lcid != word.lcid || spelling[spelling.count - 1].rcid != word.rcid { continue }
-                var trial = words
-                trial.replaceSubrange(index...index, with: spelling)
                 let trialValue = value - base + cost(of: spelling, between: previous, and: next)
-                let trialScore = trialValue + model.logProbability(of: trial.map(\.word).joined(), after: history)
+                let trialScore = score - value + trialValue - baseLocal + local(spelling.map(\.word).joined())
                 if trialScore > choice?.score ?? score { choice = (spelling, trialValue, trialScore) }
             }
             guard let choice else {
@@ -98,6 +103,10 @@ final class HomophoneRefiner {
         guard words.map(\.word).joined() != sentence.text else { return sentence }
         return KanaKanjiConverterModule.Candidate(text: words.map(\.word).joined(), value: value, composingCount: sentence.composingCount, lastMid: sentence.lastMid, data: words)
     }
+
+    /// The model's start-of-text marker, before a sentence with nothing
+    /// before it.
+    private static let start = String(repeating: "\u{2}", count: 8)
 
     /// Texts of the user's dictionary and learned words.
     var userWords: Set<String> = [] {

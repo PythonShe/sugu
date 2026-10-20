@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Model lookups by interpolation search; the Chinese respeller scores
+  fewer, likelier spellings: Chinese keystroke p50 0.81 → 0.45 ms (D-069).
 - Settings take the standard edit and close shortcuts, name every control
   for VoiceOver, ask before removing a download or forgetting the last
   hour, and keep one of Chinese and Japanese on (D-068).

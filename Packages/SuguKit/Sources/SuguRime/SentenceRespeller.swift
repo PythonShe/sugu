@@ -151,8 +151,13 @@ public final class SentenceRespeller {
     /// Syllables in the longest span respelled at once.
     static let longestSpan = 3
     private static let enumerationLimit = 400
+    /// Spellings of a span the model scores, the likeliest by the word
+    /// list: past them come runs of single characters (意识 as 益是) that
+    /// the list's weight already rules out, and scoring them was most of
+    /// a keystroke's respelling time.
+    static let scoredSpellings = 32
     private static let cacheLimit = 50_000
-    /// Up to `enumerationLimit` spellings each.
+    /// Up to `scoredSpellings` spellings each.
     private static let spellingCacheLimit = 2_048
 
     /// Log probabilities of text in context, kept across keystrokes: most
@@ -245,7 +250,7 @@ public final class SentenceRespeller {
     }
 
     /// Ways to write `syllables` as one or more listed words, with the sum
-    /// of their log probabilities.
+    /// of their log probabilities; the `scoredSpellings` likeliest.
     private func spellings(of syllables: [String]) -> [PinyinWords.Spelling] {
         var hasher = WordKey()
         hasher.add(syllables[...])
@@ -265,6 +270,9 @@ public final class SentenceRespeller {
             }
         }
         extend(0, "", 0)
+        if found.count > Self.scoredSpellings {
+            found = Array(found.sorted { $0.logProbability > $1.logProbability }.prefix(Self.scoredSpellings))
+        }
         if spellingCache.count >= Self.spellingCacheLimit { spellingCache = [:] }
         spellingCache[key] = found
         return found

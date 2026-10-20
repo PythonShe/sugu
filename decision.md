@@ -1051,3 +1051,22 @@ any call made without the owner present. Each entry: what, why, reversibility.
   word the store refuses (an empty normalized reading) says so and keeps
   the sheet open. Delete removes selected table rows. From the advisor
   survey (pass 5).
+
+## D-069 · Faster model lookups and respelling (2026-10-20)
+- Profiling the bench: model lookups were a fifth of all time, nearly all
+  inside the Chinese respeller, and binary search over the mapped keys
+  their cost. The keys are FNV hashes, spread evenly, so interpolation
+  search finds one in a few probes near the answer instead of ~21 halvings
+  (no file change).
+- The Chinese respeller scored up to 400 spellings of a three-syllable
+  span, most of them runs of single characters (意识 as 益是) that the word
+  list's weight rules out anyway. It now scores the 32 likeliest by the
+  list. Top-1 unchanged on every set (main 97%, context 60%, learned 92%);
+  fuzzy pinyin varies by a point between runs either way. 16 also held,
+  with less margin.
+- The Japanese refiner scored every trial over the whole sentence; a
+  5-gram model changes only the respelled word's characters and the four
+  after it, so only that window is scored. Same picks; its model time
+  halves. Japanese conversion stays dominated by AzooKey's own lookups.
+- Chinese keystroke p50 0.81 → 0.45 ms, Japanese conversion p99 5.1 →
+  4.8 ms; keystroke p99 3.79 ms in CI (librime's tail, D-049).
