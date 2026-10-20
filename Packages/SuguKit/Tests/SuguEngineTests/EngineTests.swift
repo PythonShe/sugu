@@ -262,6 +262,42 @@ struct RimeEngineTests {
         #expect(engine.state.segments.first { $0.role == .focused }?.text == "雨が")
     }
 
+    func languageModel(_ sentences: [String]) throws -> CharacterLanguageModel {
+        var builder = CharacterLanguageModelBuilder()
+        builder.minimumCount = 1
+        for sentence in sentences { builder.add(sentence) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-engine-lm-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try builder.build().data.write(to: url)
+        return try CharacterLanguageModel(contentsOf: url)
+    }
+
+    @Test func theLanguageModelRespellsAWordTheConverterDidNotPropose() throws {
+        let engine = try makeEngine()
+        engine.insert("yukigatakusanfutteimasu")
+        #expect(engine.convert())
+        let plain = engine.state.segments.map(\.text).joined()
+        #expect(!plain.hasPrefix("雪が"), "the converter alone already writes 雪が; pick another sentence")
+        engine.clear()
+        engine.languageModel = try languageModel(["雪が沢山降っています。", "雪が降っています。", "昨日は雪が降った。"])
+        engine.insert("yukigatakusanfutteimasu")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined() == "雪が沢山降っています")
+        #expect(engine.state.segments.first { $0.role == .focused }?.text == "雪が")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text == "雪が沢山降っています")
+        #expect(commit.reading == "ゆきがたくさんふっています")
+    }
+
+    @Test func respellingLeavesTheUsersWords() throws {
+        let engine = try makeEngine()
+        engine.setUserWords([(reading: "ゆき", text: "行き")])
+        engine.languageModel = try languageModel(["雪が沢山降っています。", "雪が降っています。", "昨日は雪が降った。"])
+        engine.insert("yukigatakusanfutteimasu")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined().hasPrefix("行きが"))
+    }
+
     @Test func cancellingAConversionThenTypingKeepsConverting() throws {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
         var configuration = AzooKeyEngine.Configuration(workingDirectory: work)

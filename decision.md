@@ -719,3 +719,34 @@ any call made without the owner present. Each entry: what, why, reversibility.
   second, always-fresh converter also worked, but changed results (a fresh
   conversion is not the incremental one: a learned name came out as レン)
   and cost 3 ms more per Space.
+
+## D-052 · Respelling words the converter did not propose (2026-10-20)
+- Weight of the model against AzooKey's cost, fitted on the first 50
+  sentences and checked on the other 51: 0.5–5 all give 43/50; on the
+  held-out half 1 gives 43, 3 and 5 give 44. Within noise; the weight
+  stays 1.
+- More text does not help either: Tatoeba plus Japanese Wikinews (CC BY,
+  34,000 sentences) misses exactly the same sentences.
+- What does: half the misses are sentences AzooKey never offers, one word
+  away from its best (行きが for 雪が). `HomophoneRefiner` looks up the
+  other spellings of each content word's reading (two to six kana, not
+  particles or auxiliaries) with a separate converter on the same
+  dictionary, prices a swap by the word costs and the connection costs
+  on both sides, and keeps it when that plus the model's score is
+  higher. A swap may be several dictionary words (効き+まし+た for
+  聞きました). Spellings are cached per reading for the session.
+- Spans that spell one of the user's words are left alone: AzooKey can
+  write a learned name out of pieces, and respelling a piece (蓮 → 連)
+  broke it.
+- When the respelled first clause is not among AzooKey's clause
+  candidates, the clause of the same length is written as the sentence
+  writes it and put first.
+- Measured: top-1 85% → 89% (first 50: 43 → 45, other 51: 43 → 45),
+  characters 97.8% → 98.5%, learned names 100%. Fixed: 雪が, 息が, 何時に,
+  行って, 開いて. Not fixed: 熱い/厚い, 速い, 効き, 描く, where the
+  model has no evidence either way.
+- Cost: a lookup is a small conversion, 0.3–1 ms, because AzooKey reads
+  dictionary files from disk for each one. Space conversion went from
+  1.3 to 2.7 ms at the median and 2.7 to 6.0 ms at p99 on the bench,
+  where most words are new to the cache; typing is unchanged, and with
+  live conversion keystroke p99 is 4.4 ms.

@@ -49,6 +49,16 @@ does it.
    are too few for collocation counts. Chinese keeps the dictionary's
    ranking, with the wanxiang grammar model as the download.
 
+7. **Respelling within a sentence.** The engine proposes at most five
+   sentences, and the right one is often missing when it differs in a
+   single word (雪が for 行きが, 何時に for 汝に). After ranking, each
+   content word of the best sentence may be replaced by another spelling
+   of its reading from the same dictionary, as one word or several,
+   when the engine's cost of the words and their connections plus the
+   model's score is higher. Words from the user's dictionary and learned
+   words, and text that spells one, keep their spelling. Top-1 went from
+   85% to 89%, by two sentences on each half of the bench.
+
 ## Later phases
 
 - A personal model from what the user commits, kept in the learned store

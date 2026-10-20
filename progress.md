@@ -3,6 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Japanese words respelled when the model prefers another spelling of the
+  same reading (ADR 0005 decision 7, D-052): top-1 85% → 89%, the same
+  gain on both halves of the bench. Weight tuning and a second corpus
+  gave nothing.
 - Live conversion trapped on Esc after converting, in three runs of four
   of the bench; the converter's lattice is now dropped when a conversion
   ends (D-051).

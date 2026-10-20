@@ -38,6 +38,12 @@ public final class AzooKeyEngine: CompositionEngine {
     }
 
     private var converter: KanaKanjiConverter
+    /// The dictionary the converter and the refiner read.
+    private let dictionary = DicdataStore.withDefaultDictionary()
+    private lazy var refiner = HomophoneRefiner(
+        dictionary: dictionary,
+        options: Self.options(configuration, leftContext: "", textReplacer: .empty, predictions: false)
+    )
     /// Ranks the converter's sentences by how naturally they read
     /// (ADR 0005); nil ranks by the converter's costs alone.
     public var languageModel: CharacterLanguageModel?
@@ -65,9 +71,9 @@ public final class AzooKeyEngine: CompositionEngine {
     /// Text after the first clause of the best sentence, keyed by that
     /// clause's kana length.
     private var bestFollowing: (length: Int, text: String)?
-    /// The focused clause's text in the best sentence, while its
+    /// The focused clause as the best sentence writes it, while its
     /// candidates are requested.
-    private var preferredFocus: String?
+    private var preferredFocus: KanaKanjiConverterModule.Candidate?
 
     public let traits = EngineTraits(hasConversionPhase: true, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
@@ -77,7 +83,7 @@ public final class AzooKeyEngine: CompositionEngine {
 
     public init(configuration: Configuration) {
         self.configuration = configuration
-        self.converter = KanaKanjiConverter.withDefaultDictionary()
+        self.converter = KanaKanjiConverter(dicdataStore: dictionary)
     }
 
     public func update(_ configuration: Configuration) {
@@ -98,6 +104,7 @@ public final class AzooKeyEngine: CompositionEngine {
             )
         }
         converter.importDynamicUserDictionary(userWords)
+        refiner.userWords = Set(words.map(\.text))
     }
 
     /// A converter that has loaded a Zenzai model, made off the main thread:
@@ -138,7 +145,7 @@ public final class AzooKeyEngine: CompositionEngine {
     /// plain one, freeing the model's memory; waits for the composition to end.
     private func releaseZenzaiIfUnused() {
         guard loadedZenzai != nil, loadedZenzai != configuration.zenzaiModel, state.isEmpty else { return }
-        converter = KanaKanjiConverter.withDefaultDictionary()
+        converter = KanaKanjiConverter(dicdataStore: dictionary)
         loadedZenzai = nil
         converter.importDynamicUserDictionary(userWords)
     }
@@ -445,10 +452,7 @@ public final class AzooKeyEngine: CompositionEngine {
                 publishConverting()
                 return
             }
-            let clause = result.firstClauseResults
-                .filter { $0.rubyCount > 0 && $0.rubyCount < total && best.text.hasPrefix($0.text) }
-                .max { $0.value < $1.value }
-            guard let clause else {
+            guard let clause = firstClause(of: best, among: result.firstClauseResults, total: total) else {
                 focusCandidates = result.mainResults
                 updateFollowingText()
                 publishConverting()
@@ -457,7 +461,7 @@ public final class AzooKeyEngine: CompositionEngine {
             focusLength = clause.rubyCount
             // The clause list has its own order; it yields only to a
             // sentence the language model preferred.
-            if best.text != result.mainResults.first?.text { preferredFocus = clause.text }
+            if best.text != result.mainResults.first?.text { preferredFocus = clause }
             bestFollowing = (clause.rubyCount, String(best.text.dropFirst(clause.text.count)))
         }
         let length = min(focusLength ?? total, total)
@@ -466,12 +470,41 @@ public final class AzooKeyEngine: CompositionEngine {
         focusCandidates = converter.requestCandidates(prefix.prefixToCursorPosition(), options: options(predictions: false)).mainResults
         // The clause as the ranked sentence wrote it comes first, so the
         // first display is that sentence.
-        if let preferredFocus, let index = focusCandidates.firstIndex(where: { $0.text == preferredFocus }), index > 0 {
-            focusCandidates.insert(focusCandidates.remove(at: index), at: 0)
+        if let preferredFocus {
+            focusCandidates.removeAll { $0.text == preferredFocus.text }
+            focusCandidates.insert(preferredFocus, at: 0)
         }
         preferredFocus = nil
         updateFollowingText()
         publishConverting()
+    }
+
+    /// The first clause of `best`: one the converter proposed, or, when
+    /// refinement rewrote that clause, the converter's clause of the same
+    /// length as `best` writes it.
+    private func firstClause(
+        of best: KanaKanjiConverterModule.Candidate,
+        among clauses: [KanaKanjiConverterModule.Candidate],
+        total: Int
+    ) -> KanaKanjiConverterModule.Candidate? {
+        let spans = clauses.filter { $0.rubyCount > 0 && $0.rubyCount < total }
+        if let proposed = spans.filter({ best.text.hasPrefix($0.text) }).max(by: { $0.value < $1.value }) {
+            return proposed
+        }
+        guard best.data.map(\.word).joined() == best.text else { return nil }
+        return spans.compactMap { clause -> KanaKanjiConverterModule.Candidate? in
+            var words: [DicdataElement] = []
+            var length = 0
+            for word in best.data where length < clause.rubyCount {
+                words.append(word)
+                length += word.ruby.count
+            }
+            guard length == clause.rubyCount, let last = words.last else { return nil }
+            return KanaKanjiConverterModule.Candidate(
+                text: words.map(\.word).joined(), value: clause.value, composingCount: clause.composingCount,
+                lastMid: last.mid, data: words
+            )
+        }.max { $0.value < $1.value }
     }
 
     /// Text before the unfixed input: the document's, then fixed clauses.
@@ -481,17 +514,20 @@ public final class AzooKeyEngine: CompositionEngine {
 
     /// The converter's whole-input sentences, at most five at the head of
     /// its results, reordered by its cost plus the language model's log
-    /// probability after `history`; the rest keep their place. Zenzai,
+    /// probability after `history`, with the best one respelled ahead of
+    /// them when the model prefers it; the rest keep their place. Zenzai,
     /// when on, has already chosen.
     private func ranked(_ results: [KanaKanjiConverterModule.Candidate], length: Int, after history: String) -> [KanaKanjiConverterModule.Candidate] {
         guard let languageModel, configuration.zenzaiModel == nil else { return results }
         let sentences = results.prefix(5).prefix { $0.rubyCount == length }
-        guard sentences.count > 1 else { return results }
-        let reordered = sentences
+        guard !sentences.isEmpty else { return results }
+        var reordered = sentences
             .map { (candidate: $0, score: $0.value + languageModel.logProbability(of: $0.text, after: history)) }
             .enumerated()
             .sorted { $0.element.score != $1.element.score ? $0.element.score > $1.element.score : $0.offset < $1.offset }
             .map(\.element.candidate)
+        let best = refiner.refined(reordered[0], after: history, model: languageModel)
+        if best.text != reordered[0].text { reordered.insert(best, at: 0) }
         return reordered + results.dropFirst(sentences.count)
     }
 
