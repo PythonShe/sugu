@@ -39,6 +39,19 @@ fetch cldr-LICENSE "https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_REF
 fetch llama.cpp-LICENSE "https://raw.githubusercontent.com/azooKey/llama.cpp/$LLAMA_CPP_REF/LICENSE" "$LLAMA_CPP_LICENSE_SHA256"
 fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle/$SPARKLE_VERSION/LICENSE" "$SPARKLE_LICENSE_SHA256"
 fetch cc-by-sa-4.0.txt "https://creativecommons.org/licenses/by-sa/4.0/legalcode.txt" "$CC_BY_SA_4_SHA256"
+fetch cc-by-2.0-fr.html \
+  "https://raw.githubusercontent.com/creativecommons/cc-legal-tools-data/$CC_LEGAL_TOOLS_REF/docs/licenses/by/2.0/fr/legalcode.fr.html" \
+  "$CC_BY_2_FR_SHA256"
+TATOEBA_NOTICE="$CACHE/tatoeba-notice.txt"
+{
+  echo "Sugu bundles character n-gram statistics computed from sentences by the"
+  echo "contributors of Tatoeba (https://tatoeba.org), taken from the OPUS Tatoeba"
+  echo "$TATOEBA_OPUS_VERSION snapshot (https://opus.nlpl.eu/Tatoeba). The sentences"
+  echo "themselves are not included. Licensed under Creative Commons Paternité 2.0"
+  echo "France:"
+  echo
+  textutil -convert txt -stdout "$CACHE/cc-by-2.0-fr.html" | sed -n '/^Paternité - 2.0/,$p'
+} >"$TATOEBA_NOTICE"
 
 version() {
   python3 -I -c 'import json, sys
@@ -81,6 +94,7 @@ entry "AzooKeyKanaKanjiConverter $(version azookeykanakanjiconverter)" "https://
 entry "azooKey dictionary data" "https://github.com/ensan-hcl/azooKey_dictionary_storage" "Apache-2.0" "$AZOOKEY_DATA/azooKey_dictionary_storage/LICENSE"
 entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/mozc" "BSD-3-Clause" "$CACHE/mozc-LICENSE"
 entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" "$CACHE/cldr-LICENSE"
+entry "Tatoeba sentences $TATOEBA_OPUS_VERSION (as the Japanese language model)" "https://tatoeba.org" "CC-BY-2.0-FR" "$TATOEBA_NOTICE"
 entry "azooKey tokenizer data: ku-nlp/gpt2-small-japanese-char tokenizer (with AzooKeyKanaKanjiConverter)" \
   "https://huggingface.co/ku-nlp/gpt2-small-japanese-char" "CC-BY-SA-4.0" "$CACHE/cc-by-sa-4.0.txt"
 entry "llama.cpp $LLAMA_CPP_REF (azooKey build, for Zenzai)" "https://github.com/azooKey/llama.cpp" "MIT" "$CACHE/llama.cpp-LICENSE"

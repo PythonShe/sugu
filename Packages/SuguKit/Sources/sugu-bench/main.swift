@@ -3,7 +3,7 @@ import SuguCore
 
 // sugu-bench: accuracy and latency of the whole input pipeline on the test
 // sets in Bench/. Run in release:
-//   swift run -c release sugu-bench --data ../../Data --bench ../../Bench [--json out.json] [--check] [--zenzai model.gguf] [--grammar model.gram]
+//   swift run -c release sugu-bench --data ../../Data --bench ../../Bench [--json out.json] [--check] [--zenzai model.gguf] [--grammar model.gram] [--no-language-model]
 // --check exits non-zero when a budget in AGENTS.md is exceeded.
 let arguments = Array(CommandLine.arguments.dropFirst())
 
@@ -13,13 +13,14 @@ func option(_ name: String) -> String? {
 }
 
 guard let data = option("--data"), let bench = option("--bench") else {
-    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>]\n".utf8))
+    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>] [--no-language-model]\n".utf8))
     exit(2)
 }
 
 let zenzai = option("--zenzai").map { URL(fileURLWithPath: $0) }
 let grammar = option("--grammar").map { URL(fileURLWithPath: $0) }
-let report = try await Bench.run(data: URL(fileURLWithPath: data), bench: URL(fileURLWithPath: bench), zenzaiModel: zenzai, grammarModel: grammar) { preferences in
+let report = try await Bench.run(data: URL(fileURLWithPath: data), bench: URL(fileURLWithPath: bench), zenzaiModel: zenzai, grammarModel: grammar,
+                                languageModels: !arguments.contains("--no-language-model")) { preferences in
     // Variants for comparing configurations.
     if arguments.contains("--no-predictions") { preferences.japanesePredictions = false }
     if arguments.contains("--no-typo-correction") { preferences.typoCorrection = false }

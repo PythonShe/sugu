@@ -15,7 +15,7 @@ enum Bench {
         var expected: String
     }
 
-    static func run(data: URL, bench: URL, zenzaiModel: URL? = nil, grammarModel: URL? = nil, configure: (inout Preferences) -> Void = { _ in }) async throws -> Report {
+    static func run(data: URL, bench: URL, zenzaiModel: URL? = nil, grammarModel: URL? = nil, languageModels: Bool = true, configure: (inout Preferences) -> Void = { _ in }) async throws -> Report {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-bench-\(getpid())", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: work) }
         var preferences = Preferences()
@@ -27,7 +27,8 @@ enum Bench {
             rimeUser: work.appendingPathComponent("Rime"),
             azooKey: work.appendingPathComponent("AzooKey"),
             models: work.appendingPathComponent("Models"),
-            lexicon: data.appendingPathComponent("Lexicon")
+            lexicon: data.appendingPathComponent("Lexicon"),
+            languageModels: languageModels ? data.appendingPathComponent("LM") : nil
         )
         if let zenzaiModel {
             try FileManager.default.createDirectory(at: locations.models, withIntermediateDirectories: true)

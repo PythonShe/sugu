@@ -4,6 +4,7 @@ import SuguAzooKey
 import SuguCore
 import SuguInput
 import SuguLearning
+import SuguLM
 import SuguRime
 
 /// Owns the language engines for the process and keeps them in step with
@@ -21,13 +22,20 @@ public final class EngineHub: EngineSource {
         public var models: URL
         /// Bundled word lists (`Lexicon`), for the pinyin syllables.
         public var lexicon: URL
+        /// Bundled character language models (`LM`, ADR 0005).
+        public var languageModels: URL?
 
-        public init(rimeShared: URL, rimeUser: URL, azooKey: URL, models: URL, lexicon: URL) {
+        public init(rimeShared: URL, rimeUser: URL, azooKey: URL, models: URL, lexicon: URL, languageModels: URL? = nil) {
             self.rimeShared = rimeShared
             self.rimeUser = rimeUser
             self.azooKey = azooKey
             self.models = models
             self.lexicon = lexicon
+            self.languageModels = languageModels
+        }
+
+        public func languageModel(_ mode: InputMode) -> URL? {
+            languageModels?.appendingPathComponent("\(mode == .japanese ? "ja" : "zh").lm")
         }
 
         /// The grammar model, when downloaded. octagram reads it from the
@@ -121,6 +129,7 @@ public final class EngineHub: EngineSource {
             if let japanese { return japanese }
             let started = ContinuousClock.now
             let engine = AzooKeyEngine(configuration: japaneseConfiguration)
+            engine.languageModel = loadLanguageModel(.japanese)
             Log.engines.notice("Japanese ready in \(ContinuousClock.now - started, privacy: .public)")
             japanese = engine
             if let store { engine.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) }) }
@@ -350,6 +359,16 @@ public final class EngineHub: EngineSource {
         configuration.zenzaiModel = preferences.zenzaiEnabled && isZenzaiModelInstalled && zenzaiLoaded == locations.zenzaiModel ? locations.zenzaiModel : nil
         try? FileManager.default.createDirectory(at: locations.azooKey, withIntermediateDirectories: true)
         return configuration
+    }
+
+    private func loadLanguageModel(_ mode: InputMode) -> CharacterLanguageModel? {
+        guard let url = locations.languageModel(mode), FileManager.default.fileExists(atPath: url.path) else { return nil }
+        do {
+            return try CharacterLanguageModel(contentsOf: url)
+        } catch {
+            Log.engines.error("Language model \(url.lastPathComponent, privacy: .public) did not load: \(String(describing: error), privacy: .public)")
+            return nil
+        }
     }
 
     /// Reloads the Chinese engine after a model was installed or removed.

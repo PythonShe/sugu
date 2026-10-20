@@ -14,6 +14,11 @@ WANXIANG_SHA256=d02793a93b9f92cea6f4dc2fcc1d6f92316c2fc96a23753877cf767b114c11c1
 # word list.
 WANXIANG_DICTS="zi jichu cuoyin duoyin diming mingren yiren en"
 
+# Tatoeba sentences (CC BY 2.0 FR) at an OPUS snapshot, for the character
+# language models (ADR 0005).
+TATOEBA_OPUS_VERSION=v2026-07-08
+TATOEBA_JA_SHA256=d5b2eb0eb1084b20c8b86aff29aedb51dfac96eb53c8ba65fe6aa4dfaf00de60
+
 # License texts for bundled code that ships without one in its sources
 # (scripts/make-notices.sh).
 LLAMA_CPP_REF=b4846
@@ -29,3 +34,7 @@ SPARKLE_TOOLS_SHA256=c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae
 SPARKLE_LICENSE_SHA256=389a4e4e9a32f059775b13a06e25a591445ba229d2838d26dd3e7c0c45127cfe
 # Creative Commons Attribution-ShareAlike 4.0 legal code (the azooKey tokenizer data).
 CC_BY_SA_4_SHA256=28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5
+# Creative Commons Paternité 2.0 France legal code (Tatoeba), from the
+# cc-legal-tools-data repository.
+CC_LEGAL_TOOLS_REF=a0dac18d1a773b4cdb7d8dd5d9bf4efab7901030
+CC_BY_2_FR_SHA256=597d4c64f6606c64da65ba6c079e5cc87e4cce2b5187eda908c939b538e7ab9b

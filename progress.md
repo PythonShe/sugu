@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Japanese conversions ranked by a character 5-gram model built from
+  Tatoeba (ADR 0005, D-047): bench top-1 78% → 86%, keystroke p99
+  unchanged, 16.4 MB bundled. Personal n-grams and Chinese ranking next.
 - Review of the language-model batch (D-046): requests re-checked after the
   pause, suggestions end with their composition, errors logged by kind.
   CI passes (keystroke p99 4.15 ms on a loaded machine).

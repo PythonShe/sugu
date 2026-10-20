@@ -50,7 +50,9 @@ checks accuracy and latency budgets.
    - **live candidates** (`handleLive`: librime, expressions): candidates
      follow every key, the first is chosen by default, Space commits it;
    - **staged conversion** (`handleStaged`: AzooKey): typing shows
-     predictions, Space converts, arrows move and resize clauses.
+     predictions, Space converts, arrows move and resize clauses. AzooKey's
+     whole-input sentences are reordered by `CharacterLanguageModel`
+     (`SuguLM`) after the left context, unless Zenzai is on.
 3. After the engine changes, `refresh()` rebuilds the list:
    `CandidateAssembler` merges the engine's candidates with learned words,
    computed candidates, Latin text and Chinese forms of Japanese names,
@@ -78,8 +80,9 @@ checks accuracy and latency budgets.
   sentences; it is regenerated from the store on every change. Sync
   writes one file per Mac to a folder the user picks, carrying deletions so a
   word deleted on one Mac stays deleted everywhere.
-- The bundled Chinese data is compiled by `scripts/build-data.sh` into
-  `Data/`; GPL data (rime-ice) and the Zenzai model are user downloads only.
+- The bundled Chinese data and the Japanese character language model
+  (ADR 0005) are compiled by `scripts/build-data.sh` into `Data/`; GPL data
+  (rime-ice) and the Zenzai model are user downloads only.
 
 ## Checks
 

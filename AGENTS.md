@@ -89,8 +89,8 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
 - `Sugu.xcodeproj` stays generated from `project.yml`. Generated artifacts
   are gitignored and recorded here: `.vendor/` (third-party sources and
   build trees), `Frameworks/` (`librime.xcframework` from
-  `scripts/build-librime.sh`), `Data/` (compiled dictionaries from
-  `scripts/build-data.sh`), `dist/` (release output of
+  `scripts/build-librime.sh`), `Data/` (compiled dictionaries and
+  language models from `scripts/build-data.sh`), `dist/` (release output of
   `scripts/release.sh`), `.build-dev/` (builds of `scripts/install-dev.sh`),
   and `Sugu.xcodeproj/` except its SwiftPM `Package.resolved`. `Packages/SuguKit/Package.resolved` is tracked.
 - Pinned third-party versions live in `scripts/versions.sh`.

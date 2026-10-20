@@ -34,6 +34,9 @@ targets:
       - path: Data/Lexicon
         type: folder
         buildPhase: resources
+      - path: Data/LM
+        type: folder
+        buildPhase: resources
     dependencies:
       - package: SuguKit
         product: SuguInput

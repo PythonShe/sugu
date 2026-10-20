@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import SuguAzooKey
 import SuguCore
+import SuguLM
 import SuguRime
 
 /// End-to-end checks against the real engines and the data built by
@@ -237,6 +238,28 @@ struct RimeEngineTests {
         engine.insert("watashihagakuseidesu")
         #expect(engine.convert())
         #expect(engine.state.segments.map(\.text).joined() == "私は学生です")
+    }
+
+    @Test func theLanguageModelRanksSentencesThatReadNaturally() throws {
+        var builder = CharacterLanguageModelBuilder()
+        builder.minimumCount = 1
+        for sentence in ["雨が降りそうです。", "明日は雨が降ります。", "雪が降りそうだ。", "古い家です。"] { builder.add(sentence) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-engine-lm-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try builder.build().data.write(to: url)
+
+        let engine = try makeEngine()
+        engine.insert("amegafurisoudesu")
+        #expect(engine.convert())
+        let plain = engine.state.segments.map(\.text).joined()
+        engine.clear()
+        engine.languageModel = try CharacterLanguageModel(contentsOf: url)
+        engine.insert("amegafurisoudesu")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined() == "雨が降りそうです")
+        #expect(plain != "雨が降りそうです", "the converter alone already ranks it first; pick another sentence")
+        // The first clause is the one the ranked sentence wrote.
+        #expect(engine.state.segments.first { $0.role == .focused }?.text == "雨が")
     }
 
     @Test func restoredReadingsConvertAgain() throws {

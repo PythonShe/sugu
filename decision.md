@@ -625,3 +625,31 @@ any call made without the owner present. Each entry: what, why, reversibility.
   before the pause is still asked once.
 - Model errors are logged by kind only: a refusal's description can quote
   the prompt.
+
+## D-047 · Character language model for Japanese ranking (2026-10-20)
+- ADR 0005 as built. `SuguLM` holds `CharacterLanguageModel` (reader) and
+  `CharacterLanguageModelBuilder`: interpolated Kneser-Ney 5-grams over
+  NFKC scalars, one discount per order from the counts of counts, pruned
+  (≥ 3 characters, seen once) with backoff weights renormalized so each
+  context still sums to one (tested). Contexts made only of start markers
+  are stored for their backoff weights. Builds are byte-identical.
+- File: sorted 64-bit FNV-1a keys, then Int16 thousandths of log
+  probability and backoff; binary search over the memory-mapped file. No
+  marisa: one lookup structure Sugu owns, no new dependency.
+- `AzooKeyEngine.ranked` reorders at most the first five whole-input
+  results by AzooKey's value plus the model's natural log probability
+  (weight 1: any weight from 0.1 to 100 gave the same picks in the
+  prototype) after the left context and fixed clauses. Used for the best
+  sentence, the text after a chosen clause, and live conversion. When the
+  model picked a different sentence than AzooKey, the clause list puts the
+  clause that sentence wrote first; otherwise AzooKey's clause order
+  stands, which is better than its sentence order (moving it always cost
+  6 points).
+- Corpus: OPUS's versioned Tatoeba snapshot, since Tatoeba's own exports
+  are replaced weekly. The bench sentences are left out at build time.
+- Measured: Japanese top-1 78% → 86%, characters 95.7% → 97.5%, learned
+  names 90% → 100% after learning, keystroke p99 unchanged (~2.7 ms).
+  Remaining misses are sentences AzooKey does not propose (弾き, 開いて),
+  numerals (十分 → 10分) and orthography (宜しく, 子ども).
+- Also found: AzooKey bundles its Zenz tokenizer (CC BY-SA 4.0) as a
+  resource; it is now attributed in the notices.

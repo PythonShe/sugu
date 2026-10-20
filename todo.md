@@ -96,3 +96,12 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Entitlement signing through `Config/Local.xcconfig`; offscreen probe
 - [ ] Verify answers once Apple Intelligence is ready on the development Mac
 - [x] Release signing: optional Developer ID profile in `scripts/release.sh` (D-045)
+
+## 12. Language model ranking (ADR 0005)
+- [x] `SuguLM`: character n-gram reader and builder; `sugu-tool build-lm`; Tatoeba pinned in the data scripts
+- [x] Japanese: AzooKey's sentences ranked by the model (D-047)
+- [ ] Personal n-grams from commits in the learned store, blended with the bundled model
+- [ ] Chinese: ranking over librime's candidates without the grammar model
+- [ ] Bench: a larger held-out Japanese and Chinese set
+- [ ] Zenzai personalization from the personal model
+

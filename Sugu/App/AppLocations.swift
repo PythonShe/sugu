@@ -7,6 +7,7 @@ struct AppLocations {
     let support: URL
     let bundledRime: URL
     let bundledLexicon: URL
+    let bundledLanguageModels: URL
 
     static let current: AppLocations = {
         var base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -20,7 +21,8 @@ struct AppLocations {
         return AppLocations(
             support: base.appendingPathComponent("Sugu", isDirectory: true),
             bundledRime: resources.appendingPathComponent("Rime", isDirectory: true),
-            bundledLexicon: resources.appendingPathComponent("Lexicon", isDirectory: true)
+            bundledLexicon: resources.appendingPathComponent("Lexicon", isDirectory: true),
+            bundledLanguageModels: resources.appendingPathComponent("LM", isDirectory: true)
         )
     }()
 
@@ -34,7 +36,8 @@ struct AppLocations {
             rimeUser: support.appendingPathComponent("Rime", isDirectory: true),
             azooKey: support.appendingPathComponent("AzooKey", isDirectory: true),
             models: support.appendingPathComponent("Models", isDirectory: true),
-            lexicon: bundledLexicon
+            lexicon: bundledLexicon,
+            languageModels: bundledLanguageModels
         )
     }
 }

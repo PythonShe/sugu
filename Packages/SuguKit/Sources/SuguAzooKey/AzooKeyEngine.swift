@@ -1,6 +1,7 @@
 import Foundation
 internal import KanaKanjiConverterModuleWithDefaultDictionary
 import SuguCore
+import SuguLM
 
 /// Japanese composition on AzooKeyKanaKanjiConverter.
 ///
@@ -37,6 +38,9 @@ public final class AzooKeyEngine: CompositionEngine {
     }
 
     private var converter: KanaKanjiConverter
+    /// Ranks the converter's sentences by how naturally they read
+    /// (ADR 0005); nil ranks by the converter's costs alone.
+    public var languageModel: CharacterLanguageModel?
     /// The Zenzai model the converter has loaded, if any.
     private var loadedZenzai: URL?
     private var configuration: Configuration
@@ -61,6 +65,9 @@ public final class AzooKeyEngine: CompositionEngine {
     /// Text after the first clause of the best sentence, keyed by that
     /// clause's kana length.
     private var bestFollowing: (length: Int, text: String)?
+    /// The focused clause's text in the best sentence, while its
+    /// candidates are requested.
+    private var preferredFocus: String?
 
     public let traits = EngineTraits(hasConversionPhase: true, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
@@ -422,7 +429,7 @@ public final class AzooKeyEngine: CompositionEngine {
         let total = composing.convertTarget.count
         if focusLength == nil {
             let result = converter.requestCandidates(composing, options: options(predictions: false))
-            guard let best = result.mainResults.first else {
+            guard let best = ranked(result.mainResults, length: total, after: history).first else {
                 focusCandidates = []
                 followingText = ""
                 publishConverting()
@@ -438,14 +445,44 @@ public final class AzooKeyEngine: CompositionEngine {
                 return
             }
             focusLength = clause.rubyCount
+            // The clause list has its own order; it yields only to a
+            // sentence the language model preferred.
+            if best.text != result.mainResults.first?.text { preferredFocus = clause.text }
             bestFollowing = (clause.rubyCount, String(best.text.dropFirst(clause.text.count)))
         }
         let length = min(focusLength ?? total, total)
         var prefix = composing
         _ = prefix.moveCursorFromCursorPosition(count: length - prefix.convertTargetCursorPosition)
         focusCandidates = converter.requestCandidates(prefix.prefixToCursorPosition(), options: options(predictions: false)).mainResults
+        // The clause as the ranked sentence wrote it comes first, so the
+        // first display is that sentence.
+        if let preferredFocus, let index = focusCandidates.firstIndex(where: { $0.text == preferredFocus }), index > 0 {
+            focusCandidates.insert(focusCandidates.remove(at: index), at: 0)
+        }
+        preferredFocus = nil
         updateFollowingText()
         publishConverting()
+    }
+
+    /// Text before the unfixed input: the document's, then fixed clauses.
+    private var history: String {
+        leftContext + fixed.map(\.text).joined()
+    }
+
+    /// The converter's whole-input sentences, at most five at the head of
+    /// its results, reordered by its cost plus the language model's log
+    /// probability after `history`; the rest keep their place. Zenzai,
+    /// when on, has already chosen.
+    private func ranked(_ results: [KanaKanjiConverterModule.Candidate], length: Int, after history: String) -> [KanaKanjiConverterModule.Candidate] {
+        guard let languageModel, configuration.zenzaiModel == nil else { return results }
+        let sentences = results.prefix(5).prefix { $0.rubyCount == length }
+        guard sentences.count > 1 else { return results }
+        let reordered = sentences
+            .map { (candidate: $0, score: $0.value + languageModel.logProbability(of: $0.text, after: history)) }
+            .enumerated()
+            .sorted { $0.element.score != $1.element.score ? $0.element.score > $1.element.score : $0.offset < $1.offset }
+            .map(\.element.candidate)
+        return reordered + results.dropFirst(sentences.count)
     }
 
     /// Converts what follows the highlighted clause candidate, reusing the
@@ -460,7 +497,8 @@ public final class AzooKeyEngine: CompositionEngine {
         var remainder = composing
         remainder.prefixComplete(composingCount: candidate.composingCount)
         guard !remainder.isEmpty else { return }
-        followingText = converter.requestCandidates(remainder, options: options(predictions: false)).mainResults.first?.text ?? remainder.convertTarget
+        let results = converter.requestCandidates(remainder, options: options(predictions: false)).mainResults
+        followingText = ranked(results, length: remainder.convertTarget.count, after: history + candidate.text).first?.text ?? remainder.convertTarget
     }
 
     private func publishConverting() {
@@ -527,8 +565,9 @@ public final class AzooKeyEngine: CompositionEngine {
         guard pending < target.count else { return nil }
         var kana = composing
         _ = kana.moveCursorFromCursorPosition(count: -pending)
-        let result = converter.requestCandidates(kana.prefixToCursorPosition(), options: options(predictions: false))
-        return result.mainResults.first.map { $0.text + target.suffix(pending) }
+        let input = kana.prefixToCursorPosition()
+        let result = converter.requestCandidates(input, options: options(predictions: false))
+        return ranked(result.mainResults, length: input.convertTarget.count, after: history).first.map { $0.text + target.suffix(pending) }
     }
 
     private func refreshComposing() {
