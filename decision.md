@@ -300,3 +300,18 @@ any call made without the owner present. Each entry: what, why, reversibility.
   about half from the user-dictionary lookup and half from the toneless
   syllables; the budget is 5 ms.
 
+## D-026 · Apostrophes in learned readings (2026-10-20)
+- Readings were stored without apostrophes, so a word picked after typing
+  `xi'an` (西安) was offered first for `xian`, where the user means 先 or
+  现 — the behavior of the built-in input method this project wants to
+  avoid. A learned reading now keeps an apostrophe where pinyin needs one
+  to split differently: before a syllable starting with a, o or e, or
+  between n and g (`fan'gan`). Elsewhere (`ni'hao`) it is dropped, so it
+  does not split one word's uses.
+- Typing with an apostrophe also finds words stored without it that have
+  a character per part (西安 for `xi'an`, not 先). Added and imported words
+  drop every apostrophe, since import formats separate each syllable.
+- Words whose reading kept an apostrophe stay out of librime's user
+  dictionary (D-025): librime reads `xian` both ways and would offer them
+  for the bare keys. Sugu's exact-reading match serves them.
+

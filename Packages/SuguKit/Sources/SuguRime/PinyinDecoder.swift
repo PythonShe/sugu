@@ -38,6 +38,7 @@ public struct PinyinDecoder: Sendable {
 
     /// Syllable sequences that type `keys` as exactly `count` syllables,
     /// those needing the fewest derived spellings first, at most `limit`.
+    /// An apostrophe is a boundary no syllable crosses.
     public func syllables(typedAs keys: String, count: Int, limit: Int = 4) -> [[String]] {
         let keys = Array(keys)
         guard count > 0, keys.count >= count else { return [] }
@@ -46,6 +47,7 @@ public struct PinyinDecoder: Sendable {
         var memo: [Int: (cost: Int, sequences: [[String]])] = [:]
         func solve(_ position: Int, _ remaining: Int) -> (cost: Int, sequences: [[String]]) {
             if position == keys.count { return remaining == 0 ? (0, [[]]) : (.max, []) }
+            if keys[position] == "'" { return solve(position + 1, remaining) }
             if remaining == 0 { return (.max, []) }
             let key = position * (count + 1) + remaining
             if let known = memo[key] { return known }

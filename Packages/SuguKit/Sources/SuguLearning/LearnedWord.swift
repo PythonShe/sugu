@@ -41,17 +41,38 @@ public struct LearnedWord: Sendable, Hashable, Identifiable {
         return (pinned ? 1_000 : 0) + (kind == .user ? 100 : 0) + usage
     }
 
-    /// The key words are stored and looked up under: case- and
-    /// separator-insensitive pinyin, or hiragana.
+    /// The key words are stored and looked up under: case-insensitive
+    /// pinyin without spaces, or hiragana.
+    ///
+    /// An apostrophe the user typed stays where pinyin needs one, before a
+    /// syllable starting with a, o or e (xi'an, not xian) or between n and g
+    /// (fan'gan, not fang'an), so a word picked for `xi'an` is not offered
+    /// first for `xian`. Elsewhere it marks a boundary the keys already
+    /// make (ni'hao) and is dropped.
     public static func normalize(_ reading: String, mode: InputMode) -> String {
         switch mode {
         case .chinese:
-            reading.lowercased().filter { $0 != "'" && $0 != " " }
+            let letters = Array(reading.lowercased().filter { $0 != " " })
+            var result = ""
+            for (index, character) in letters.enumerated() {
+                guard character == "'" else { result.append(character); continue }
+                guard let previous = result.last, previous != "'", index + 1 < letters.count else { continue }
+                let next = letters[index + 1]
+                if "aoe".contains(next) || (previous == "n" && next == "g") { result.append(character) }
+            }
+            return result
         case .japanese:
-            WidthConversion.hiragana(reading).filter { $0 != " " && $0 != "　" }
+            return WidthConversion.hiragana(reading).filter { $0 != " " && $0 != "　" }
         case .english:
-            reading.lowercased()
+            return reading.lowercased()
         }
+    }
+
+    /// The key for a reading the user did not type into a composition (an
+    /// added or imported word): import formats separate every syllable,
+    /// so no apostrophe is kept.
+    public static func normalize(enteredReading reading: String, mode: InputMode) -> String {
+        normalize(mode == .chinese ? reading.filter { $0 != "'" } : reading, mode: mode)
     }
 }
 

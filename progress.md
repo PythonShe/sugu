@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Learned readings keep a needed apostrophe (D-026): 西安 picked for
+  `xi'an` is no longer offered first for `xian`.
 - Chinese learned words take part in librime's sentences (D-025): a
   read-only user dictionary generated from the store, codes decoded from
   the typed keys by the schema's own spelling rules, toneless syllables

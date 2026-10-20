@@ -24,6 +24,8 @@ struct PinyinDecoderTests {
         #expect(decoder.syllables(typedAs: "xian", count: 1) == [["xian"]])
         #expect(decoder.syllables(typedAs: "lvse", count: 2) == [["lv", "se"]])
         #expect(decoder.syllables(typedAs: "zgr", count: 3).isEmpty)
+        #expect(decoder.syllables(typedAs: "xi'an", count: 2) == [["xi", "an"]])
+        #expect(decoder.syllables(typedAs: "xi'an", count: 1).isEmpty)
     }
 
     @Test func doublePinyin() throws {
@@ -49,6 +51,7 @@ struct PinyinDecoderTests {
             RimeUserDictionary.Word(reading: "ta", text: "她", count: 5),
             RimeUserDictionary.Word(reading: "tshirt", text: "T恤", count: 1),
             RimeUserDictionary.Word(reading: "zgr", text: "中国人", count: 1),
+            RimeUserDictionary.Word(reading: "xi'an", text: "西安", count: 1),
         ]
         let table = RimeUserDictionary.table(for: words, decoder: xiaohe, fullPinyin: try decoder())
         let rows = table.split(separator: "\n").filter { !$0.hasPrefix("#") }

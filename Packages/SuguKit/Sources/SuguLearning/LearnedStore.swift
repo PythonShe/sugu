@@ -105,10 +105,17 @@ public final class LearnedStore {
 
     // MARK: Reading
 
-    /// Words for exactly this reading, best first.
+    /// Words for this reading, best first. A reading typed with an
+    /// apostrophe also finds words stored without it that have a character
+    /// for every part (西安 for xi'an, not 先).
     public func lookup(_ reading: String, mode: InputMode) -> [LearnedWord] {
-        let key = IndexKey(mode: mode, reading: LearnedWord.normalize(reading, mode: mode))
-        guard let ids = index[key] else { return [] }
+        let normalized = LearnedWord.normalize(reading, mode: mode)
+        var ids = index[IndexKey(mode: mode, reading: normalized)] ?? []
+        if mode == .chinese, normalized.contains("'") {
+            let parts = normalized.split(separator: "'").count
+            ids += (index[IndexKey(mode: mode, reading: normalized.filter { $0 != "'" })] ?? [])
+                .filter { (words[$0]?.text.count ?? 0) >= parts }
+        }
         let now = clock()
         return ids.compactMap { words[$0] }.sorted { $0.score(at: now) > $1.score(at: now) }
     }
@@ -194,7 +201,7 @@ public final class LearnedStore {
     /// Adds a word the user typed in, or imported.
     @discardableResult
     public func addUserWord(reading: String, text: String, mode: InputMode) -> Bool {
-        let reading = LearnedWord.normalize(reading, mode: mode)
+        let reading = LearnedWord.normalize(enteredReading: reading, mode: mode)
         guard !reading.isEmpty, !text.isEmpty else { return false }
         do {
             try database.transaction {
@@ -213,7 +220,7 @@ public final class LearnedStore {
         let now = clock()
         try database.transaction {
             for entry in entries {
-                let reading = LearnedWord.normalize(entry.reading, mode: entry.mode)
+                let reading = LearnedWord.normalize(enteredReading: entry.reading, mode: entry.mode)
                 guard !reading.isEmpty, !entry.text.isEmpty else { continue }
                 if index[IndexKey(mode: entry.mode, reading: reading)]?.contains(where: { words[$0]?.text == entry.text }) != true {
                     added += 1

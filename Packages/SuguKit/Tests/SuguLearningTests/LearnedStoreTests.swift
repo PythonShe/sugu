@@ -49,6 +49,28 @@ struct LearnedStoreTests {
         #expect(store.lookup("nihao", mode: .chinese).first?.text == "拟好")
     }
 
+    /// A word picked for xi'an is not offered first for xian; words
+    /// learned for xian with a character per part still are for xi'an.
+    @Test func apostrophesThatSplitDifferentlyStay() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "西安", reading: "xi'an"), mode: .chinese)
+        #expect(store.lookup("xian", mode: .chinese).isEmpty)
+        #expect(store.lookup("Xi'an", mode: .chinese).map(\.text) == ["西安"])
+        store.learn(Commit(text: "先", reading: "xian"), mode: .chinese)
+        store.learn(Commit(text: "西岸", reading: "xian"), mode: .chinese)
+        #expect(Set(store.lookup("xi'an", mode: .chinese).map(\.text)) == ["西安", "西岸"])
+        #expect(Set(store.lookup("xian", mode: .chinese).map(\.text)) == ["先", "西岸"])
+        #expect(LearnedWord.normalize("fan'gan", mode: .chinese) == "fan'gan")
+        #expect(LearnedWord.normalize("zhang''san'", mode: .chinese) == "zhangsan")
+    }
+
+    /// Imported pinyin separates every syllable; none of it is kept.
+    @Test func enteredReadingsDropApostrophes() throws {
+        let store = try makeStore()
+        _ = try store.importUserWords([(reading: "zhou'an", text: "周安", mode: .chinese)])
+        #expect(store.lookup("zhouan", mode: .chinese).map(\.text) == ["周安"])
+    }
+
     @Test func forgetsTheLastHour() throws {
         let store = try makeStore()
         store.learn(Commit(text: "你好", reading: "nihao"), mode: .chinese)

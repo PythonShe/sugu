@@ -49,7 +49,10 @@ public enum RimeUserDictionary {
     public static func table(for words: [Word], decoder: PinyinDecoder, fullPinyin: PinyinDecoder?) -> String {
         var lines = Set<String>()
         var written = 0
-        for word in words where (2...maximumLength).contains(word.text.count) && word.text.allSatisfy(\.isHan) {
+        // A reading that kept an apostrophe (xi'an) splits the keys where
+        // librime would not; librime would offer the word for the keys
+        // alone (xian), so it is left to Sugu's exact-reading match.
+        for word in words where (2...maximumLength).contains(word.text.count) && word.text.allSatisfy(\.isHan) && !word.reading.contains("'") {
             guard written < maximumWords else { break }
             var readings = decoder.syllables(typedAs: word.reading, count: word.text.count, limit: maximumReadings)
             if readings.isEmpty, let fullPinyin {
