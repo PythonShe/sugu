@@ -17,12 +17,12 @@ reasons behind each choice are in `docs/adr/` (product) and `decision.md`
 
 | Module | Role | Depends on |
 |---|---|---|
-| `SuguCore` | Modes, the key model, candidates, composition state, the `CompositionEngine` protocol and `EngineTraits`, punctuation, width and kana conversion, computed candidates, Latin inference, preferences | — |
+| `SuguCore` | Modes, the key model, candidates, composition state, the `CompositionEngine` protocol and `EngineTraits`, punctuation, width and kana conversion, computed candidates, Latin inference, the pinyin syllabary, preferences, `Log` (unified-log channels) | — |
 | `SuguLearning` | `LearnedStore`: learned and user words in SQLite with an in-memory index, deletions, expiry, pins | Core |
-| `SuguInput` | `InputSession`, the input state machine, with `CandidateAssembler`, `CandidateList`, the `v` expression engine, `InputClient` and `EngineSource` protocols, `ShiftTapDetector` | Core, Learning |
+| `SuguInput` | `InputSession`, the input state machine, with `CandidateAssembler`, `CandidateList`, the `v` expression engine, the `LoadingEngine` that holds letters until librime is ready, `InputClient` and `EngineSource` protocols, `ShiftTapDetector` | Core, Learning |
 | `SuguRime` | librime through the `CRimeShim` C target: schema generation, runtime, `RimeEngine`, OpenCC `ScriptConverter`, the learned-word user dictionary and the pinyin decoder it needs | Core |
-| `SuguAzooKey` | `AzooKeyEngine`: predictions and clause conversion over AzooKeyKanaKanjiConverter, Zenzai options | Core |
-| `SuguEngines` | `EngineHub` (the real `EngineSource`: lazy engines, preferences, script) and `ModelLibrary` (optional downloads) | Input, Rime, AzooKey, Downloads |
+| `SuguAzooKey` | `AzooKeyEngine`: predictions and clause conversion over AzooKeyKanaKanjiConverter; Zenzai loaded on a background converter and adopted between compositions | Core |
+| `SuguEngines` | `EngineHub` (the real `EngineSource`: engines prepared at mode change and focus, deployment retries, preferences, script) and `ModelLibrary` (optional downloads) | Input, Rime, AzooKey, Downloads |
 | `SuguDictionaries` | Importers and exporters, Sugu's own dictionary format, folder sync (`SyncFolder`, `DictionarySync`) | Core, Learning |
 | `SuguDownloads` | Pinned, checksum-verified downloads and zip extraction | — |
 | `SuguUpdates` | Sparkle, with system profiling off | Sparkle |
@@ -42,9 +42,11 @@ checks accuracy and latency budgets.
    `InputCoordinator`, which drops duplicates, handles Shift taps and Caps
    Lock, and turns the `NSEvent` into a `KeyInput` (`KeyTranslator`).
 2. `InputSession.handle(_:)` applies global keys (mode keys, shortcuts, vim
-   Esc, F6–F10). With no composition, `start(_:)` picks the engine for the
-   mode. During a composition the active engine's traits choose the
-   bindings:
+   Esc, F6–F10, and the Emacs and Kotoeri control keys inside a
+   composition). With no composition, `start(_:)` picks the engine for the
+   mode; while librime is still deploying, the `LoadingEngine` holds the
+   letters and hands them over when `EngineSource.onEngineReady` fires.
+   During a composition the active engine's traits choose the bindings:
    - **live candidates** (`handleLive`: librime, expressions): candidates
      follow every key, the first is chosen by default, Space commits it;
    - **staged conversion** (`handleStaged`: AzooKey): typing shows
@@ -64,7 +66,12 @@ checks accuracy and latency budgets.
 
 - Field text (left context, document vocabulary, reconversion) is read
   through one gate, `canReadField`: never in secure input or excluded apps,
-  held in memory only.
+  held in memory only. Secure input counts unless its holder plainly
+  cannot own the field (the login window, another app in the background).
+- Logging (`SuguCore.Log`) records lifecycle and failures, never readings
+  or text; Settings › Advanced exports this run's entries on request.
+- A damaged learned store is renamed `learned.sqlite.damaged-<date>` and a
+  fresh one opened.
 - Learned words stay in the store's directory, excluded from backups. The
   Chinese ones are also written, read-only for librime, into its user
   directory (`sugu_learned.txt`, likewise excluded) so they take part in
