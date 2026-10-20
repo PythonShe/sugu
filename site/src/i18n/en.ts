@@ -19,7 +19,7 @@ export default {
       title: 'Install',
       steps: [
         'Open the downloaded package and follow the installer.',
-        'Sugu is selected in the input menu. It is listed under Chinese, Simplified in System Settings › Keyboard › Input Sources.',
+        'Sugu is added to the input menu. If it is missing, add it in System Settings › Keyboard › Input Sources › Edit, under Chinese, Simplified; log out and back in if it is not listed yet.',
         'Sugu checks for updates itself; you can turn this off in its settings.',
       ],
     },

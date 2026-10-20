@@ -24,7 +24,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Install
 
-Requires macOS 14 or later. Download `Sugu-<version>.pkg` from [sugu.zheng-she.com](https://sugu.zheng-she.com), open it, and Sugu is selected in the input menu. It is listed under Chinese, Simplified in **System Settings › Keyboard › Input Sources**. Sugu checks for updates itself; this can be turned off in its settings.
+Requires macOS 14 or later. Download `Sugu-<version>.pkg` from [sugu.zheng-she.com](https://sugu.zheng-she.com) and open it; Sugu is added to the input menu. If it is missing, add it in **System Settings › Keyboard › Input Sources › Edit**, under Chinese, Simplified; log out and back in if it is not listed yet. Sugu checks for updates itself; this can be turned off in its settings.
 
 To uninstall, remove Sugu from **Input Sources**, then in Terminal:
 
