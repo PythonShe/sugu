@@ -3,6 +3,15 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- First review pass fixed: computed candidates no longer learned; ⌃⌫ undo
+  checks the text left of the caret and restores into the engine that
+  composed it (expressions are not undoable); one gate for reading the
+  field; focus loss finishes a partial Rime selection; a failed Chinese
+  deploy is not retried per keystroke and `isReady` needs a deployed
+  schema; download cancel/remove ordered; sync carries deletions
+  (tombstones) so deleted words stay deleted on every Mac, reads files off
+  the main actor with coordination and iCloud downloads, backs off after
+  failures. 69 package tests.
 - `sugu-bench` added with 50-sentence Chinese and Japanese seed sets
   (D-018). Fixes it surfaced: Japanese keystroke p99 18.7 → ~4 ms (emoji
   replacer built once), trailing n → ん before conversion, romaji symbol

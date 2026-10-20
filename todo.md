@@ -59,4 +59,4 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [ ] CI workflow: build, tests, budgets
 - [ ] Packaging: signed/notarized `.pkg` scripts, Sparkle (profile off), dev install script
 - [ ] README, third-party notices/attribution, ADR updates
-- [~] Code review passes (reviewer agents) and fixes — first pass: 11 findings being fixed
+- [~] Code review passes (reviewer agents) and fixes — first pass fixed (11 findings + 3 minor); second pass after packaging
