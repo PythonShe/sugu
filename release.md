@@ -30,7 +30,8 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 - [x] `publish-release.sh`: AWS CLI (CI) or `cf` (local); rollback guard; downloads verified byte-for-byte through the public URL; index merge keeps first dates; polls until the feed serves the new build.
   - Every guard runs before the first upload. A list the site answers 404 for counts as empty only when the bucket has none either (checked with the AWS CLI).
   - After a failed publish, re-run **failed jobs only**: re-running all of them rebuilds the release with different bytes (new signature timestamps), and that version can no longer be published.
-- [x] `release.yml`: publishes one tag at a time (`release-publish`); every action pinned to a commit. `deploy-site.yml` deploys `main`, also when a release calls it from its tag.
+- [x] `release.yml`: publishes one tag at a time (`release-publish`); every action pinned to a commit. GitHub keeps one publish waiting at most: a third tag pushed meanwhile cancels the waiting one, which is then re-run.
+- Publishing locally with `cf` cannot ask the bucket, so a file the site does not serve stops it; set `FIRST_RELEASE=1` for the very first release. `deploy-site.yml` deploys `main`, also when a release calls it from its tag.
 - [x] `.github/workflows/release.yml`: prepare → notes → build (macos-26) → publish (R2) → site. Dry run = dispatch without tag, publish off.
 - [x] `.github/workflows/release-notes.yml`: Claude, four languages, end_turn + shape check, fixed fallback; body through stdin.
 - [x] `.github/workflows/deploy-site.yml`: push to `main` on site paths, after each release, manual; `pnpm check`, build, `wrangler pages deploy`; skips deploying without the Cloudflare secrets.

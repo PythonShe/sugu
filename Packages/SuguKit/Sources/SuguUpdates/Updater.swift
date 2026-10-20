@@ -38,9 +38,11 @@ public final class Updater: NSObject, SPUUpdaterDelegate, @MainActor SPUStandard
 
     public var supportsGentleScheduledUpdateReminders: Bool { true }
 
-    /// Shown at once only when Sugu has the focus anyway.
+    /// Never shown by itself: "immediate focus" means Sugu was just
+    /// launched or the Mac was idle, not that Sugu has the focus, and the
+    /// window would open over the app being typed in.
     public func standardUserDriverShouldHandleShowingScheduledUpdate(_ update: SUAppcastItem, andInImmediateFocus immediateFocus: Bool) -> Bool {
-        immediateFocus
+        false
     }
 
     public func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {

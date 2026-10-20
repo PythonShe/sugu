@@ -208,14 +208,14 @@ struct LearnedStoreTests {
     }
 
     /// A Sugu file the user imports brings back what Delete All removed.
-    @Test func restoringBringsBackDeletedWords() throws {
+    @Test func restoringBringsBackDeletedWords() async throws {
         let store = try makeStore()
         store.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
         let backup = store.allWords()
         clock.advance(hours: 1)
         store.deleteAll()
         #expect(try store.merge(backup) == 0)
-        #expect(try store.merge(backup, restoring: true) == 1)
+        #expect(try await store.restore(backup) == 1)
         #expect(store.allDeletions().isEmpty)
         // As used now, so a deletion another Mac still carries keeps it.
         #expect(store.allWords().first?.lastUsed == clock.now)

@@ -63,14 +63,22 @@ if [[ -n "${R2_ACCESS_KEY_ID:-}" ]]; then
       aws --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --region auto "$@"
   }
   put() { r2 s3 cp "$1" "s3://$BUCKET/$2" --content-type "$3" --cache-control "$4" --only-show-errors; }
-  # Whether the bucket holds a file, whatever the site serves.
-  stored() { r2 s3api head-object --bucket "$BUCKET" --key "$1" >/dev/null 2>&1; }
+  # Whether the bucket holds a file, whatever the site serves. Only a
+  # "not found" counts as absent; any other failure stops the publish.
+  stored() {
+    local output
+    output="$(r2 s3api head-object --bucket "$BUCKET" --key "$1" 2>&1)" && return 0
+    grep -Eq "\(404\)|Not Found" <<<"$output" && return 1
+    fail "Could not ask the bucket for $1: $output"
+  }
 else
   # The Cloudflare CLI sets no Cache-Control; the site's functions do.
   put() {
     cf r2 objects put "$2" --bucket-name "$BUCKET" --file "$1" --content-type "$3" >/dev/null
   }
-  stored() { false; }
+  # The bucket is not asked here: a file the site does not serve counts as
+  # there, unless FIRST_RELEASE=1 says nothing was published yet.
+  stored() { [[ "${FIRST_RELEASE:-}" != 1 ]]; }
 fi
 
 # Every check comes before the first upload, so a refused release leaves
@@ -117,6 +125,7 @@ for file in "$PKG" "$ZIP"; do
     cmp -s "$WORK/live" "$file" || fail "$key is already out with other contents; release a new version instead."
     echo "Already published: $key"
   else
+    ! stored "$key" || fail "The bucket has $key but $SITE does not serve it."
     MISSING+=("$file")
   fi
 done

@@ -1684,3 +1684,18 @@ checked against the code before it was changed.
 - **Site functions.** Preconditions and single ranges are read by the
   function: 304, 412 and 416 each where they belong, HEAD included;
   several ranges get the whole file. `/download/` answers HEAD.
+- **Second pass (Opus review of the fixes).** A file merged before and
+  unchanged since is skipped (its SHA-256 is kept in this Mac's
+  preferences), and a file no Mac has written for longer than deletions
+  are kept is ignored: a retired or migrated Mac's file would otherwise
+  bring back words once their deletions lapsed. A merge notifies only when
+  it changed something, so an idle pull rebuilds no engine. Undo's
+  deletion is dated at the word's first use here, so another Mac's later
+  uses keep it. Restoring a Sugu file is batched and capped like other
+  imports. A transaction that could not begin reads nothing back, and a
+  read swaps memory in whole. Scheduled updates are never shown by
+  Sparkle itself: its "immediate focus" means launched or idle, not
+  focused. The download mirror falls back on network errors too. HEAD
+  ignores Range. Publishing counts a file as absent only on a real "not
+  found" from the bucket, checks the downloads' keys too, and with `cf`
+  (which cannot ask) needs `FIRST_RELEASE=1` for the first release.

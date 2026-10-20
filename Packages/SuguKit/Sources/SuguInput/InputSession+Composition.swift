@@ -237,6 +237,9 @@ extension InputSession {
         if active?.traits.learnsCommits == true { _ = learn(head) }
         undoable = nil
         retypable = nil
+        // Part of the composition is in the field: Esc no longer puts the
+        // reconverted selection back.
+        reconverted = nil
     }
 
     /// 英数 pressed twice retypes the Japanese just committed as the romaji

@@ -211,6 +211,34 @@ private final class ManualClock: @unchecked Sendable {
         #expect(desktop.allWords().first?.pinned == true)
     }
 
+    /// A file merged before and unchanged since is not merged again, so
+    /// the store hears of no change; a changed one is.
+    @Test func unchangedFilesAreSkipped() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let laptop = try store()
+        let laptopSync = SyncFolder(folder: folder, deviceID: "laptop", store: laptop)
+        laptop.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)
+        try await laptopSync.export(includeLearned: false)
+
+        let desktop = try store()
+        let sync = SyncFolder(folder: folder, deviceID: "desktop", store: desktop)
+        #expect(try await sync.pull(includeLearned: false) == 1)
+        var changes = 0
+        let observer = NotificationCenter.default.addObserver(forName: LearnedStore.didChangeNotification, object: desktop, queue: nil) { _ in changes += 1 }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        desktop.deleteAll()
+        changes = 0
+        // The laptop's copy is older than the deletion and unchanged.
+        #expect(try await sync.pull(includeLearned: false) == 0)
+        #expect(changes == 0)
+        #expect(sync.merged.keys.sorted() == ["laptop.sugudict"])
+
+        laptop.addUserWord(reading: "kuai", text: "快", mode: .chinese)
+        try await laptopSync.export(includeLearned: false)
+        #expect(try await sync.pull(includeLearned: false) == 1)
+    }
+
     @Test func unreadableFilesDoNotStopTheOthers() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: folder.appendingPathComponent("broken.sugudict"), withIntermediateDirectories: true)

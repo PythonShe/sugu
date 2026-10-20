@@ -25,9 +25,10 @@ public enum Downloader {
 
         do {
             try await fetch(download.url, as: download, to: staging, session: session, progress: progress)
-        } catch let error as DownloadError {
-            // A server without the file, or with another one under its name.
-            guard let fallback = download.fallback else { throw error }
+        } catch {
+            // A server without the file, with another one under its name,
+            // or out of reach; a cancel stays a cancel.
+            guard let fallback = download.fallback, !(error is CancellationError), (error as? URLError)?.code != .cancelled else { throw error }
             try? fm.removeItem(at: staging)
             try await fetch(fallback, as: download, to: staging, session: session, progress: progress)
         }

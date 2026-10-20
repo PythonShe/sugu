@@ -169,7 +169,8 @@ final class SettingsModel {
             }.value
             switch file {
             case .sugu(let words):
-                added += try store.merge(words, restoring: true)
+                guard words.count <= DictionaryImporter.maximumEntries else { throw DictionaryImporter.Error.tooLarge }
+                added += try await store.restore(words)
             case .entries(let entries):
                 added += try await store.importUserWords(entries.map { ($0.reading, $0.text, $0.mode) })
             }

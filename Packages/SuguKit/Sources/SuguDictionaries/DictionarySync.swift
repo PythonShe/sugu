@@ -19,6 +19,7 @@ public final class DictionarySync {
         static let deviceID = "SyncDeviceID"
         static let deviceMachine = "SyncDeviceMachine"
         static let lastSync = "SyncLastDate"
+        static let merged = "SyncMergedFiles"
     }
 
     private let store: LearnedStore
@@ -101,7 +102,8 @@ public final class DictionarySync {
 
     private func makeFolder() -> SyncFolder? {
         guard let folder else { return nil }
-        return SyncFolder(folder: folder, deviceID: deviceID, store: store)
+        let merged = defaults.dictionary(forKey: Keys.merged) as? [String: String] ?? [:]
+        return SyncFolder(folder: folder, deviceID: deviceID, store: store, merged: merged)
     }
 
     /// Pulls and pushes now, unless a sync is already running. Returns the
@@ -118,6 +120,7 @@ public final class DictionarySync {
                 let snapshot = try await sync.read()
                 guard generation == self.generation else { return }
                 try sync.merge(snapshot, includeLearned: includeLearned)
+                defaults.set(sync.merged, forKey: Keys.merged)
                 if let name = snapshot.unreadable.first {
                     pullError = CocoaError(.fileReadNoPermission, userInfo: [NSFilePathErrorKey: name])
                 }
@@ -179,7 +182,10 @@ public final class DictionarySync {
             onChange?()
             syncNow()
         } else if current.syncLearnedWords != syncedLearned {
+            // Files merged without their learned words are read again.
             syncedLearned = current.syncLearnedWords
+            defaults.removeObject(forKey: Keys.merged)
+            nextPull = nil
             storeDidChange()
         }
     }
@@ -201,6 +207,7 @@ public final class DictionarySync {
         running = nil
         pendingExport?.cancel()
         defaults.removeObject(forKey: Keys.lastSync)
+        defaults.removeObject(forKey: Keys.merged)
         nextPull = nil
         failures = 0
         lastError = nil

@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import SuguCore
 import SuguLearning
@@ -6,8 +7,11 @@ import SuguLearning
 /// Drive, a shared disk). Each Mac writes only its own file and reads the
 /// others', so two Macs never write the same file. Files carry deletions as
 /// well as words, so a word deleted on one Mac goes on every Mac and is not
-/// brought back by another Mac's older copy. Every pull reads whole files:
-/// the store decides what to take (`LearnedStore.merge`).
+/// brought back by another Mac's older copy. A pull merges whole files, and
+/// the store decides what to take (`LearnedStore.merge`); a file merged
+/// before and unchanged since is skipped, and so is one no Mac has written
+/// for longer than deletions are kept (a retired Mac's), which could
+/// otherwise bring back words whose deletions have lapsed.
 ///
 /// File access runs off the main actor and is coordinated, because a
 /// cloud folder can block while it downloads; only merging into the store
@@ -19,12 +23,15 @@ public final class SyncFolder {
     public let folder: URL
     /// Identifies this Mac's file. Random, not derived from hardware.
     public let deviceID: String
+    /// The checksum of each other Mac's file as last merged.
+    public private(set) var merged: [String: String]
     private let store: LearnedStore
 
-    public init(folder: URL, deviceID: String, store: LearnedStore) {
+    public init(folder: URL, deviceID: String, store: LearnedStore, merged: [String: String] = [:]) {
         self.folder = folder
         self.deviceID = deviceID
         self.store = store
+        self.merged = merged
     }
 
     private var ownName: String { "\(deviceID).\(Self.fileExtension)" }
@@ -47,7 +54,7 @@ public final class SyncFolder {
 
     /// Other Macs' files, read off the main actor.
     public struct Snapshot: Sendable {
-        fileprivate var files: [(name: String, data: Data)]
+        fileprivate var files: [(name: String, data: Data, digest: String)]
         /// Files that exist but could not be read this time.
         public var unreadable: [String]
     }
@@ -64,8 +71,9 @@ public final class SyncFolder {
     public func read() async throws -> Snapshot {
         let folder = folder
         let ownName = ownName
+        let oldest = Date().addingTimeInterval(-LearnedStore.deletionRetention)
         return try await Task.detached(priority: .utility) {
-            try Self.readOtherFiles(in: folder, excluding: ownName)
+            try Self.readOtherFiles(in: folder, excluding: ownName, writtenSince: oldest)
         }.value
     }
 
@@ -73,13 +81,17 @@ public final class SyncFolder {
     @discardableResult
     public func merge(_ snapshot: Snapshot, includeLearned: Bool) throws -> Int {
         var changed = 0
-        for (_, data) in snapshot.files {
+        for (name, data, digest) in snapshot.files where merged[name] != digest {
             let contents = SuguDictionaryFile.decodeContents(data)
             let words = contents.words.filter { includeLearned || $0.kind == .user }
             let deletions = contents.deletions.filter { includeLearned || $0.kind == .user }
             changed += try store.applyDeletions(deletions)
             changed += try store.merge(words)
+            merged[name] = digest
         }
+        // Files gone from the folder are forgotten.
+        let present = Set(snapshot.files.map(\.name) + snapshot.unreadable)
+        merged = merged.filter { present.contains($0.key) }
         return changed
     }
 
@@ -87,9 +99,9 @@ public final class SyncFolder {
 
     /// Other Macs' files that are on this disk. Files a cloud provider has
     /// not downloaded yet are requested and read on a later pull.
-    nonisolated private static func readOtherFiles(in folder: URL, excluding ownName: String) throws -> Snapshot {
+    nonisolated private static func readOtherFiles(in folder: URL, excluding ownName: String, writtenSince oldest: Date) throws -> Snapshot {
         let fm = FileManager.default
-        let keys: [URLResourceKey] = [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey]
+        let keys: [URLResourceKey] = [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey, .contentModificationDateKey]
         let entries = try fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys)
         var result = Snapshot(files: [], unreadable: [])
         for entry in entries {
@@ -106,8 +118,10 @@ public final class SyncFolder {
                 try? fm.startDownloadingUbiquitousItem(at: entry)
                 continue
             }
+            if let modified = values?.contentModificationDate, modified < oldest { continue }
             if let data = try? coordinatedRead(entry) {
-                result.files.append((name, data))
+                let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+                result.files.append((name, data, digest))
             } else {
                 result.unreadable.append(name)
             }

@@ -52,7 +52,8 @@ export async function serve(request: Request, env: Env, key: string): Promise<Re
   const status = precondition(request.headers, head);
   if (status) return new Response(null, { status, headers });
 
-  let range = requestedRange(request.headers, head);
+  // Range applies to GET alone (RFC 9110 §14.2).
+  let range = request.method === 'GET' ? requestedRange(request.headers, head) : undefined;
   if (range === 'unsatisfiable') {
     headers.set('Content-Range', `bytes */${head.size}`);
     return new Response(null, { status: 416, headers });
