@@ -156,6 +156,7 @@ public final class AzooKeyEngine: CompositionEngine {
         }
         guard !composing.isEmpty else { return false }
         _ = composing.moveCursorFromCursorPosition(count: composing.convertTarget.count - composing.convertTargetCursorPosition)
+        finishRomaji()
         converting = true
         fixed = []
         focusLength = nil
@@ -238,6 +239,7 @@ public final class AzooKeyEngine: CompositionEngine {
     }
 
     public func commitRaw() -> Commit? {
+        if !converting { finishRomaji() }
         let reading = fixed.first?.before.convertTarget ?? composing.convertTarget
         guard !reading.isEmpty else { return nil }
         clear()
@@ -255,6 +257,14 @@ public final class AzooKeyEngine: CompositionEngine {
         followingText = ""
         converter.stopComposition()
         state = .empty
+    }
+
+    /// Ends romaji input at the caret, as a separator would: a pending
+    /// "n" becomes ん, so "imasen" converts as いません.
+    private func finishRomaji() {
+        guard inputStyle == .roman2kana, composing.convertTargetCursorPosition == composing.convertTarget.count,
+              composing.convertTarget.last == "n" else { return }
+        composing.insertAtCursorPosition([ComposingText.InputElement(piece: .compositionSeparator, inputStyle: .roman2kana)])
     }
 
     public func restore(reading: String) {
