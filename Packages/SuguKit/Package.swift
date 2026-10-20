@@ -22,6 +22,7 @@ let package = Package(
         .library(name: "SuguDictionaries", targets: ["SuguDictionaries"]),
         .library(name: "SuguDownloads", targets: ["SuguDownloads"]),
         .executable(name: "sugu-tool", targets: ["sugu-tool"]),
+        .executable(name: "sugu-bench", targets: ["sugu-bench"]),
     ],
     dependencies: [
         .package(
@@ -74,6 +75,11 @@ let package = Package(
         .executableTarget(
             name: "sugu-tool",
             dependencies: ["SuguInput", "SuguRime", "SuguAzooKey", "SuguCore"],
+            swiftSettings: cxxSwiftSettings
+        ),
+        .executableTarget(
+            name: "sugu-bench",
+            dependencies: ["SuguInput", "SuguCore", "SuguLearning"],
             swiftSettings: cxxSwiftSettings
         ),
         .testTarget(name: "SuguCoreTests", dependencies: ["SuguCore"], swiftSettings: swiftSettings),
