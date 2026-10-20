@@ -56,6 +56,7 @@ enum Bench {
         )
         await engines.waitUntilReady()
         engines.prepare(.japanese)
+        await engines.waitForJapaneseDictionary()
         await engines.waitForZenzai()
         let latin = LatinInference(
             syllables: syllables,

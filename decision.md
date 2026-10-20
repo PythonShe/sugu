@@ -1070,3 +1070,17 @@ any call made without the owner present. Each entry: what, why, reversibility.
   halves. Japanese conversion stays dominated by AzooKey's own lookups.
 - Chinese keystroke p50 0.81 → 0.45 ms, Japanese conversion p99 5.1 →
   4.8 ms; keystroke p99 3.79 ms in CI (librime's tail, D-049).
+
+## D-070 · AzooKey's dictionary in memory (2026-10-20)
+- Profiling found AzooKey opening and mapping one of its 433 entry files
+  (`loudstxt3`) at each dictionary lookup: 7.6% of the bench's time.
+  AzooKey can read them all into memory at start (`preloadDictionary`),
+  but that takes ~40 ms against 1.5 ms, on the main thread at the first
+  Japanese focus (D-064).
+- So the Japanese engine starts on the files as before, and the hub reads
+  the dictionary into memory off the main thread and hands it over between
+  compositions, as Zenzai is (D-032). The converter is remade on it with
+  the user's words; a converter holding Zenzai keeps its own store.
+- Japanese keystroke p50 0.77 → 0.64 ms, p99 2.4 → 2.0 ms, conversion p99
+  4.8 → 4.5 ms; footprint 100 → 81 MB, since 21 MB read once costs less
+  than the mappings made and dropped at every lookup. Accuracy unchanged.

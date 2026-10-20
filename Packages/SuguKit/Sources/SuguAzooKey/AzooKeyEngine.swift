@@ -47,8 +47,9 @@ public final class AzooKeyEngine: CompositionEngine {
     /// row: every request asks for predictions alike, and an unchanged
     /// input takes the last result.
     private var lastRequest: (input: ComposingText, result: ConversionResult)?
-    /// The dictionary the converter and the refiner read.
-    private let dictionary = DicdataStore.withDefaultDictionary()
+    /// The dictionary the converter and the refiner read: from its files
+    /// at each lookup until `adopt(_:)` hands over one held in memory.
+    private var dictionary = DicdataStore.withDefaultDictionary()
     /// Made on the first ranking, not with the engine.
     private var loadedRefiner: HomophoneRefiner?
     /// Ranks the converter's sentences by how naturally they read
@@ -156,6 +157,31 @@ public final class AzooKeyEngine: CompositionEngine {
         guard loadedZenzai != nil, loadedZenzai != configuration.zenzaiModel, state.isEmpty else { return }
         converter = KanaKanjiConverter(dicdataStore: dictionary)
         loadedZenzai = nil
+        converter.importDynamicUserDictionary(userWords)
+    }
+
+    /// AzooKey's dictionary read into memory, so a lookup no longer opens
+    /// and maps one of its files (D-070). Reading it takes ~40 ms, too long
+    /// for the first Japanese keystroke, so it is made off the main thread.
+    public struct MemoryDictionary: @unchecked Sendable {
+        // Handed from the thread that made it to the engine, never shared.
+        fileprivate let store: DicdataStore
+    }
+
+    public nonisolated static func loadMemoryDictionary() async -> MemoryDictionary {
+        await Task.detached(priority: .utility) {
+            MemoryDictionary(store: DicdataStore.withDefaultDictionary(preloadDictionary: true))
+        }.value
+    }
+
+    /// Takes over a dictionary held in memory; call between compositions.
+    /// A converter holding Zenzai keeps its own until it is released.
+    public func adopt(_ loaded: MemoryDictionary) {
+        precondition(state.isEmpty, "the dictionary is swapped only between compositions")
+        dictionary = loaded.store
+        loadedRefiner = nil
+        guard loadedZenzai == nil else { return }
+        converter = KanaKanjiConverter(dicdataStore: dictionary)
         converter.importDynamicUserDictionary(userWords)
     }
 

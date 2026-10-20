@@ -431,6 +431,18 @@ struct RimeEngineTests {
         #expect(engine.state.segments.map(\.text).joined().hasPrefix("行きが"))
     }
 
+    @Test func theDictionaryInMemoryKeepsTheUsersWords() async throws {
+        let engine = try makeEngine()
+        engine.setUserWords([(reading: "すぐ", text: "数具")])
+        engine.insert("sugu")
+        engine.clear()
+        engine.adopt(await AzooKeyEngine.loadMemoryDictionary())
+        engine.insert("sugu")
+        #expect(engine.convert())
+        #expect(engine.state.candidates.contains { $0.text == "数具" })
+        #expect(engine.state.candidates.contains { $0.text == "直ぐ" || $0.text == "すぐ" })
+    }
+
     @Test func cancellingAConversionThenTypingKeepsConverting() throws {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
         var configuration = AzooKeyEngine.Configuration(workingDirectory: work)

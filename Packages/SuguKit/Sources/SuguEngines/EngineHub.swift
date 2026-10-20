@@ -77,6 +77,8 @@ public final class EngineHub: EngineSource {
     /// Counts model installs and removals, so a load that began before one
     /// is not adopted.
     private var zenzaiGeneration = 0
+    /// Reads AzooKey's dictionary into memory once the Japanese engine is made.
+    private var japaneseDictionaryLoading: Task<Void, Never>?
     private var preparing: Task<Void, Never>?
     private var userWordsRefresh: Task<Void, Never>?
     private var chineseWordsUpdate: Task<Void, Never>?
@@ -137,6 +139,7 @@ public final class EngineHub: EngineSource {
             Log.engines.notice("Japanese ready in \(ContinuousClock.now - started, privacy: .public)")
             japanese = engine
             if let store { engine.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) }) }
+            loadJapaneseDictionary(for: engine)
             loadZenzai()
             return engine
         case .english:
@@ -472,6 +475,27 @@ public final class EngineHub: EngineSource {
             japanese.update(japaneseConfiguration)
             Log.engines.notice("Zenzai ready in \(ContinuousClock.now - started, privacy: .public)")
         }
+    }
+
+    /// Hands the Japanese engine its dictionary in memory between
+    /// compositions; until then it reads the dictionary's files.
+    private func loadJapaneseDictionary(for engine: AzooKeyEngine) {
+        japaneseDictionaryLoading = Task { [weak self, weak engine] in
+            let started = ContinuousClock.now
+            let loaded = await AzooKeyEngine.loadMemoryDictionary()
+            while let engine, !engine.state.isEmpty {
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+            self?.japaneseDictionaryLoading = nil
+            guard let engine else { return }
+            engine.adopt(loaded)
+            Log.engines.notice("Japanese dictionary in memory in \(ContinuousClock.now - started, privacy: .public)")
+        }
+    }
+
+    /// Waits until the Japanese dictionary is in memory (for tools).
+    public func waitForJapaneseDictionary() async {
+        while let task = japaneseDictionaryLoading { await task.value }
     }
 
     /// Waits until Zenzai is loaded, when it is on (for tools and tests).
