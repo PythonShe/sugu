@@ -24,7 +24,7 @@ final class InputCoordinator {
         self.candidateWindow = candidateWindow
         self.indicator = indicator
         session.onChange = { [unowned self] in render($0.display) }
-        session.onModeChange = { [unowned self] mode in modeDidChange(to: mode) }
+        session.onModeChange = { [unowned self] mode, byUser in modeDidChange(to: mode, byUser: byUser) }
         candidateWindow.onSelect = { [unowned session] row in session.selectCandidate(onPage: row) }
         candidateWindow.onTurnPage = { [unowned session] delta in session.turnPage(by: delta) }
     }
@@ -157,9 +157,14 @@ final class InputCoordinator {
         candidateWindow.show(presentation, mode: display.mode, near: client.compositionRect(at: display.candidateAnchor), preferences: preferences.preferences)
     }
 
-    private func modeDidChange(to mode: InputMode) {
+    /// Shows the new mode at the caret. A switch that came with the focus
+    /// shows only where the field reports its caret: an app switch is not
+    /// worth a label at the pointer.
+    private func modeDidChange(to mode: InputMode, byUser: Bool) {
         guard preferences.preferences.showModeIndicator, let client else { return }
-        indicator.show(mode, near: client.compositionRect())
+        let caret = client.compositionRect()
+        guard byUser || caret != .zero else { return }
+        indicator.show(mode, near: caret)
     }
 
     // MARK: Menu commands

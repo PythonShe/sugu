@@ -171,6 +171,18 @@ struct InputSessionTests {
         #expect(terminal.document.isEmpty)
     }
 
+    /// The shell shows a mode switched by focus less eagerly than one the
+    /// user made.
+    @Test func modeChangesSayWhetherTheUserMadeThem() {
+        let session = makeSession()
+        var changes: [(InputMode, Bool)] = []
+        session.onModeChange = { changes.append(($0, $1)) }
+        session.attach(FakeClient(bundleIdentifier: "com.apple.Terminal"))
+        session.toggleEnglish()
+        #expect(changes.map(\.0) == [.english, session.mode])
+        #expect(changes.map(\.1) == [false, true])
+    }
+
     @Test func secureInputPassesEverythingThrough() {
         let session = makeSession()
         session.isSecureInput = true

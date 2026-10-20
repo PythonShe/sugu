@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- The mode indicator no longer appears at the pointer when switching
+  apps changes the mode (D-064).
 - The learned store carries a schema version and logs failed writes
   (D-063).
 - The candidate window opens under the focused clause rather than the

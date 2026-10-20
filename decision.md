@@ -949,3 +949,22 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - A learn or unlearn that fails is logged before the store reloads from
   disk. Found by an advisor survey (pass 4).
 
+## D-064 · Mode indicator on app switches; Japanese engine start (2026-10-20)
+- A mode set by the focused app's rule or remembered mode showed the
+  indicator like a switch the user made, and where the field reports no
+  caret (no marked text, many apps) at the pointer: ⌘-Tab between a
+  terminal and an editor flashed 中/A wherever the mouse was.
+  `onModeChange` now says whether the user switched (its documentation
+  already promised it); a switch that came with the focus shows only at
+  a caret the field reports. `setMode(_:remember:)` became
+  `setMode(_:byUser:)`, the one meaning both had.
+- Measured and left: the Japanese engine is made on the main thread at
+  the first Japanese focus, 18–22 ms (dictionary store and emoji table),
+  with the model mapped in 0.1 ms and 500 user words in 0.3 ms; the first
+  keys then take 5–6 ms while AzooKey reads its dictionary. Chinese moved
+  off the main thread because librime's deploy takes seconds (D-027); a
+  one-time 20 ms is not worth a second hand-over path.
+- Also from the advisor survey (pass 4), left: a Shift tap commits a
+  Japanese composition as it shows (D-041 chose that); capitals in a
+  romaji composition stay Latin, as on Apple's Japanese input.
+

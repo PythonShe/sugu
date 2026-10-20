@@ -56,7 +56,7 @@ public final class InputSession {
     /// Called after every change to `display` or `mode`.
     public var onChange: ((InputSession) -> Void)?
     /// Called when the mode changes, with whether the user switched it.
-    public var onModeChange: ((InputMode) -> Void)?
+    public var onModeChange: ((_ mode: InputMode, _ byUser: Bool) -> Void)?
 
     let engines: any EngineSource
     let store: LearnedStore?
@@ -159,9 +159,9 @@ public final class InputSession {
         let rule = preferences.rule(for: bundleID)
         applyChineseScript()
         if let mode = rule.defaultMode {
-            setMode(mode, remember: false)
+            setMode(mode, byUser: false)
         } else if preferences.rememberModePerApp, let bundleID, let remembered = modeMemory?.mode(for: bundleID) {
-            setMode(remembered, remember: false)
+            setMode(remembered, byUser: false)
         }
         if mode != .english { engines.prepare(mode) }
         publish()
@@ -178,19 +178,21 @@ public final class InputSession {
 
     // MARK: Modes
 
-    public func setMode(_ newMode: InputMode, remember: Bool = true) {
+    /// Switches to `newMode`. A switch not `byUser` follows the focused
+    /// app's rule or remembered mode, and is not itself remembered.
+    public func setMode(_ newMode: InputMode, byUser: Bool = true) {
         guard preferences.enabledModes.contains(newMode) || newMode == .english else { return }
         if newMode != mode, !isEmpty { commitComposition() }
         let changed = newMode != mode
         mode = newMode
         if newMode != .english { lastCJKMode = newMode }
-        if remember, preferences.rememberModePerApp, let bundleID = client?.bundleIdentifier {
+        if byUser, preferences.rememberModePerApp, let bundleID = client?.bundleIdentifier {
             modeMemory?.remember(newMode, for: bundleID)
         }
         publish()
         if changed {
             if newMode != .english { engines.prepare(newMode) }
-            onModeChange?(newMode)
+            onModeChange?(newMode, byUser)
         }
     }
 
