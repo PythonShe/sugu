@@ -302,6 +302,8 @@ public final class AzooKeyEngine: CompositionEngine {
             clear()
             return .committed(commit)
         }
+        // The next clause is the best sentence's, not one of the same length.
+        focusLength = nil
         refocus()
         return .continued
     }

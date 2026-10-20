@@ -869,3 +869,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
   gives the same as 1; 2 gives 55%. Left: 大雪 after 一场 gains 1.7 from
   the model but loses more than that on the word list's frequencies.
 
+## D-059 · Choosing a clause kept its length for the next one (2026-10-20)
+- Choosing a clause candidate during a conversion fixed it and focused
+  the next clause at the chosen clause's length: after 今日は (three
+  kana) the rest of 今日はいい天気ですね became いいて + 点機ですね. Moving
+  the focus with the arrow keys already went to the best sentence's next
+  clause; choosing now does the same. Found by a review of the language
+  model work.
+

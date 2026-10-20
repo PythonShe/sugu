@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Choosing a Japanese clause no longer gives the next clause its length
+  (D-059).
 - One Chinese word typed after text that decides it is respelled by a
   smaller margin (D-058): context pairs 45% → 60%, nothing else moves.
 - The bench measures conversions after text that decides them (D-057).

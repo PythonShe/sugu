@@ -266,6 +266,19 @@ struct RimeEngineTests {
         #expect(commit.reading == "わたしはがくせい")
     }
 
+    /// Choosing a clause moves on to the next clause of the best sentence,
+    /// whatever the length of the one chosen.
+    @Test func choosingAClauseFocusesTheNextClauseOfTheSentence() throws {
+        let engine = try makeEngine()
+        engine.insert("kyouhaiitenkidesune")
+        #expect(engine.convert())
+        let sentence = engine.state.segments.map(\.text).joined()
+        #expect(sentence == "今日はいい天気ですね")
+        #expect(engine.select(0) == .continued)
+        #expect(engine.state.segments.map(\.text).joined() == sentence)
+        #expect(focused(engine) != nil && focused(engine) != "いいて")
+    }
+
     @Test func voicingMarksJoinTheKanaBeforeThem() throws {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
         var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
