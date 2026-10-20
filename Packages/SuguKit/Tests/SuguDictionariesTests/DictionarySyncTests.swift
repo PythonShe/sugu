@@ -71,4 +71,16 @@ final class SyncTestClock: @unchecked Sendable {
         #expect(try files().count == 1)
         #expect(sync.lastError == nil)
     }
+
+    @Test func aResetWhileWritingLeavesNoState() async throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let sync = sync(try store())
+        let export = sync.storeDidChange()
+        // The export is already on its way when the folder changes.
+        await Task.yield()
+        sync.reset()
+        await export?.value
+        #expect(sync.lastSync == nil)
+        #expect(sync.lastError == nil)
+    }
 }

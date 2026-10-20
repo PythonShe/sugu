@@ -142,6 +142,26 @@ struct RimeEngineTests {
         #expect(commit.reading == "わたしはね")
     }
 
+    @Test func aSecondConversionKeepsTheFirstClauses() throws {
+        let engine = try makeEngine()
+        engine.insert("watashiha")
+        _ = engine.convert()
+        engine.insert("gakusei")
+        _ = engine.convert()
+        #expect(engine.state.segments.first == CompositionSegment("私は", role: .converted))
+        #expect(focused(engine) == "学生")
+        // Esc undoes only the second conversion.
+        engine.cancelConversion()
+        #expect(engine.state.segments.map(\.text) == ["私は", "がくせい"])
+        engine.moveFocus(forward: false)
+        _ = engine.convert()
+        engine.moveFocus(forward: false)
+        #expect(engine.state.segments.first?.text == "私は")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text == "私は学生")
+        #expect(commit.reading == "わたしはがくせい")
+    }
+
     @Test func restoredReadingsConvertAgain() throws {
         let engine = try makeEngine()
         engine.restore(reading: "わたしはがくせいです")

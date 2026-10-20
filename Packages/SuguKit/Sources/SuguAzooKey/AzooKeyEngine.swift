@@ -40,6 +40,9 @@ public final class AzooKeyEngine: CompositionEngine {
 
     private var converting = false
     private var fixed: [FixedClause] = []
+    /// Clauses fixed before the current conversion began (kept when typing
+    /// went on after a conversion); Esc and stepping back stop there.
+    private var conversionStart = 0
     private var focusCandidates: [KanaKanjiConverterModule.Candidate] = []
     private var highlighted = 0
     /// Clause length chosen with Shift-arrows, in kana; nil lets the
@@ -163,7 +166,7 @@ public final class AzooKeyEngine: CompositionEngine {
         _ = composing.moveCursorFromCursorPosition(count: composing.convertTarget.count - composing.convertTargetCursorPosition)
         finishRomaji()
         converting = true
-        fixed = []
+        conversionStart = fixed.count
         focusLength = nil
         refocus()
         return true
@@ -171,8 +174,10 @@ public final class AzooKeyEngine: CompositionEngine {
 
     public func cancelConversion() {
         guard converting else { return }
-        if let first = fixed.first { composing = first.before }
-        fixed = []
+        if fixed.count > conversionStart {
+            composing = fixed[conversionStart].before
+            fixed.removeSubrange(conversionStart...)
+        }
         converting = false
         focusLength = nil
         refreshComposing()
@@ -215,7 +220,7 @@ public final class AzooKeyEngine: CompositionEngine {
             guard !remainder.isEmpty else { return }
             fix(candidate)
         } else {
-            guard let last = fixed.popLast() else { return }
+            guard fixed.count > conversionStart, let last = fixed.popLast() else { return }
             composing = last.before
         }
         focusLength = nil
@@ -255,6 +260,7 @@ public final class AzooKeyEngine: CompositionEngine {
         composing = ComposingText()
         converting = false
         fixed = []
+        conversionStart = 0
         focusCandidates = []
         predictions = []
         highlighted = 0

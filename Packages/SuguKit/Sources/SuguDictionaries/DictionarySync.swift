@@ -123,13 +123,17 @@ public final class DictionarySync {
         guard folder != nil else { return nil }
         pendingExport?.cancel()
         let delay = exportDelay
+        let generation = generation
         pendingExport = Task { [weak self] in
             try? await Task.sleep(for: delay)
             guard !Task.isCancelled, let self, let sync = makeFolder() else { return }
             do {
                 try await sync.export(includeLearned: preferences.preferences.syncLearnedWords)
+                // A reset while writing belongs to another folder now.
+                guard generation == self.generation else { return }
                 succeeded()
             } catch {
+                guard generation == self.generation else { return }
                 failed(error)
             }
         }
