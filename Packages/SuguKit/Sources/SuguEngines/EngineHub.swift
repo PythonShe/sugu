@@ -180,6 +180,12 @@ public final class EngineHub: EngineSource {
         converter(for: chineseScript)?.convert(text)
     }
 
+    public func pinyin(of text: String) -> String? {
+        let simplified = converter(for: .simplified)?.convert(text) ?? text
+        guard let wordList = try? Data(contentsOf: locations.lexicon.appendingPathComponent(Lexicon.pinyinWordsFile), options: .mappedIfSafe) else { return nil }
+        return ChineseReadings.syllables(of: simplified, wordList: wordList)?.joined()
+    }
+
     /// Keys that type Chinese `text` in the scheme in use, or Zhuyin's
     /// codes, for reconverting it; nil when a character is in no listed
     /// word. Reads the word list for this alone.

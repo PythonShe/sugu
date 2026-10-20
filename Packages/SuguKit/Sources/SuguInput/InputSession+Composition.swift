@@ -274,6 +274,39 @@ extension InputSession {
     }
 }
 
+/// A word to add by hand, from the selected text.
+public struct WordDraft: Sendable, Equatable {
+    public var text: String
+    /// The reading Sugu knows for it, as a word is entered; empty when
+    /// none is known.
+    public var reading: String
+    public var mode: InputMode
+}
+
+extension InputSession {
+    /// The selected text as a word to add, in the language being typed or
+    /// else the first enabled one: its reading the one it was learned
+    /// with, the kana themselves, or the dictionary's pinyin.
+    public func selectedWordDraft() -> WordDraft {
+        let mode = mode != .english ? mode : (preferences.enabledModes.first { $0 != .english } ?? .chinese)
+        guard isEmpty, canReadField, let selected = client?.selectedText()?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !selected.isEmpty, selected.count <= LearnedStore.maximumWordLength else {
+            return WordDraft(text: "", reading: "", mode: mode)
+        }
+        let learned = store?.reading(for: selected, mode: mode)
+        let reading: String?
+        switch mode {
+        case .japanese:
+            let kana = WidthConversion.hiragana(selected)
+            reading = kana.isHiraganaReading ? kana : learned
+        default:
+            // A Zhuyin word's reading is its codes; pinyin is entered here.
+            reading = learned.flatMap { Zhuyin.syllables(ofCodes: $0) == nil ? $0 : nil } ?? engines.pinyin(of: selected)
+        }
+        return WordDraft(text: selected, reading: reading ?? "", mode: mode)
+    }
+}
+
 /// The commit ⌃⌫ can take back.
 struct PendingUndo {
     /// What was inserted into the field.

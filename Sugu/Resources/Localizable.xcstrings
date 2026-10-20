@@ -47,6 +47,29 @@
         }
       }
     },
+    "Add Word…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "単語を追加…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加词…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入詞⋯"
+          }
+        }
+      }
+    },
     "Added %lld words.": {
       "extractionState": "manual",
       "localizations": {

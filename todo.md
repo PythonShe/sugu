@@ -152,7 +152,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] ⇧⌫ forgets a learned candidate (D-074)
 - [x] Google's z-symbols in romaji (z. … z/ ・ zh ←) (D-074)
 - [x] `[` `]` commit the first or last character of the highlighted Chinese word (D-074)
-- [ ] Add Word from the input menu, filled from the selection
+- [x] Add Word from the input menu, filled from the selection (D-074)
 - [ ] ⌃. switches the punctuation width
 - [ ] Symbols by their Chinese names
 - [ ] The mode in the menu bar

@@ -276,6 +276,7 @@ private final class ZhuyinSource: EngineSource {
     func setChineseScript(_ script: ChineseScript) {}
     func chineseText(_ text: String) -> String? { text }
     func chineseReading(of text: String) -> String? { nil }
+    func pinyin(of text: String) -> String? { nil }
 }
 
 @MainActor

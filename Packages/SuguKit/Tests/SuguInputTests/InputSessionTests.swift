@@ -245,6 +245,27 @@ struct InputSessionTests {
         #expect(client.markedText == "ka…』")
     }
 
+    /// Add Word starts from the selection and the reading Sugu knows.
+    @Test func selectionBecomesAWordDraft() {
+        let session = makeSession()
+        source.readings = ["世界": "shi'jie"]
+        client.selection = "世界"
+        #expect(session.selectedWordDraft() == WordDraft(text: "世界", reading: "shijie", mode: .chinese))
+        store.learn(Commit(text: "世界", reading: "shi4jie4"), mode: .chinese)
+        #expect(session.selectedWordDraft().reading == "shijie")
+        store.learn(Commit(text: "東京", reading: "dongjing"), mode: .chinese)
+        client.selection = "東京"
+        #expect(session.selectedWordDraft().reading == "dongjing")
+        session.setMode(.japanese)
+        client.selection = "すぐ"
+        #expect(session.selectedWordDraft() == WordDraft(text: "すぐ", reading: "すぐ", mode: .japanese))
+        client.selection = "直ぐ"
+        #expect(session.selectedWordDraft() == WordDraft(text: "直ぐ", reading: "", mode: .japanese))
+        session.setMode(.english)
+        client.selection = nil
+        #expect(session.selectedWordDraft() == WordDraft(text: "", reading: "", mode: .chinese))
+    }
+
     @Test func secureInputPassesEverythingThrough() {
         let session = makeSession()
         session.isSecureInput = true

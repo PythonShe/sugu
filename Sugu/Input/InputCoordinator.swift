@@ -185,6 +185,10 @@ final class InputCoordinator {
 
     var canReviseSelection: Bool { session.canReviseSelection }
 
+    func addWord() {
+        AppEnvironment.shared.showAddWord(session.selectedWordDraft())
+    }
+
     func revise(selectionWith task: TextTask) {
         session.revise(selectionWith: task)
     }

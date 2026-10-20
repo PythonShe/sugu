@@ -1,5 +1,6 @@
 import AppKit
 import SuguCore
+import SuguInput
 import SuguLearning
 
 final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
@@ -184,9 +185,9 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
     }
 }
 
-/// Sheet for adding a word by hand.
+/// Sheet for adding a word by hand, perhaps filled from a selection.
 @MainActor
-private final class AddWordSheet: NSObject {
+final class AddWordSheet: NSObject {
     let window: NSWindow
     private let model: SettingsModel
     private let form = SettingsForm()
@@ -195,8 +196,13 @@ private final class AddWordSheet: NSObject {
     private var text = ""
     private var addButton: NSButton!
 
-    init(model: SettingsModel) {
+    init(model: SettingsModel, draft: WordDraft? = nil) {
         self.model = model
+        if let draft {
+            mode = draft.mode == .japanese ? .japanese : .chinese
+            reading = draft.reading
+            text = draft.text
+        }
         window = NSWindow(contentRect: .zero, styleMask: [.titled], backing: .buffered, defer: true)
         super.init()
         form.segmented(String(localized: "Language:"), options: [
@@ -212,7 +218,7 @@ private final class AddWordSheet: NSObject {
         cancel.keyEquivalent = "\u{1b}"
         addButton = form.makeButton(String(localized: "Add")) { [unowned self] in add() }
         addButton.keyEquivalent = "\r"
-        addButton.isEnabled = false
+        validate()
         let buttons = NSStackView(views: [cancel, addButton])
         buttons.translatesAutoresizingMaskIntoConstraints = false
 
@@ -229,7 +235,8 @@ private final class AddWordSheet: NSObject {
             buttons.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -20),
         ])
         window.contentView = content
-        window.initialFirstResponder = readingField
+        // The field still to fill, the reading when unsure.
+        window.initialFirstResponder = reading.isEmpty || text.isEmpty ? readingField : textField
         objc_setAssociatedObject(window, &AddWordSheet.key, self, .OBJC_ASSOCIATION_RETAIN)
     }
 

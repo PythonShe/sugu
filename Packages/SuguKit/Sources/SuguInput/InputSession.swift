@@ -27,6 +27,9 @@ public protocol EngineSource: AnyObject {
     /// Keys that type Chinese text, for reconverting text Sugu did not
     /// type; nil when there is no reading.
     func chineseReading(of text: String) -> String?
+    /// Chinese text in full pinyin without tones (`nihao`), as a word is
+    /// entered by hand; nil when there is no reading.
+    func pinyin(of text: String) -> String?
 }
 
 /// Remembers the last mode per app across launches.

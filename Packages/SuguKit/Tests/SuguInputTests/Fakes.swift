@@ -170,6 +170,7 @@ final class FakeEngineSource: EngineSource {
     /// Readings by text, standing in for the word list.
     var readings: [String: String] = [:]
     func chineseReading(of text: String) -> String? { readings[text] }
+    func pinyin(of text: String) -> String? { readings[text]?.filter { $0 != "'" } }
 }
 
 @MainActor

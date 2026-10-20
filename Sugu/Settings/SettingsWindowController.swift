@@ -1,4 +1,5 @@
 import AppKit
+import SuguInput
 
 /// The settings window: a toolbar of panes, each a grid of native controls.
 @MainActor
@@ -63,6 +64,13 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         model.isVisible = true
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
+    }
+
+    /// Shows the Learning pane with the Add Word sheet, filled from `draft`.
+    func addWord(_ draft: WordDraft) {
+        show(.learning)
+        guard let window, window.attachedSheet == nil else { return }
+        window.beginSheet(AddWordSheet(model: model, draft: draft).window)
     }
 
     func windowWillClose(_ notification: Notification) {

@@ -9,6 +9,7 @@ final class InputMenu {
         case reconvert
         case learning
         case learnedWords
+        case addWord
         case settings
         case checkForUpdates
     }
@@ -47,6 +48,7 @@ final class InputMenu {
         learning.state = preferences.preferences.learningEnabled ? .on : .off
         menu.addItem(learning)
         menu.addItem(Self.item(String(localized: "Learned Words…"), command: .learnedWords))
+        menu.addItem(Self.item(String(localized: "Add Word…"), command: .addWord))
         menu.addItem(.separator())
         if AppEnvironment.shared.updater.isAvailable {
             menu.addItem(Self.item(String(localized: "Check for Updates…"), command: .checkForUpdates))
@@ -104,6 +106,7 @@ final class InputMenu {
         case .reconvert: coordinator.reconvertSelection()
         case .learning: preferences.update { $0.learningEnabled.toggle() }
         case .learnedWords: AppEnvironment.shared.showSettings(.learning)
+        case .addWord: coordinator.addWord()
         case .settings: AppEnvironment.shared.showSettings()
         case .checkForUpdates: AppEnvironment.shared.updater.checkForUpdates()
         case nil: break

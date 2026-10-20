@@ -96,6 +96,12 @@ final class AppEnvironment {
         controller.show(pane)
     }
 
+    func showAddWord(_ draft: WordDraft) {
+        let controller = settings ?? SettingsWindowController(model: SettingsModel(environment: self))
+        settings = controller
+        controller.addWord(draft)
+    }
+
     private func preferencesDidChange() {
         let current = preferences.preferences
         engines.apply(current)

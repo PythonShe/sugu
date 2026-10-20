@@ -1261,3 +1261,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
   The character teaches nothing: which of the word's syllables it reads
   is not known. Without a composition, or on a single character, the
   keys stay 【 and 】.
+- Add Word… in the input menu opens the Learning pane's Add Word sheet
+  filled from the selection, as Google Japanese Input's 単語登録 does: the
+  language being typed (else the first enabled), the reading the text
+  was learned with, its kana, or the word list's pinyin — never a
+  Zhuyin word's codes, since the sheet takes pinyin. With no selection,
+  or a long one, the sheet opens empty; focus goes to the field still
+  to fill.
