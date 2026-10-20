@@ -115,7 +115,7 @@ let package = Package(
         .testTarget(name: "SuguDownloadsTests", dependencies: ["SuguDownloads"], swiftSettings: swiftSettings),
         .testTarget(
             name: "SuguEngineTests",
-            dependencies: ["SuguRime", "SuguAzooKey", "SuguCore"],
+            dependencies: ["SuguEngines", "SuguDownloads", "SuguRime", "SuguAzooKey", "SuguCore"],
             swiftSettings: cxxSwiftSettings
         ),
     ]

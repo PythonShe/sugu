@@ -2,6 +2,15 @@ import Foundation
 import SuguDownloads
 import SuguRime
 
+/// Where `ModelLibrary` installs files, and who reloads them afterwards.
+@MainActor
+public protocol ModelHost: AnyObject {
+    var locations: EngineHub.Locations { get }
+    func modelsDidChange()
+}
+
+extension EngineHub: ModelHost {}
+
 /// Optional data the user can download from settings. Each item is pinned
 /// to a file and checksum reviewed for this release; nothing is fetched
 /// without the user asking.
@@ -84,13 +93,16 @@ public final class ModelLibrary {
     /// Called on every state change, including progress.
     public var onChange: ((Item) -> Void)?
 
-    private let engines: EngineHub
+    private let engines: any ModelHost
+    /// The pinned download for each item; tests substitute local files.
+    private let downloads: (Item) -> Download
     private var tasks: [Item: Task<Void, Never>] = [:]
     /// Items whose removal waits for a cancelled download to unwind.
     private var removing: Set<Item> = []
 
-    public init(engines: EngineHub) {
+    public init(engines: any ModelHost, downloads: @escaping (Item) -> Download = \.download) {
         self.engines = engines
+        self.downloads = downloads
         for item in Item.allCases {
             states[item] = isInstalled(item) ? .installed : .notInstalled
         }
@@ -100,9 +112,9 @@ public final class ModelLibrary {
 
     public func isInstalled(_ item: Item) -> Bool {
         switch item {
-        case .grammarModel: engines.isGrammarModelInstalled
-        case .rimeIce: engines.isRimeIceInstalled
-        case .zenzaiModel: engines.isZenzaiModelInstalled
+        case .grammarModel: engines.locations.hasGrammarModel
+        case .rimeIce: engines.locations.hasRimeIce
+        case .zenzaiModel: engines.locations.hasZenzaiModel
         }
     }
 
@@ -167,16 +179,16 @@ public final class ModelLibrary {
         }
         switch item {
         case .grammarModel:
-            try await Downloader.fetch(item.download, to: locations.grammarModel, progress: progress)
+            try await Downloader.fetch(downloads(item), to: locations.grammarModel, progress: progress)
         case .zenzaiModel:
-            try await Downloader.fetch(item.download, to: locations.zenzaiModel, progress: progress)
+            try await Downloader.fetch(downloads(item), to: locations.zenzaiModel, progress: progress)
         case .rimeIce:
             let fm = FileManager.default
             let work = locations.models.appendingPathComponent("rime-ice-install", isDirectory: true)
             try? fm.removeItem(at: work)
             defer { try? fm.removeItem(at: work) }
             let archive = work.appendingPathComponent("cn_dicts.zip")
-            try await Downloader.fetch(item.download, to: archive, progress: progress)
+            try await Downloader.fetch(downloads(item), to: archive, progress: progress)
             set(item, .installing)
             let extracted = work.appendingPathComponent("extracted", isDirectory: true)
             try await ZipArchive.extract(archive, to: extracted)

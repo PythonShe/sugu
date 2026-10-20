@@ -45,6 +45,10 @@ public final class EngineHub: EngineSource {
         public var rimeIceTables: URL {
             rimeUser.appendingPathComponent(RimeSchema.rimeIceFolder, isDirectory: true)
         }
+
+        public var hasGrammarModel: Bool { FileManager.default.fileExists(atPath: grammarModel.path) }
+        public var hasZenzaiModel: Bool { FileManager.default.fileExists(atPath: zenzaiModel.path) }
+        public var hasRimeIce: Bool { FileManager.default.fileExists(atPath: rimeIceManifest.path) }
     }
 
     public let locations: Locations
@@ -173,17 +177,9 @@ public final class EngineHub: EngineSource {
 
     // MARK: Configuration
 
-    public var isGrammarModelInstalled: Bool {
-        FileManager.default.fileExists(atPath: locations.grammarModel.path)
-    }
-
-    public var isZenzaiModelInstalled: Bool {
-        FileManager.default.fileExists(atPath: locations.zenzaiModel.path)
-    }
-
-    public var isRimeIceInstalled: Bool {
-        FileManager.default.fileExists(atPath: locations.rimeIceManifest.path)
-    }
+    public var isGrammarModelInstalled: Bool { locations.hasGrammarModel }
+    public var isZenzaiModelInstalled: Bool { locations.hasZenzaiModel }
+    public var isRimeIceInstalled: Bool { locations.hasRimeIce }
 
     private var schema: RimeSchema {
         RimeSchema(
