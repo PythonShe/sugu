@@ -124,7 +124,7 @@ final class InputCoordinator {
             client?.commit(text)
             return true
         }
-        if session.mode == .chinese, key.modifiers.contains(.control), key.modifiers.isDisjoint(with: [.command, .option, .shift]),
+        if session.mode == .chinese, !session.isSecureInput, key.modifiers.contains(.control), key.modifiers.isDisjoint(with: [.command, .option, .shift]),
            key.charactersIgnoringModifiers == "." {
             switchPunctuationWidth()
             return true
@@ -139,7 +139,7 @@ final class InputCoordinator {
         if current != .half { widthBeforeHalf = current }
         let next = current == .half ? widthBeforeHalf : .half
         preferences.update { $0.punctuationWidth = next }
-        guard let client else { return }
+        guard preferences.preferences.showModeIndicator, let client else { return }
         let half = next == .half
         indicator.show(half ? "," : "，", named: half ? String(localized: "Half Width") : String(localized: "Full Width"), near: client.compositionRect())
     }

@@ -261,6 +261,8 @@ final class AddWordSheet: NSObject {
 
     private func close() {
         window.sheetParent?.endSheet(window)
+        // The window kept the sheet alive while it showed.
+        objc_setAssociatedObject(window, &Self.key, nil, .OBJC_ASSOCIATION_RETAIN)
     }
 }
 
