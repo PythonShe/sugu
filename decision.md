@@ -566,3 +566,28 @@ any call made without the owner present. Each entry: what, why, reversibility.
   handles moves the caret or edits (arrows, ⌫, shortcuts), on focus
   change, and when the window server reports a click since the last key;
   then the field is read as before.
+
+## D-043 · Apple language models, built (2026-10-20)
+- ADR 0004 as built. `LanguageAssistant` (SuguCore) is the seam; the
+  session never imports FoundationModels. `AppleLanguageAssistant` (app
+  target, macOS 27, FoundationModels weak-linked) picks the models for the
+  level — Private Cloud Compute then the on-device model, or the
+  on-device model alone — and asks for typed results (`@Generable`).
+- Selected text: Input menu › Translate Selection (Chinese, Japanese,
+  English) and Rewrite Selection (Fix Grammar, More Formal, More Casual,
+  Shorter), shown when the level and the switch allow it and the field can
+  be read. The selection becomes a `RevisionEngine` composition whose first
+  candidate is the text itself, so Space, Enter, focus loss, Esc and any
+  other key leave it unchanged; results join as further candidates.
+- Long compositions (≥ 8 characters of reading, full pinyin or kana) ask
+  once per reading, 450 ms after the last key, for a conversion and the
+  asked translations; they join after the engine's first candidate. A
+  chosen conversion is learned; a translation is not.
+- Never in secure input or in apps excluded from learning.
+- Signing: the entitlement needs a profile for
+  `com.zheng-she.inputmethod.Sugu` (the bundle ID moved from
+  `io.github.pythonshe…` for the developer account; it must keep
+  `.inputmethod.`). `Config/Local.xcconfig` signs development builds with
+  the team; `--probe-language-model` checks both models offscreen with
+  fixed text. First run on this Mac: entitlement present, both models
+  report not ready (`modelNotReady`, `systemNotReady`).

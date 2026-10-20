@@ -44,6 +44,7 @@ extension InputSession {
         }
         let state = engine.state
         list.candidates = assembled(state)
+        scheduleSuggestions()
         if state.phase == .converting {
             let index = state.highlightedIndex.flatMap { engineIndex in list.candidates.firstIndex { $0.engineIndex == engineIndex } }
             list.setHighlight(index ?? 0)
@@ -56,7 +57,7 @@ extension InputSession {
     }
 
     private func assembled(_ state: CompositionState) -> [Candidate] {
-        assembler.assemble(.init(
+        let candidates = assembler.assemble(.init(
             mode: mode,
             includesSuguCandidates: active?.traits.takesSuguCandidates ?? false,
             state: state,
@@ -66,6 +67,7 @@ extension InputSession {
             chineseText: { [engines] in engines.chineseText($0) },
             offersChineseForms: preferences.enabledModes.contains(.chinese)
         ))
+        return mergingSuggestions(into: candidates, reading: state.reading)
     }
 
     func publish() {

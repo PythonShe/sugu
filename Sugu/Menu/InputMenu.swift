@@ -15,6 +15,9 @@ final class InputMenu {
 
     /// Tags of the Chinese Characters items, one per script.
     private static let scriptTags = 100
+    /// Tags of the Translate and Rewrite Selection items.
+    private static let translateTags = 200
+    private static let rewriteTags = 300
 
     private let coordinator: InputCoordinator
     private let preferences: PreferencesStore
@@ -35,6 +38,10 @@ final class InputMenu {
         menu.addItem(.separator())
         if enabled.contains(.chinese) { menu.addItem(scriptMenu()) }
         menu.addItem(Self.item(String(localized: "Reconvert Selection"), command: .reconvert))
+        if coordinator.canReviseSelection {
+            menu.addItem(Self.submenu(String(localized: "Translate Selection"), titles: AssistLanguage.allCases.map(\.title), tags: Self.translateTags))
+            menu.addItem(Self.submenu(String(localized: "Rewrite Selection"), titles: RewriteStyle.allCases.map(\.title), tags: Self.rewriteTags))
+        }
         menu.addItem(.separator())
         let learning = Self.item(String(localized: "Learn from Typing"), command: .learning)
         learning.state = preferences.preferences.learningEnabled ? .on : .off
@@ -46,6 +53,18 @@ final class InputMenu {
         }
         menu.addItem(Self.item(String(localized: "Settings…"), command: .settings))
         return menu
+    }
+
+    private static func submenu(_ title: String, titles: [String], tags: Int) -> NSMenuItem {
+        let submenu = NSMenu()
+        for (index, title) in titles.enumerated() {
+            let item = NSMenuItem(title: title, action: #selector(SuguInputController.performMenuAction(_:)), keyEquivalent: "")
+            item.tag = tags + index
+            submenu.addItem(item)
+        }
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.submenu = submenu
+        return item
     }
 
     private func scriptMenu() -> NSMenuItem {
@@ -63,6 +82,15 @@ final class InputMenu {
     }
 
     func perform(_ item: NSMenuItem) {
+        let languages = AssistLanguage.allCases, styles = RewriteStyle.allCases
+        if languages.indices.contains(item.tag - Self.translateTags) {
+            coordinator.revise(selectionWith: .translate(to: languages[item.tag - Self.translateTags]))
+            return
+        }
+        if styles.indices.contains(item.tag - Self.rewriteTags) {
+            coordinator.revise(selectionWith: .rewrite(styles[item.tag - Self.rewriteTags]))
+            return
+        }
         let scripts = ChineseScript.allCases
         if scripts.indices.contains(item.tag - Self.scriptTags) {
             let script = scripts[item.tag - Self.scriptTags]
@@ -94,5 +122,26 @@ final class InputMenu {
         let item = NSMenuItem(title: title, action: #selector(SuguInputController.performMenuAction(_:)), keyEquivalent: "")
         item.tag = command.rawValue
         return item
+    }
+}
+
+extension AssistLanguage {
+    var title: String {
+        switch self {
+        case .chinese: String(localized: "Chinese")
+        case .japanese: String(localized: "Japanese")
+        case .english: String(localized: "English")
+        }
+    }
+}
+
+extension RewriteStyle {
+    var title: String {
+        switch self {
+        case .fixGrammar: String(localized: "Fix Grammar")
+        case .formal: String(localized: "More Formal")
+        case .casual: String(localized: "More Casual")
+        case .shorter: String(localized: "Shorter")
+        }
     }
 }

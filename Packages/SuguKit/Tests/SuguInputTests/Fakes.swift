@@ -41,7 +41,25 @@ final class FakeClient: InputClient {
         return true
     }
 
-    func selectedText() -> String? { nil }
+    /// What the field has selected; marked text replaces it.
+    var selection: String?
+
+    func selectedText() -> String? { selection }
+}
+
+/// A language model with canned answers.
+@MainActor
+final class FakeAssistant: LanguageAssistant {
+    var suggestions = CompositionSuggestions()
+    var results: [String] = []
+    private(set) var requests: [CompositionRequest] = []
+
+    func suggestions(for request: CompositionRequest) async -> CompositionSuggestions {
+        requests.append(request)
+        return suggestions
+    }
+
+    func perform(_ task: TextTask, on text: String) async -> [String] { results }
 }
 
 /// An engine with a fixed table of readings, standing in for librime or

@@ -48,11 +48,15 @@ public struct EngineTraits: Sendable, Equatable {
     /// Sugu adds its own candidates (learned, computed, Latin) to the
     /// engine's.
     public var takesSuguCandidates: Bool
+    /// The composition stands for text already in the document (a selection
+    /// being translated): Esc puts it back as it was.
+    public var revisesText: Bool
 
-    public init(hasConversionPhase: Bool, learnsCommits: Bool, takesSuguCandidates: Bool) {
+    public init(hasConversionPhase: Bool, learnsCommits: Bool, takesSuguCandidates: Bool, revisesText: Bool = false) {
         self.hasConversionPhase = hasConversionPhase
         self.learnsCommits = learnsCommits
         self.takesSuguCandidates = takesSuguCandidates
+        self.revisesText = revisesText
     }
 }
 

@@ -53,12 +53,13 @@ extension InputSession {
             return false
         }
         if key.keyCode == VirtualKey.escape, preferences.rule(for: client?.bundleIdentifier).escapeSwitchesToEnglish {
-            if !isEmpty { cancelComposition() }
+            if !isEmpty { abandonComposition() }
             setMode(.english)
             return false
         }
         if !isEmpty, let consumed = handleFunctionKey(key) { return consumed }
-        if mode == .english { return false }
+        // English composes only a selection being revised.
+        if mode == .english, isEmpty { return false }
         if key.modifiers.contains(.option) {
             // Option types the layout's symbols; finish the composition first.
             if !isEmpty { commitComposition() }
@@ -124,7 +125,7 @@ extension InputSession {
     /// Space commits it, digits pick another.
     private func handleLive(_ key: KeyInput, engine: any CompositionEngine) -> Bool {
         switch key.keyCode {
-        case VirtualKey.escape: cancelComposition(); return true
+        case VirtualKey.escape: abandonComposition(); return true
         case VirtualKey.returnKey, VirtualKey.keypadEnter: commit(engine.commitRaw()); return true
         case VirtualKey.space:
             // Space chooses a candidate; while the engine is still being set

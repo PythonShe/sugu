@@ -54,6 +54,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         INSTALL_PATH: /Library/Input Methods
         COMBINE_HIDPI_IMAGES: YES
+        # FoundationModels exists from macOS 26; Sugu runs from macOS 14.
+        OTHER_LDFLAGS: "$(inherited) -weak_framework FoundationModels"
         # Set by scripts/release.sh; without it the updater stays off.
         SPARKLE_PUBLIC_ED_KEY: ""
   # Logic tests for shell code that needs AppKit or InputMethodKit; no host

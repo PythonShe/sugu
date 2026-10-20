@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Apple language models (ADR 0004, D-043): Translate and Rewrite Selection,
+  model conversions and translations for long compositions, a Language
+  Model pane with Off / On This Mac / Private Cloud Compute. Signed
+  development build carries the PCC entitlement; both models report not
+  ready on this Mac so far. 58 session tests.
 - Shift-clicks no longer switch to English; a Shift tap after typed
   letters commits them as English (D-041). PCC entitlement plumbing:
   optional `Config/Local.xcconfig`; signing waits on an Xcode account.

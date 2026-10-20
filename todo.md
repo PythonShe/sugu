@@ -90,3 +90,9 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [ ] Learned-word expiry also on setting change and daily, not only at launch
 - [ ] VoiceOver: candidate rows and pager as accessibility children
 - [ ] Skip identical marked-text updates and caret-rect reads on highlight moves
+
+## 11. Apple language models (ADR 0004)
+- [x] Levels, switches, seam, selection commands, composition suggestions (D-043)
+- [x] Entitlement signing through `Config/Local.xcconfig`; offscreen probe
+- [ ] Verify answers once Apple Intelligence is ready on the development Mac
+- [ ] Release signing: Developer ID profile with the capability in `scripts/release.sh`

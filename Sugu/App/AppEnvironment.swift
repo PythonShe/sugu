@@ -46,6 +46,7 @@ final class AppEnvironment {
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: locations.bundledLexicon)
         )
         session = InputSession(preferences: preferences, engines: engines, store: store, modeMemory: DefaultsModeMemory(), latin: latin)
+        if #available(macOS 27.0, *) { session.assistant = AppleLanguageAssistant(preferences: self.preferences) }
         coordinator = InputCoordinator(
             session: session,
             preferences: self.preferences,

@@ -172,6 +172,12 @@ final class InputCoordinator {
         session.reconvertSelection()
     }
 
+    var canReviseSelection: Bool { session.canReviseSelection }
+
+    func revise(selectionWith task: TextTask) {
+        session.revise(selectionWith: task)
+    }
+
     func preferencesDidChange(_ preferences: Preferences) {
         session.preferences = preferences
         syncCapsLock()

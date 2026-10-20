@@ -87,6 +87,13 @@ public final class InputSession {
     /// committed or let through. Some hosts report the field late, so this
     /// is trusted over reading it; nil once the caret may have moved.
     var lastTyped: Character?
+    /// Apple's language models (ADR 0004); nil where unavailable.
+    public var assistant: (any LanguageAssistant)?
+    /// Model suggestions for a reading, and the translation languages asked.
+    var suggestions: (reading: String, languages: [AssistLanguage], result: CompositionSuggestions)?
+    var suggestionTask: Task<Void, Never>?
+    /// The reading a suggestion request is out for.
+    var pendingSuggestion: String?
 
     public init(
         preferences: Preferences,

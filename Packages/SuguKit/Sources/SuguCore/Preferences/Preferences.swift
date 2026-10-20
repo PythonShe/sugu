@@ -34,6 +34,12 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var fullWidthSpace = false
     public var zenzaiEnabled = false
 
+    // MARK: Language model (ADR 0004)
+    public var languageModel: LanguageModelLevel = .off
+    public var modelForSelection = true
+    public var modelForConversion = false
+    public var modelForTranslation = false
+
     // MARK: Apps
     public var rememberModePerApp = true
     public var appRules: [String: AppRule] = [:]
@@ -100,6 +106,10 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.typoCorrection, into: &typoCorrection)
         load(.fullWidthSpace, into: &fullWidthSpace)
         load(.zenzaiEnabled, into: &zenzaiEnabled)
+        load(.languageModel, into: &languageModel)
+        load(.modelForSelection, into: &modelForSelection)
+        load(.modelForConversion, into: &modelForConversion)
+        load(.modelForTranslation, into: &modelForTranslation)
         load(.rememberModePerApp, into: &rememberModePerApp)
         load(.appRules, into: &appRules)
         load(.learningEnabled, into: &learningEnabled)

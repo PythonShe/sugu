@@ -11,7 +11,7 @@ enum SettingsSnapshot {
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let model = SettingsModel(environment: .shared)
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            for pane in SettingsWindowController.Pane.allCases {
+            for pane in SettingsWindowController.Pane.available {
                 let controller = SettingsWindowController.makePane(pane, model: model)
                 let view = controller.view
                 view.appearance = NSAppearance(named: appearance)

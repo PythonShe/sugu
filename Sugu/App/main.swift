@@ -12,6 +12,11 @@ if CommandLine.arguments.contains("--measure-draw") {
     exit(DrawMeasurement.run() ? 0 : 1)
 }
 
+if CommandLine.arguments.contains("--probe-language-model") {
+    let answered = await LanguageModelProbe.run()
+    exit(answered ? 0 : 1)
+}
+
 if CommandLine.arguments.contains("--register") {
     exit(InputSourceRegistration.registerAndEnable() ? 0 : 1)
 }

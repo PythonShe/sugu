@@ -137,6 +137,14 @@ extension InputSession {
             let reading = engine.state.reading
             engine.clear()
             commitText(candidate.text, reading: reading, learn: false)
+        case .model(let learns):
+            // A model conversion the user chose is theirs to keep; a
+            // translation is not a reading of what was typed.
+            let reading = engine.state.reading
+            let teaches = learns && engine.traits.learnsCommits
+            let record = Commit(text: candidate.text, reading: reading, clauses: [.init(reading: reading, text: candidate.text)])
+            engine.clear()
+            commitText(candidate.text, reading: reading, learn: teaches, record: record, undoable: teaches)
         }
     }
 

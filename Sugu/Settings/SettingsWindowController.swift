@@ -4,7 +4,13 @@ import AppKit
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     enum Pane: Int, CaseIterable {
-        case general, chinese, japanese, apps, learning, dictionaries, advanced
+        case general, chinese, japanese, apps, learning, dictionaries, languageModel, advanced
+
+        /// The panes this Mac shows: language models need macOS 27.
+        static var available: [Pane] {
+            if #available(macOS 27.0, *) { return allCases }
+            return allCases.filter { $0 != .languageModel }
+        }
     }
 
     private let tabs = NSTabViewController()
@@ -19,8 +25,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
         tabs.tabStyle = .toolbar
         tabs.canPropagateSelectedChildViewControllerTitle = true
-        for pane in Pane.allCases {
+        for pane in Pane.available {
             let item = NSTabViewItem(viewController: Self.makePane(pane, model: model))
+            item.identifier = pane.rawValue
             item.label = pane.title
             item.image = NSImage(systemSymbolName: pane.symbol, accessibilityDescription: pane.title)
             tabs.addTabViewItem(item)
@@ -41,6 +48,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         case .apps: AppsPane(model: model)
         case .learning: LearningPane(model: model)
         case .dictionaries: DictionariesPane(model: model)
+        case .languageModel:
+            if #available(macOS 27.0, *) { LanguageModelPane(model: model) } else { AdvancedPane(model: model) }
         case .advanced: AdvancedPane(model: model)
         }
         controller.title = pane.title
@@ -48,7 +57,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func show(_ pane: Pane?) {
-        if let pane { tabs.selectedTabViewItemIndex = pane.rawValue }
+        if let pane, let index = tabs.tabViewItems.firstIndex(where: { $0.identifier as? Int == pane.rawValue }) {
+            tabs.selectedTabViewItemIndex = index
+        }
         model.isVisible = true
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
@@ -68,6 +79,7 @@ extension SettingsWindowController.Pane {
         case .apps: String(localized: "Apps")
         case .learning: String(localized: "Learning")
         case .dictionaries: String(localized: "Dictionaries")
+        case .languageModel: String(localized: "Language Model")
         case .advanced: String(localized: "Advanced")
         }
     }
@@ -80,6 +92,7 @@ extension SettingsWindowController.Pane {
         case .apps: "square.grid.2x2"
         case .learning: "brain"
         case .dictionaries: "books.vertical"
+        case .languageModel: "sparkles"
         case .advanced: "gearshape.2"
         }
     }
