@@ -877,3 +877,26 @@ any call made without the owner present. Each entry: what, why, reversibility.
   clause; choosing now does the same. Found by a review of the language
   model work.
 
+## D-060 · The same Japanese input never reaches the converter twice (2026-10-20)
+- A fuzz run (`sugu-bench --fuzz`: random keys through the input session,
+  checking caret, marked text, candidate pages and Return after each key)
+  trapped in AzooKey's `kana2lattice_no_change` again, on ⇧→ after
+  typing うぃ: the caret move asked for the same input as the key before.
+  AzooKey takes an unchanged input as a cue to rebuild its results from
+  the lattice it holds, which traps when that lattice grew from other
+  input; D-051 removed one way to get there, not the cause.
+- Fix: one converter and one request. Every request asks for predictions
+  alike (when they are on), and an input equal to the last one takes the
+  last result, so the no-change path is never reached. Conversion views
+  (the sentence, clauses, the rest after a fixed clause) drop the
+  predictions, which read further than the input.
+- Rejected: a converter for predictions and one for conversions. It kept
+  the converter growing key by key but converted Space from scratch, and
+  a whole input converted at once prunes the paths that find learned
+  words (星宮蓮 became 星宮連): learned words (ja) 100% → 90%, Space p50
+  2.7 → 5.8 ms. Stopping the composition whenever the options changed
+  put live conversion over the keystroke budget (p99 7.2 ms).
+- After: 0 failures in 300 sessions per language for five seeds (also
+  with live conversion, fuzzy pinyin, no predictions) under random hash
+  seeds; Japanese 91%, learned words 100%, keystroke p99 2.3 ms (3.6 ms
+  live). CI runs 200 fuzz sessions.

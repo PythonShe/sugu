@@ -64,6 +64,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Packaging: signed/notarized `.pkg` scripts, Sparkle (profile off), dev install script (D-020)
 - [x] README, third-party notices/attribution, ADR updates
 - [x] Code review passes (reviewer agents) and fixes — three passes, all findings fixed
+- [x] Fuzzing: random keys through the input session with the real engines, in CI (D-060)
 
 ## 8. Maintainability (advisor review, D-024)
 - [x] Drift fixes: one `subscript(safe:)`, one kana test, bundle version once, sugu-tool deps, CI cache key, build-data opencc check, CLAUDE.md names and plan files

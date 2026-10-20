@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- A fuzzer types random keys through the input session (`sugu-bench
+  --fuzz`, in CI). It found a trap in AzooKey on a caret move; the same
+  input now never reaches the converter twice in a row (D-060).
 - Choosing a Japanese clause no longer gives the next clause its length
   (D-059).
 - One Chinese word typed after text that decides it is respelled by a

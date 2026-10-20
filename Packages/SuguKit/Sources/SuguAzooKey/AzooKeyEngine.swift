@@ -37,7 +37,16 @@ public final class AzooKeyEngine: CompositionEngine {
         var before: ComposingText
     }
 
-    private var converter: KanaKanjiConverter
+    private var converter: KanaKanjiConverter {
+        didSet { lastRequest = nil }
+    }
+    /// The converter's last request and its result. Asked for the same
+    /// input again, AzooKeyKanaKanjiConverter rebuilds its results from the
+    /// lattice in a way that can trap when the lattice grew from other
+    /// input (D-051, D-060), so the same input never reaches it twice in a
+    /// row: every request asks for predictions alike, and an unchanged
+    /// input takes the last result.
+    private var lastRequest: (input: ComposingText, result: ConversionResult)?
     /// The dictionary the converter and the refiner read.
     private let dictionary = DicdataStore.withDefaultDictionary()
     /// Made on the first ranking, not with the engine.
@@ -86,6 +95,7 @@ public final class AzooKeyEngine: CompositionEngine {
 
     public func update(_ configuration: Configuration) {
         self.configuration = configuration
+        lastRequest = nil
         releaseZenzaiIfUnused()
     }
 
@@ -102,6 +112,7 @@ public final class AzooKeyEngine: CompositionEngine {
             )
         }
         converter.importDynamicUserDictionary(userWords)
+        lastRequest = nil
         loadedRefiner?.userWords = Set(words.map(\.text))
     }
 
@@ -152,6 +163,25 @@ public final class AzooKeyEngine: CompositionEngine {
     public var holdsZenzai: Bool { loadedZenzai != nil }
 
     private var inputStyle: InputStyle { configuration.kanaInput ? .direct : .roman2kana }
+
+    /// The converter's results for `input`, with predictions when they
+    /// are on.
+    private func request(_ input: ComposingText) -> ConversionResult {
+        if let lastRequest, lastRequest.input == input { return lastRequest.result }
+        let result = converter.requestCandidates(input, options: options(predictions: configuration.predictions))
+        lastRequest = (input, result)
+        return result
+    }
+
+    /// Conversions of `input`: its results without the predictions, which
+    /// read further than the input.
+    private func conversions(of input: ComposingText) -> ConversionResult {
+        var result = request(input)
+        let length = input.convertTarget.count
+        result.mainResults.removeAll { $0.rubyCount > length }
+        result.firstClauseResults.removeAll { $0.rubyCount > length }
+        return result
+    }
 
     private func options(predictions: Bool) -> ConvertRequestOptions {
         Self.options(configuration, leftContext: leftContext, textReplacer: textReplacer, predictions: predictions)
@@ -277,6 +307,7 @@ public final class AzooKeyEngine: CompositionEngine {
     /// inconsistent and trap on at the next request; typing starts afresh.
     private func endConversionLattice() {
         converter.stopComposition()
+        lastRequest = nil
     }
 
     public func highlight(_ index: Int) {
@@ -370,6 +401,7 @@ public final class AzooKeyEngine: CompositionEngine {
         followingText = ""
         liveText = nil
         converter.stopComposition()
+        lastRequest = nil
         state = .empty
         releaseZenzaiIfUnused()
     }
@@ -389,6 +421,7 @@ public final class AzooKeyEngine: CompositionEngine {
     }
 
     public func setLeftContext(_ text: String) {
+        if text != leftContext { lastRequest = nil }
         leftContext = text
     }
 
@@ -445,7 +478,7 @@ public final class AzooKeyEngine: CompositionEngine {
         bestFollowing = nil
         let total = composing.convertTarget.count
         if focusLength == nil {
-            let result = converter.requestCandidates(composing, options: options(predictions: false))
+            let result = conversions(of: composing)
             let sentences = ranked(result.mainResults, length: total, after: history)
             guard let best = sentences.first else {
                 focusCandidates = []
@@ -469,7 +502,7 @@ public final class AzooKeyEngine: CompositionEngine {
         let length = min(focusLength ?? total, total)
         var prefix = composing
         _ = prefix.moveCursorFromCursorPosition(count: length - prefix.convertTargetCursorPosition)
-        focusCandidates = converter.requestCandidates(prefix.prefixToCursorPosition(), options: options(predictions: false)).mainResults
+        focusCandidates = conversions(of: prefix.prefixToCursorPosition()).mainResults
         // The clause as the ranked sentence wrote it comes first, so the
         // first display is that sentence.
         if let preferredFocus {
@@ -563,7 +596,7 @@ public final class AzooKeyEngine: CompositionEngine {
         var remainder = composing
         remainder.prefixComplete(composingCount: candidate.composingCount)
         guard !remainder.isEmpty else { return }
-        let results = converter.requestCandidates(remainder, options: options(predictions: false)).mainResults
+        let results = conversions(of: remainder).mainResults
         followingText = ranked(results, length: remainder.convertTarget.count, after: history + candidate.text).first?.text ?? remainder.convertTarget
     }
 
@@ -632,7 +665,7 @@ public final class AzooKeyEngine: CompositionEngine {
         var kana = composing
         _ = kana.moveCursorFromCursorPosition(count: -pending)
         let input = kana.prefixToCursorPosition()
-        let result = converter.requestCandidates(input, options: options(predictions: false))
+        let result = conversions(of: input)
         return ranked(result.mainResults, length: input.convertTarget.count, after: history).first.map { $0.text + target.suffix(pending) }
     }
 
@@ -645,7 +678,7 @@ public final class AzooKeyEngine: CompositionEngine {
             return
         }
         if configuration.predictions, !composing.isEmpty {
-            predictions = Array(converter.requestCandidates(composing, options: options(predictions: true)).mainResults.prefix(9))
+            predictions = Array(request(composing).mainResults.prefix(9))
         } else {
             predictions = []
         }
