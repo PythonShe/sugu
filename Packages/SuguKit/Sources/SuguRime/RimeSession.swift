@@ -145,6 +145,7 @@ public protocol ChineseEngine: CompositionEngine {
     /// unless a composition is in progress; returns whether it reopened.
     func reloadUserDictionary() -> Bool
     func setScript(_ script: ChineseScript)
+    var respelling: ChineseRespelling? { get set }
 }
 
 extension RimeEngine: ChineseEngine {}

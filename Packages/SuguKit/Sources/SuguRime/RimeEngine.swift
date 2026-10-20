@@ -14,7 +14,7 @@ public final class RimeEngine: CompositionEngine {
     private var candidateLimit: Int
     private let initialCandidateLimit: Int
     /// Respells librime's sentence where the language model reads it better.
-    public var respelling: Respelling?
+    public var respelling: ChineseRespelling?
     /// librime's sentence respelled, shown ahead of librime's candidates;
     /// librime's own indices are one further down while it is.
     private var respelled: String?
@@ -22,21 +22,6 @@ public final class RimeEngine: CompositionEngine {
     /// highlighted; typing highlights it again.
     private var respelledHighlighted = true
     private var leftContext = ""
-
-    public struct Respelling {
-        public var respeller: SentenceRespeller
-        /// Reads typed keys as syllables in the schema's scheme.
-        public var decoder: PinyinDecoder
-        /// Converts text into a script, for sentences in scripts other than
-        /// Simplified, which the model and word list are written in.
-        public var converter: @MainActor (ChineseScript) -> ScriptConverter?
-
-        public init(respeller: SentenceRespeller, decoder: PinyinDecoder, converter: @escaping @MainActor (ChineseScript) -> ScriptConverter?) {
-            self.respeller = respeller
-            self.decoder = decoder
-            self.converter = converter
-        }
-    }
 
     public let traits = EngineTraits(composition: .live, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
@@ -255,28 +240,16 @@ public final class RimeEngine: CompositionEngine {
     }
 
     /// librime's sentence for the whole input respelled, when the language
-    /// model reads another spelling as clearly better. The model and word
-    /// list are Simplified: a sentence in another script is respelled in
-    /// Simplified, and only the characters that changed are converted back,
-    /// so the rest keeps librime's forms.
+    /// model reads another spelling as clearly better.
     private func respell(_ sentence: String) -> String? {
-        guard let respelling else { return nil }
+        guard let respelling, let decoder = respelling.decoder else { return nil }
         // Readings that type all the input as one syllable per character;
         // none when the candidate covers only part of it. Fuzzy pinyin can
         // mean that librime read a derived spelling (zong for zhong), so
         // those follow the readings as typed.
-        let readings = respelling.decoder.syllables(typedAs: session.input, count: sentence.count, limit: 16, fewestDerivedOnly: false)
+        let readings = decoder.syllables(typedAs: session.input, count: sentence.count, limit: 16, fewestDerivedOnly: false)
         guard !readings.isEmpty else { return nil }
         let context = String(leftContext.suffix(respelling.respeller.contextLength))
-        guard script != .simplified else {
-            return respelling.respeller.respelled(sentence, readings: readings, after: context)
-        }
-        guard let toSimplified = respelling.converter(.simplified), let toScript = respelling.converter(script) else { return nil }
-        let simplified = toSimplified.convert(sentence)
-        guard let respelled = respelling.respeller.respelled(simplified, readings: readings, after: toSimplified.convert(context)) else { return nil }
-        let original = Array(sentence), before = Array(simplified), after = Array(respelled), converted = Array(toScript.convert(respelled))
-        guard Set([original.count, before.count, after.count, converted.count]).count == 1 else { return nil }
-        let result = String(original.indices.map { after[$0] == before[$0] ? original[$0] : converted[$0] })
-        return result == sentence ? nil : result
+        return respelling.respelled(sentence, readings: readings, after: context, script: script)
     }
 }

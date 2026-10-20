@@ -1,6 +1,6 @@
 import SuguCore
 
-/// Chinese typed in Zhuyin on the standard layout, composed as Taiwanese
+/// Chinese typed in Zhuyin, composed as Taiwanese
 /// input methods compose (D-073): each syllable ends with its tone, the
 /// sentence stays converted as it grows, and choosing a word at the caret
 /// fixes it while librime converts the rest around it. librime reads each
@@ -39,23 +39,10 @@ public final class ZhuyinEngine: CompositionEngine {
     /// The start of a sentence grown past `longestSentence`, let go of.
     private var overflow: Commit?
 
-    /// Sugu's word list, the user's words and the language model, in
-    /// Simplified, their script: they tell words from librime's sentences,
-    /// which librime makes for any syllables no word covers, and respell
-    /// librime's sentence as for pinyin (ADR 0005), where the characters
-    /// that change are librime's under their tones.
-    public struct Respelling {
-        public var respeller: SentenceRespeller
-        /// Converts text into a script.
-        public var converter: @MainActor (ChineseScript) -> ScriptConverter?
-
-        public init(respeller: SentenceRespeller, converter: @escaping @MainActor (ChineseScript) -> ScriptConverter?) {
-            self.respeller = respeller
-            self.converter = converter
-        }
-    }
-
-    public var respelling: Respelling? {
+    /// Tells words from librime's sentences and respells them as for
+    /// pinyin, where the characters that change are librime's under their
+    /// tones.
+    public var respelling: ChineseRespelling? {
         didSet { respelled = [:] }
     }
     /// Respelled sentences by input and the text before them.
@@ -499,7 +486,7 @@ public final class ZhuyinEngine: CompositionEngine {
         let context = String(before.suffix(respelling.respeller.contextLength))
         let key = input(for: range) + "\t" + context
         if let known = respelled[key] { return known.isEmpty ? nil : known }
-        let result = respelled(sentence, context: context, readings: syllables[range].compactMap(\.pinyin), respelling: respelling)
+        let result = respelling.respelled(sentence, readings: [syllables[range].compactMap(\.pinyin)], after: context, script: session.script)
             .flatMap { candidate -> String? in
                 let new = Array(candidate), old = Array(sentence)
                 guard new.count == old.count else { return nil }
@@ -508,18 +495,6 @@ public final class ZhuyinEngine: CompositionEngine {
         if respelled.count >= 512 { respelled = [:] }
         respelled[key] = result ?? ""
         return result
-    }
-
-    private func respelled(_ sentence: String, context: String, readings: [String], respelling: Respelling) -> String? {
-        let script = session.script
-        guard script != .simplified else { return respelling.respeller.respelled(sentence, readings: [readings], after: context) }
-        guard let toSimplified = respelling.converter(.simplified), let toScript = respelling.converter(script) else { return nil }
-        let simplified = toSimplified.convert(sentence)
-        guard let respelled = respelling.respeller.respelled(simplified, readings: [readings], after: toSimplified.convert(context)) else { return nil }
-        let original = Array(sentence), before = Array(simplified), after = Array(respelled), converted = Array(toScript.convert(respelled))
-        guard Set([original.count, before.count, after.count, converted.count]).count == 1 else { return nil }
-        let result = String(original.indices.map { after[$0] == before[$0] ? original[$0] : converted[$0] })
-        return result == sentence ? nil : result
     }
 
     /// Whether librime offers `character` for `syllable` with its tone.
@@ -573,9 +548,7 @@ public final class ZhuyinEngine: CompositionEngine {
     }
 
     private func isWord(_ text: String, readAs syllables: [String]) -> Bool {
-        guard let respelling else { return true }
-        let simplified = respelling.converter(.simplified)?.convert(text) ?? text
-        return respelling.respeller.knows(simplified, readAs: syllables)
+        respelling?.knows(text, readAs: syllables) ?? true
     }
 
     // MARK: State

@@ -127,16 +127,10 @@ public final class EngineHub: EngineSource {
         case .chinese:
             guard runtime.isReady else { warmUp(.chinese); return nil }
             if let chinese { return chinese }
-            let engine: any ChineseEngine
-            if runtime.schema?.keyboard == .zhuyin {
-                let zhuyin = ZhuyinEngine(runtime: runtime, script: chineseScript)
-                attachRespelling(to: zhuyin)
-                engine = zhuyin
-            } else {
-                let pinyin = RimeEngine(runtime: runtime, script: chineseScript)
-                attachRespelling(to: pinyin)
-                engine = pinyin
-            }
+            let engine: any ChineseEngine = runtime.schema?.keyboard == .zhuyin
+                ? ZhuyinEngine(runtime: runtime, script: chineseScript)
+                : RimeEngine(runtime: runtime, script: chineseScript)
+            attachRespelling(to: engine)
             chinese = engine
             chineseWordsNeedReload = false
             return engine
@@ -294,18 +288,14 @@ public final class EngineHub: EngineSource {
         guard let decoder else { chineseRespelling = nil; return }
         chineseRespelling = (schema, respeller, decoder)
         // An engine made while this loaded, once librime was ready.
-        if let chinese = chinese as? RimeEngine { attachRespelling(to: chinese) }
-        if let chinese = chinese as? ZhuyinEngine { attachRespelling(to: chinese) }
+        if let chinese { attachRespelling(to: chinese) }
     }
 
-    private func attachRespelling(to engine: RimeEngine) {
-        guard let chineseRespelling, chineseRespelling.schema == runtime.schema else { return }
-        engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: chineseRespelling.decoder) { [weak self] in self?.converter(for: $0) }
-    }
-
-    private func attachRespelling(to engine: ZhuyinEngine) {
-        guard let respeller = chineseRespelling?.respeller else { return }
-        engine.respelling = .init(respeller: respeller) { [weak self] in self?.converter(for: $0) }
+    /// Pinyin respells only with the decoder of the schema in use.
+    private func attachRespelling(to engine: any ChineseEngine) {
+        guard let chineseRespelling else { return }
+        let decoder = chineseRespelling.schema == runtime.schema ? chineseRespelling.decoder : nil
+        engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: decoder) { [weak self] in self?.converter(for: $0) }
     }
 
     /// Learned words in Simplified, the respeller's script, whatever
