@@ -220,6 +220,21 @@ struct InputSessionTests {
         #expect(store.lookup("nihao", mode: .chinese).map(\.text) == ["你号"])
     }
 
+    /// [ and ] commit the first or last character of the highlighted word.
+    @Test func bracketsTakeACharacterOfTheWord() {
+        let session = makeSession()
+        type("shijie", into: session)
+        type("]", into: session)
+        #expect(client.document == "界")
+        type("nihao", into: session)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.tab, characters: "\t"))
+        type("[", into: session)
+        #expect(client.document == "界拟")
+        // Without a composition, [ is the bracket.
+        type("[", into: session)
+        #expect(client.document == "界拟【")
+    }
+
     /// z and a symbol key type Google Japanese Input's symbols in romaji.
     @Test func zSymbolsInRomaji() {
         let session = makeSession()

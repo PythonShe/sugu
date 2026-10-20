@@ -1255,3 +1255,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
   zk zl) but never sees the others, which the session maps to Japanese
   punctuation first; so the session, finding the z still unconverted
   before the caret, replaces it with the symbol.
+- 以词定字: in pinyin, [ and ] commit the first or last character of the
+  highlighted word of two or more Han characters and drop the rest of
+  the composition, as Sogou, Microsoft Pinyin and rime-ice's script do.
+  The character teaches nothing: which of the word's syllables it reads
+  is not known. Without a composition, or on a single character, the
+  keys stay 【 and 】.

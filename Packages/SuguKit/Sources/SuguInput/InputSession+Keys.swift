@@ -218,6 +218,15 @@ extension InputSession {
         }
         if character == "-" { turnPage(by: -1); return true }
         if character == "=" { turnPage(by: 1); return true }
+        // [ and ] take the first or last character of the highlighted word
+        // (以词定字), as Sogou and Microsoft Pinyin do.
+        if mode == .chinese, character == "[" || character == "]", let word = list.highlighted?.text, word.count > 1, word.allSatisfy(\.isHan),
+           let chosen = character == "[" ? word.first : word.last {
+            let reading = engine.state.reading
+            engine.clear()
+            commitText(String(chosen), reading: reading, learn: false)
+            return true
+        }
         if mode == .chinese, ChinesePunctuator.handles(character) {
             commitHighlighted()
             typePunctuation(character)
