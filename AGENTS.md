@@ -100,7 +100,7 @@ pnpm --dir site check && pnpm --dir site build   # the home page
   build trees), `Frameworks/` (`librime.xcframework` from
   `scripts/build-librime.sh`), `Data/` (compiled dictionaries and
   language models from `scripts/build-data.sh`), `dist/` (release output of
-  `scripts/release.sh`), `.build-dev/` (builds of `scripts/install-dev.sh`),
+  `scripts/release.sh`), `.build-dev/` (builds of `scripts/install-dev.sh` and `scripts/package-dev.sh`),
   `Config/Local.xcconfig` (local signing overrides, from
   `Local.xcconfig.example`), `.cloudflare/` (the Cloudflare CLI's cache),
   `site/node_modules/`, `site/dist/`, `site/.astro/` and `site/.wrangler/`

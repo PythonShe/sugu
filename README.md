@@ -49,7 +49,7 @@ xcodegen generate
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' build
 ```
 
-`scripts/ci.sh` runs everything above plus the tests and the benchmark (`sugu-bench`, with its test sets in `Bench/`). `scripts/install-dev.sh` installs a build for the current user.
+`scripts/ci.sh` runs everything above plus the tests and the benchmark (`sugu-bench`, with its test sets in `Bench/`). `scripts/install-dev.sh` installs a build for the current user; `scripts/package-dev.sh` makes an unsigned installer package of one, for testing the package install.
 
 | Path | Contents |
 |---|---|
