@@ -370,6 +370,21 @@ struct RimeEngineTests {
         #expect(engine.state.segments.map(\.text).joined() == "彼女はピアノを弾きます")
     }
 
+    /// A conversion that is one clause takes the language model's order
+    /// too, conditioned on the text before it.
+    @Test(.enabled(if: hasData)) func aSingleClauseIsRankedAfterTheTextBeforeIt() throws {
+        let engine = try makeEngine()
+        engine.languageModel = try CharacterLanguageModel(contentsOf: dataDirectory.appendingPathComponent("LM/ja.lm"))
+        for (context, expected) in [("寒いのでコートを", "着ます"), ("明日の朝またここに", "来ます")] {
+            engine.setLeftContext(context)
+            engine.insert("kimasu")
+            #expect(engine.convert())
+            #expect(engine.state.segments.map(\.text).joined() == expected)
+            #expect(Set(engine.state.candidates.map(\.text)).count == engine.state.candidates.count)
+            engine.clear()
+        }
+    }
+
     @Test func respellingLeavesTheUsersWords() throws {
         let engine = try makeEngine()
         engine.setUserWords([(reading: "ゆき", text: "行き")])

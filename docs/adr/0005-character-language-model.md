@@ -39,7 +39,9 @@ does it.
    corpus (19 of Tatoeba's sentences match them). On the first 50
    Japanese sentences `sugu-bench` top-1 went from 78% to 86%; on 51
    written afterwards to check it, from 78% to 84%; learned names stay
-   first; keystroke p99 is unchanged.
+   first; keystroke p99 is unchanged. Pairs that share a reading and
+   differ by the text before the caret measure the context: 50% of them
+   right with the field hidden, 71% with it read.
 
 6. **No grammar for librime.** librime builds one sentence and offers no
    alternatives to rerank. A small octagram grammar built from Tatoeba's

@@ -444,14 +444,16 @@ public final class AzooKeyEngine: CompositionEngine {
         let total = composing.convertTarget.count
         if focusLength == nil {
             let result = converter.requestCandidates(composing, options: options(predictions: false))
-            guard let best = ranked(result.mainResults, length: total, after: history).first else {
+            let sentences = ranked(result.mainResults, length: total, after: history)
+            guard let best = sentences.first else {
                 focusCandidates = []
                 followingText = ""
                 publishConverting()
                 return
             }
+            // One clause: the ranked sentences are its candidates.
             guard let clause = firstClause(of: best, among: result.firstClauseResults, total: total) else {
-                focusCandidates = result.mainResults
+                focusCandidates = sentences
                 updateFollowingText()
                 publishConverting()
                 return
@@ -536,8 +538,15 @@ public final class AzooKeyEngine: CompositionEngine {
             .sorted { $0.element.score != $1.element.score ? $0.element.score > $1.element.score : $0.offset < $1.offset }
             .map(\.element.candidate)
         let best = refiner.refined(reordered[0], after: history, model: languageModel)
-        if best.text != reordered[0].text { reordered.insert(best, at: 0) }
-        return reordered + results.dropFirst(sentences.count)
+        var rest = Array(results.dropFirst(sentences.count))
+        if best.text != reordered[0].text {
+            // A sentence the converter also proposed moves up rather than
+            // showing twice.
+            reordered.removeAll { $0.text == best.text }
+            rest.removeAll { $0.text == best.text }
+            reordered.insert(best, at: 0)
+        }
+        return reordered + rest
     }
 
     /// Converts what follows the highlighted clause candidate, reusing the

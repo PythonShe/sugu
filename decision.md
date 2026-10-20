@@ -833,3 +833,25 @@ any call made without the owner present. Each entry: what, why, reversibility.
   keystroke: keystroke p99 4.6 ms, and the shown sentence stays the one
   Space would give.
 
+## D-057 · Conversions after text that decides them (2026-10-20)
+- Every ranking and respelling step reads the text before the caret, but
+  the bench field showed none, so none of it was measured.
+  `Bench/{zh,ja}-context.tsv` hold pairs that share a reading and differ
+  by what came before (花束を贈ります, 資料を送ります; 一场大雪, 上大学).
+  The bench types each with the field hidden and with it read, and the
+  pairs' sentences are left out of the corpora like the others.
+- First run: no difference at all in either language. Japanese: a
+  conversion that is one clause showed the converter's own sentences,
+  not the ranked ones, so the model never ranked a single word, with or
+  without context. Fixed; a respelled sentence the converter also
+  proposed moves up instead of appearing twice. Japanese context set 38%
+  → 50% without the text before and 71% with it; main set 90% → 91%.
+- Chinese: the model does prefer 大雪 after 一场 and 骑车 after 喜欢, by
+  1.7–2.8, but respelling needs 4. A margin of 2 gives 55% with context
+  and keeps 97% on the main set, by fixing two sentences and breaking
+  two others (开机变快, 钥匙), with characters 99.4% → 99.0%; the
+  margin stays at 4. Short Chinese words decided by context need a
+  ranking of librime's whole-input candidates, not respelling.
+- Left as the model's limits: 熱い after 熱湯を注いだ and 弾いて after ピアノ
+  教室 sit beyond five characters.
+
