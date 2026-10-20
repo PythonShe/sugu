@@ -26,5 +26,5 @@ public final class Updater: NSObject, SPUUpdaterDelegate {
         controller?.checkForUpdates(nil)
     }
 
-    nonisolated public func allowedSystemProfileKeys(for updater: SPUUpdater) -> [String] { [] }
+    nonisolated public func allowedSystemProfileKeys(for updater: SPUUpdater) -> [String]? { [] }
 }
