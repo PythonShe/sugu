@@ -9,9 +9,12 @@ import SuguInput
 final class TextInputClient: InputClient {
     let client: any IMKTextInput & NSObjectProtocol
     private weak var controller: IMKInputController?
-    /// Whether Sugu has marked text in the field. Clearing marked text that
-    /// was never set replaces the selection in some apps.
-    private var hasMarkedText = false
+    /// The marked text Sugu last set; nil when there is none. Clearing
+    /// marked text that was never set replaces the selection in some apps.
+    private var marked: (segments: [CompositionSegment], caret: Int)?
+    /// Where the composition starts on screen, read once per marked text:
+    /// moving the highlight through predictions leaves it in place.
+    private var markedRect: NSRect?
 
     private static let notFound = NSRange(location: NSNotFound, length: NSNotFound)
 
@@ -28,11 +31,13 @@ final class TextInputClient: InputClient {
 
     func commit(_ text: String) {
         client.insertText(text, replacementRange: Self.notFound)
-        hasMarkedText = false
+        marked = nil
+        markedRect = nil
     }
 
     func setMarkedText(_ segments: [CompositionSegment], caret: Int) {
-        guard hasMarkedText || !segments.isEmpty else { return }
+        if let marked, marked.segments == segments, marked.caret == caret { return }
+        guard marked != nil || !segments.isEmpty else { return }
         let marked = NSMutableAttributedString()
         for segment in segments {
             let range = NSRange(location: marked.length, length: (segment.text as NSString).length)
@@ -41,7 +46,8 @@ final class TextInputClient: InputClient {
         let joined = segments.map(\.text).joined()
         let caretOffset = joined.prefix(caret).utf16.count
         client.setMarkedText(marked, selectionRange: NSRange(location: caretOffset, length: 0), replacementRange: Self.notFound)
-        hasMarkedText = !segments.isEmpty
+        self.marked = segments.isEmpty ? nil : (segments, caret)
+        markedRect = nil
     }
 
     private func attributes(for role: CompositionSegment.Role, range: NSRange) -> [NSAttributedString.Key: Any] {
@@ -102,8 +108,10 @@ final class TextInputClient: InputClient {
     /// The rectangle of the composition's first character in screen
     /// coordinates; zero when the field does not report one.
     func compositionRect() -> NSRect {
+        if let markedRect { return markedRect }
         var rect = NSRect.zero
         _ = client.attributes(forCharacterIndex: 0, lineHeightRectangle: &rect)
+        if marked != nil, rect != .zero { markedRect = rect }
         return rect
     }
 }

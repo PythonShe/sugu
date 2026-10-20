@@ -89,7 +89,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Turning Zenzai off releases the model (D-044)
 - [x] Learned-word expiry also on setting change and daily, not only at launch
 - [x] VoiceOver: candidate rows and pager as accessibility children
-- [ ] Skip identical marked-text updates and caret-rect reads on highlight moves
+- [x] Skip identical marked-text updates and caret-rect reads on highlight moves
 
 ## 11. Apple language models (ADR 0004)
 - [x] Levels, switches, seam, selection commands, composition suggestions (D-043)

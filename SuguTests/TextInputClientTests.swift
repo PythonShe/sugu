@@ -1,5 +1,6 @@
 import AppKit
 import InputMethodKit
+import SuguCore
 import Testing
 
 /// A text field as InputMethodKit presents it: UTF-16 offsets throughout.
@@ -8,6 +9,8 @@ private final class FakeTextInput: NSObject, IMKTextInput {
     var selection: NSRange
     var marked = NSRange(location: NSNotFound, length: 0)
     var exposesText = true
+    var markedTextUpdates = 0
+    var rectReads = 0
 
     init(_ text: String, caret: Int? = nil) {
         self.text = NSMutableString(string: text)
@@ -22,7 +25,7 @@ private final class FakeTextInput: NSObject, IMKTextInput {
         marked = NSRange(location: NSNotFound, length: 0)
     }
 
-    func setMarkedText(_ string: Any!, selectionRange: NSRange, replacementRange: NSRange) {}
+    func setMarkedText(_ string: Any!, selectionRange: NSRange, replacementRange: NSRange) { markedTextUpdates += 1 }
     func selectedRange() -> NSRange { exposesText ? selection : NSRange(location: NSNotFound, length: NSNotFound) }
     func markedRange() -> NSRange { marked }
     func attributedSubstring(from range: NSRange) -> NSAttributedString! {
@@ -31,7 +34,11 @@ private final class FakeTextInput: NSObject, IMKTextInput {
     }
     func length() -> Int { exposesText ? text.length : NSNotFound }
     func characterIndex(for point: NSPoint, tracking mappingMode: IMKLocationToOffsetMappingMode, inMarkedRange: UnsafeMutablePointer<ObjCBool>!) -> Int { 0 }
-    func attributes(forCharacterIndex index: Int, lineHeightRectangle lineRect: UnsafeMutablePointer<NSRect>!) -> [AnyHashable: Any]! { [:] }
+    func attributes(forCharacterIndex index: Int, lineHeightRectangle lineRect: UnsafeMutablePointer<NSRect>!) -> [AnyHashable: Any]! {
+        rectReads += 1
+        lineRect.pointee = NSRect(x: 100, y: 100, width: 1, height: 18)
+        return [:]
+    }
     func validAttributesForMarkedText() -> [Any]! { [] }
     func overrideKeyboard(withKeyboardNamed keyboardUniqueName: String!) {}
     func selectMode(_ modeIdentifier: String!) {}
@@ -79,6 +86,26 @@ private final class FakeTextInput: NSObject, IMKTextInput {
         #expect(field.text as String == "ab")
         #expect(!client.deleteBeforeCaret(count: 3))
         #expect(field.text as String == "ab")
+    }
+
+    @Test func unchangedMarkedTextIsNotSentAgain() {
+        let field = FakeTextInput("")
+        let client = adapter(field)
+        let segments = [CompositionSegment("にほん", role: .input)]
+        client.setMarkedText(segments, caret: 3)
+        _ = client.compositionRect()
+        // Moving the highlight through predictions changes neither.
+        client.setMarkedText(segments, caret: 3)
+        _ = client.compositionRect()
+        #expect(field.markedTextUpdates == 1)
+        #expect(field.rectReads == 1)
+        client.setMarkedText(segments, caret: 2)
+        _ = client.compositionRect()
+        #expect(field.markedTextUpdates == 2)
+        #expect(field.rectReads == 2)
+        client.commit("日本")
+        client.setMarkedText(segments, caret: 2)
+        #expect(field.markedTextUpdates == 3)
     }
 
     @Test func fieldsThatHideTheirTextGiveNothing() {

@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Unchanged marked text is not sent to the app again, and the composition's
+  screen position is read once per marked text, so moving through
+  predictions costs no calls to the app.
 - VoiceOver sees each candidate and the page buttons in the candidate
   window and can press them; the highlighted candidate is selected.
 - Learned words also expire when the date changes and when the expiry
