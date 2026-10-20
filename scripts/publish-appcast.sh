@@ -47,7 +47,9 @@ fi
 if [[ -n "${R2_ACCESS_KEY_ID:-}" ]]; then
   : "${R2_ACCOUNT_ID:?}" "${R2_SECRET_ACCESS_KEY:?}"
   put() {
+    # R2 does not take the checksums newer AWS CLIs send by default.
     AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
+      AWS_REQUEST_CHECKSUM_CALCULATION=when_required AWS_RESPONSE_CHECKSUM_VALIDATION=when_required \
       aws --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --region auto \
       s3 cp "$1" "s3://$BUCKET/$2" --content-type "$3" --cache-control no-cache --only-show-errors
   }

@@ -123,18 +123,19 @@ jobs:
           RAW=$(mktemp)
           trap 'rm -f "$HEADER" "$RAW"' EXIT
           USER_TEXT=$(printf '%s\n\n%s\n\n%s' "$FIRST" "$TRUNCATED" "$COMMITS")
+          # The body goes through stdin: a long range would exceed one argument's limit.
           request() {
-            curl -s --max-time 240 https://api.anthropic.com/v1/messages \
+            jq -n --arg model "$MODEL" --arg system "$SYSTEM" --arg text "$USER_TEXT" --arg effort "$1" '{
+                model: $model,
+                max_tokens: 64000,
+                output_config: {effort: $effort},
+                system: $system,
+                messages: [{role: "user", content: $text}]
+              }' | curl -s --max-time 240 https://api.anthropic.com/v1/messages \
               -H "content-type: application/json" \
               -H "anthropic-version: 2023-06-01" \
               -H @"$HEADER" \
-              -d "$(jq -n --arg model "$MODEL" --arg system "$SYSTEM" --arg text "$USER_TEXT" --arg effort "$1" '{
-                    model: $model,
-                    max_tokens: 64000,
-                    output_config: {effort: $effort},
-                    system: $system,
-                    messages: [{role: "user", content: $text}]
-                  }')" || true
+              --data-binary @- || true
           }
 
           # Only a complete answer in the four-language shape ships.

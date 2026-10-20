@@ -116,7 +116,13 @@ notarize() {
   local output
   output="$(xcrun notarytool submit "$1" "${NOTARY_AUTH[@]}" --wait --timeout 30m)"
   echo "$output"
-  grep -q "status: Accepted" <<<"$output" || { echo "notarization of $(basename "$1") was not accepted" >&2; exit 1; }
+  if ! grep -q "status: Accepted" <<<"$output"; then
+    echo "notarization of $(basename "$1") was not accepted" >&2
+    local id
+    id="$(awk '$1 == "id:" { print $2; exit }' <<<"$output")"
+    [[ -z "$id" ]] || xcrun notarytool log "$id" "${NOTARY_AUTH[@]}" >&2 || true
+    exit 1
+  fi
 }
 
 # Update archive: notarize the app, staple it, then archive the stapled app.
