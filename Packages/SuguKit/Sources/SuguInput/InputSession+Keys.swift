@@ -247,9 +247,7 @@ extension InputSession {
         if mode == .chinese, character == "[" || character == "]", let candidate = list.highlighted, candidate.source != .computed,
            case let word = candidate.text, word.count > 1, word.allSatisfy(\.isHan),
            let chosen = character == "[" ? word.first : word.last {
-            let reading = engine.state.reading
-            engine.clear()
-            commitText(String(chosen), reading: reading, learn: false)
+            commitWhole(String(chosen))
             return true
         }
         if mode == .chinese, ChinesePunctuator.handles(character) {

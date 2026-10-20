@@ -87,9 +87,7 @@ extension InputSession {
     func commitHighlighted() {
         guard let engine = active else { return }
         if let transformed {
-            let reading = engine.state.reading
-            engine.clear()
-            commitText(transformed, reading: reading, learn: false)
+            commitWhole(transformed)
             return
         }
         guard let index = list.highlight ?? (composition(of: engine) == .live ? 0 : nil),
@@ -123,37 +121,34 @@ extension InputSession {
             }
         case .learned:
             // Shown in the script in use; the store keeps the form it learned.
-            let reading = engine.state.reading
-            let learned = learnedText(shown: candidate.text, reading: reading)
-            let record = Commit(text: learned, reading: reading, clauses: [.init(reading: reading, text: learned)])
             let learns = engine.traits.learnsCommits
-            engine.clear()
-            commitText(candidate.text, reading: reading, learn: learns, record: record, undoable: learns)
+            commitWhole(candidate.text, word: learnedText(shown: candidate.text, reading: engine.state.reading), learn: learns, undoable: learns)
         case .chineseForm:
             // A Chinese name in Japanese text does not belong in the Japanese store.
-            let reading = engine.state.reading
-            engine.clear()
-            commitText(candidate.text, reading: reading, learn: false, undoable: true)
+            commitWhole(candidate.text, undoable: true)
         case .computed:
             // Dates, numerals and results are made fresh each time; learning
             // them would pin yesterday's date to the reading.
-            let reading = engine.state.reading
-            let record = Commit(text: candidate.text, reading: reading)
-            engine.clear()
-            commitText(candidate.text, reading: reading, learn: false, record: record, undoable: engine.traits.learnsCommits)
+            commitWhole(candidate.text, undoable: engine.traits.learnsCommits)
         case .latin:
-            let reading = engine.state.reading
-            engine.clear()
-            commitText(candidate.text, reading: reading, learn: false)
+            commitWhole(candidate.text)
         case .model(let learns):
             // A model conversion the user chose is theirs to keep; a
             // translation is not a reading of what was typed.
-            let reading = engine.state.reading
             let teaches = learns && engine.traits.learnsCommits
-            let record = Commit(text: candidate.text, reading: reading, clauses: [.init(reading: reading, text: candidate.text)])
-            engine.clear()
-            commitText(candidate.text, reading: reading, learn: teaches, record: record, undoable: teaches)
+            commitWhole(candidate.text, word: candidate.text, learn: teaches, undoable: teaches)
         }
+    }
+
+    /// Commits `text` for the whole composition, which the engine drops:
+    /// one of Sugu's own candidates, or a form of the input. `word` is what
+    /// the commit teaches as a word of the reading.
+    func commitWhole(_ text: String, word: String? = nil, learn: Bool = false, undoable: Bool = false) {
+        guard let engine = active else { return }
+        let reading = engine.state.reading
+        engine.clear()
+        let record = word.map { Commit(text: $0, reading: reading, clauses: [.init(reading: reading, text: $0)]) }
+        commitText(text, reading: reading, learn: learn, record: record, undoable: undoable)
     }
 
     /// Forgets the highlighted candidate as a learned word, as ⌃⌦ takes a
@@ -198,17 +193,23 @@ extension InputSession {
         transformed = nil
         list.clear()
         showsConversionWindow = false
-        client?.commit(text)
-        lastTyped = text.last
-        if !vocabulary.isEmpty {
-            vocabulary = String((vocabulary + text).suffix(Self.vocabularyLimit * 2))
-        }
+        insertCommitted(text)
         let record = record ?? Commit(text: text, reading: reading)
         let learned = learn && self.learn(record)
         self.undoable = undoable ? engine.map { PendingUndo(text: text, commit: record, engine: $0, mode: mode, learned: learned) } : nil
         let typedAsRomaji = mode == .japanese && !typed.isEmpty && typed != text && typed.unicodeScalars.allSatisfy { (0x21...0x7E).contains($0.value) }
         retypable = typedAsRomaji ? Retypable(text: text, romaji: typed, commit: record, learned: learned, isRomaji: false) : nil
         publish()
+    }
+
+    /// Puts committed text into the field and notes it as what the caret
+    /// follows and as part of the field's vocabulary.
+    private func insertCommitted(_ text: String) {
+        client?.commit(text)
+        lastTyped = text.last
+        if !vocabulary.isEmpty {
+            vocabulary = String((vocabulary + text).suffix(Self.vocabularyLimit * 2))
+        }
     }
 
     /// Teaches the store a commit, where this field and mode learn;
@@ -223,11 +224,7 @@ extension InputSession {
     /// Commits the start of a composition that goes on (a long Zhuyin
     /// sentence); the field shows the rest as marked text next.
     func commitHead(_ head: Commit) {
-        client?.commit(head.text)
-        lastTyped = head.text.last
-        if !vocabulary.isEmpty {
-            vocabulary = String((vocabulary + head.text).suffix(Self.vocabularyLimit * 2))
-        }
+        insertCommitted(head.text)
         if active?.traits.learnsCommits == true { _ = learn(head) }
         undoable = nil
         retypable = nil
