@@ -79,6 +79,6 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Traditional Chinese punctuation: 「」『』 for the Taiwan and Hong Kong scripts (D-035)
 - [x] Input menu: Chinese script, pause learning, Check for Updates (D-036)
 - [x] Candidate window: width cap with truncation, hover highlight (D-037)
-- [ ] Undo after commit: verify the deletion in hosts that ignore the replacement range
+- [x] ~~Undo after commit: verify the deletion in hosts that ignore the replacement range~~ — declined (D-038)
 - [ ] Zhuyin, if wanxiang or librime algebra supports it under a compatible license
 - [ ] Japanese live conversion, as a preference

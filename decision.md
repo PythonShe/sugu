@@ -494,3 +494,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   active always, since the panel never becomes key; the hover clears when
   the page changes.
 - `--measure-draw` adds a page with an over-long candidate: p99 1.0 ms.
+
+## D-038 · Undo after commit is not re-verified (2026-10-20)
+- Considered: after ⌃⌫ deletes the last commit, read the field again and
+  restore the composition only if the text is gone, for hosts that ignore
+  `replacementRange`. Declined. Browsers and Electron apps report the
+  selection asynchronously, so an immediate re-read sees the old text even
+  when the deletion happened; giving up then would drop the commit from
+  the field without restoring the composition, the one outcome worse than
+  a duplicate.
+- Undo already runs only where the field can be read and the text before
+  the caret is exactly the commit (D-012); hosts that cannot be read get
+  ⌃⌫ as a plain key.
