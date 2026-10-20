@@ -62,7 +62,9 @@ public final class EngineHub: EngineProvider {
     /// every keystroke.
     private var failedSchema: RimeSchema?
     private var chineseScript: ChineseScript
-    private var scriptConverter: (script: ChineseScript, converter: ScriptConverter?)?
+    /// Converters by script, opened on first use and kept, so switching
+    /// between apps with different scripts does not reopen them.
+    private var scriptConverters: [ChineseScript: ScriptConverter] = [:]
 
     public init(locations: Locations, preferences: Preferences, store: LearnedStore?, version: String) {
         self.locations = locations
@@ -110,14 +112,21 @@ public final class EngineHub: EngineProvider {
         guard script != chineseScript else { return }
         chineseScript = script
         chinese?.setScript(script)
+        // Opened at focus rather than on the first keystroke.
+        if chinese != nil { _ = converter(for: script) }
     }
 
     public func chineseText(_ text: String) -> String? {
-        if scriptConverter?.script != chineseScript {
-            let openCC = locations.rimeShared.appendingPathComponent("opencc")
-            scriptConverter = (chineseScript, ScriptConverter.toScript(chineseScript, openCC: openCC))
-        }
-        return scriptConverter?.converter?.convert(text)
+        converter(for: chineseScript)?.convert(text)
+    }
+
+    private func converter(for script: ChineseScript) -> ScriptConverter? {
+        if let converter = scriptConverters[script] { return converter }
+        let openCC = locations.rimeShared.appendingPathComponent("opencc")
+        // Not kept when it fails: the tables appear once librime is set up.
+        let converter = ScriptConverter.toScript(script, openCC: openCC)
+        scriptConverters[script] = converter
+        return converter
     }
 
     // MARK: Lifecycle

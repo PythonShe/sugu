@@ -267,6 +267,10 @@ struct InputSessionTests {
         let session = makeSession()
         type("shijie", into: session)
         #expect(session.display.candidates?.candidates.first?.text == "东京")
+        _ = session.handle(Key.space)
+        #expect(client.document == "东京")
+        // The use counts for the learned form; no converted twin is added.
+        #expect(store.lookup("shijie", mode: .chinese).map(\.text) == ["東京"])
     }
 
     @Test func japaneseNamesOfferTheirChineseForm() {
@@ -283,6 +287,7 @@ struct InputSessionTests {
         #expect(client.markedText == "东京")
         _ = session.handle(Key.enter)
         #expect(client.document == "东京")
+        #expect(store.count == 0)
     }
 
     @Test func wordsLeftOfTheCaretRankFirst() {
@@ -338,6 +343,15 @@ struct InputSessionTests {
         _ = session.handle(Key.space)
         #expect(!session.handle(Key.keypad("1")))
         #expect(client.document == "你好東共")
+    }
+
+    @Test func numpadKeysContinueAnExpression() {
+        let session = makeSession()
+        type("v", into: session)
+        #expect(session.handle(Key.keypad("1")))
+        #expect(session.handle(Key.keypad("+")))
+        #expect(session.handle(Key.keypad("2")))
+        #expect(client.markedText == "v1+2")
     }
 
     @Test func numpadEnterCommitsTheTypedLetters() {

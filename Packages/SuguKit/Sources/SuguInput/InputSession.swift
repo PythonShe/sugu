@@ -71,7 +71,7 @@ public final class InputSession {
     /// (document vocabulary). Kept in memory only.
     private var vocabulary = ""
     /// The commit ⌃⌫ can take back, with the engine that composed it.
-    private var undoable: (commit: Commit, engine: any CompositionEngine, mode: InputMode, learned: Bool)?
+    private var undoable: (text: String, commit: Commit, engine: any CompositionEngine, mode: InputMode, learned: Bool)?
 
     public init(
         preferences: Preferences,
@@ -106,6 +106,8 @@ public final class InputSession {
             setMode(preferences.enabledModes.first ?? .english)
         }
         provider.setChineseScript(chineseScript)
+        // Candidates on screen follow a script change at once.
+        if active != nil { refresh() }
     }
 
     /// The focused app's Chinese script, or the global one.
@@ -265,14 +267,14 @@ public final class InputSession {
             break
         }
         guard let character else { return true }
-        if key.modifiers.contains(.numericPad) {
-            commitComposition()
-            return false
-        }
         if engine is ExpressionEngine, engine.accepts(character) {
             engine.insert(String(character))
             refresh()
             return true
+        }
+        if key.modifiers.contains(.numericPad) {
+            commitComposition()
+            return false
         }
         if let digit = character.selectionDigit {
             selectOnPage(digit)
@@ -525,10 +527,19 @@ public final class InputSession {
                 highlight = nil
                 refresh()
             }
-        case .learned, .chineseForm:
+        case .learned:
+            // Shown in the script in use; the store keeps the form it learned.
+            let reading = engine.state.reading
+            let learned = learnedText(shown: candidate.text, reading: reading)
+            let record = Commit(text: learned, reading: reading, clauses: [.init(reading: reading, text: learned)])
+            let fromLanguage = !(engine is ExpressionEngine)
+            engine.clear()
+            commitText(candidate.text, reading: reading, learn: fromLanguage, record: record, undoable: fromLanguage)
+        case .chineseForm:
+            // A Chinese name in Japanese text does not belong in the Japanese store.
             let reading = engine.state.reading
             engine.clear()
-            commit(Commit(text: candidate.text, reading: reading, clauses: [.init(reading: reading, text: candidate.text)]))
+            commitText(candidate.text, reading: reading, learn: false, undoable: true)
         case .computed:
             // Dates, numerals and results are made fresh each time; learning
             // them would pin yesterday's date to the reading.
@@ -541,6 +552,14 @@ public final class InputSession {
             engine.clear()
             commitText(candidate.text, reading: reading, learn: false)
         }
+    }
+
+    /// The learned word a candidate shows, before script conversion.
+    private func learnedText(shown: String, reading: String) -> String {
+        guard mode == .chinese, let words = store?.lookup(reading, mode: mode) else { return shown }
+        return words.first { $0.text == shown }?.text
+            ?? words.first { provider.chineseText($0.text) == shown }?.text
+            ?? shown
     }
 
     private func commit(_ commit: Commit?) {
@@ -570,7 +589,7 @@ public final class InputSession {
             provider.learnedWordsDidChange()
             learned = true
         }
-        self.undoable = undoable ? engine.map { (record, $0, mode, learned) } : nil
+        self.undoable = undoable ? engine.map { (text, record, $0, mode, learned) } : nil
         publish()
     }
 
@@ -579,7 +598,7 @@ public final class InputSession {
     /// was committed, so a field that moved the caret loses nothing.
     private func undoLastCommit() -> Bool {
         guard let undoable, undoable.mode == mode, canReadField, let client else { return false }
-        let text = undoable.commit.text
+        let text = undoable.text
         guard client.textBeforeCaret(limit: text.count) == text,
               client.deleteBeforeCaret(count: text.count) else { return false }
         self.undoable = nil
