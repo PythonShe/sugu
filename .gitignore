@@ -41,5 +41,5 @@ build/
 # Cloudflare CLI cache
 /.cloudflare/
 
-# Working notes, kept out of the repository
+# Scratch material from design sessions
 /docs/internal/
