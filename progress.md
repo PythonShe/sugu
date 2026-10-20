@@ -3,6 +3,15 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Habits from other input methods (D-074): ⇧⌫ forgets a learned
+  candidate, Google's z-symbols in romaji, 以词定字 with [ ], Add Word…
+  in the input menu filled from the selection, ⌃. for punctuation width,
+  symbols after the Chinese names CLDR leaves out. CI passes: keystroke
+  p99 3.82 ms, footprint 81 MB, fuzz 0 failures in every variant.
+- Zhuyin closer to McBopomofo and the system's: Esc takes the pending
+  syllable, tones retone the last one, long sentences commit their
+  start, punctuation and Shift-letters stay in the sentence, Eten and
+  IBM layouts, Taiwan's characters by default (D-073).
 - Zhuyin input (D-073): the standard layout, toned codes librime reads
   from the same dictionary, a sentence converted as syllables end with
   words chosen at the caret, a Keyboard setting and ㄅ indicator; fuzzed
