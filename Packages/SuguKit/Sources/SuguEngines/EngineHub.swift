@@ -1,6 +1,7 @@
 import Foundation
 import SuguAzooKey
 import SuguCore
+import SuguInput
 import SuguLearning
 import SuguRime
 

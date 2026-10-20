@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 import SuguCore
+import SuguEngines
 import SuguInput
 import SuguLearning
 

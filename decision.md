@@ -9,8 +9,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - All logic that can run headless lives in the local package
   `Packages/SuguKit`, split by responsibility: `SuguCore` (models, key model,
   punctuation, computed candidates, Latin inference, preferences),
-  `SuguRime`, `SuguAzooKey`, `SuguLearning`, `SuguDictionaries`, and
-  `SuguInput` (the input state machine that ties them together).
+  `SuguRime`, `SuguAzooKey`, `SuguLearning`, `SuguDictionaries`,
+  `SuguDownloads`, `SuguUpdates`, `SuguInput` (the input state machine,
+  engine-free behind `CompositionEngine` and `EngineSource`), and
+  `SuguEngines` (`EngineHub` and `ModelLibrary`: the real engines and their
+  downloadable data, which only the app and `sugu-bench` link).
 - The app target is a thin shell: IMK wiring, windows, settings.
 - Why: the input state machine can be tested with `swift test` without
   installing or activating an input method, so testing never interrupts the

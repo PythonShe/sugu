@@ -17,6 +17,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "SuguInput", targets: ["SuguInput"]),
+        .library(name: "SuguEngines", targets: ["SuguEngines"]),
         .library(name: "SuguCore", targets: ["SuguCore"]),
         .library(name: "SuguLearning", targets: ["SuguLearning"]),
         .library(name: "SuguDictionaries", targets: ["SuguDictionaries"]),
@@ -77,7 +78,12 @@ let package = Package(
         ),
         .target(
             name: "SuguInput",
-            dependencies: ["SuguCore", "SuguRime", "SuguAzooKey", "SuguLearning", "SuguDownloads"],
+            dependencies: ["SuguCore", "SuguLearning"],
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "SuguEngines",
+            dependencies: ["SuguInput", "SuguCore", "SuguRime", "SuguAzooKey", "SuguLearning", "SuguDownloads"],
             swiftSettings: cxxSwiftSettings
         ),
         .executableTarget(
@@ -87,14 +93,14 @@ let package = Package(
         ),
         .executableTarget(
             name: "sugu-bench",
-            dependencies: ["SuguInput", "SuguCore", "SuguLearning"],
+            dependencies: ["SuguEngines", "SuguInput", "SuguCore", "SuguLearning"],
             swiftSettings: cxxSwiftSettings
         ),
         .testTarget(name: "SuguCoreTests", dependencies: ["SuguCore"], swiftSettings: swiftSettings),
         .testTarget(
             name: "SuguInputTests",
             dependencies: ["SuguInput", "SuguCore", "SuguLearning"],
-            swiftSettings: cxxSwiftSettings
+            swiftSettings: swiftSettings
         ),
         .testTarget(
             name: "SuguLearningTests",

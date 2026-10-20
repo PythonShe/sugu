@@ -1,5 +1,5 @@
 import AppKit
-import SuguInput
+import SuguEngines
 
 /// The controls for one downloadable item: its size and license, and the
 /// action its state allows (download, cancel, remove, retry).

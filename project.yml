@@ -35,6 +35,8 @@ targets:
       - package: SuguKit
         product: SuguInput
       - package: SuguKit
+        product: SuguEngines
+      - package: SuguKit
         product: SuguDictionaries
       - package: SuguKit
         product: SuguUpdates
