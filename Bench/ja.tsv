@@ -1,7 +1,7 @@
 # Sugu seed test set, Japanese. Columns: romaji as typed, expected text.
 # Original sentences written for Sugu; Apache-2.0 with the repository.
 kyouhaiitenkidesune	今日はいい天気ですね
-ashitahaamegafurusoudesu	明日は雨が降りそうです
+ashitahaamegafurisoudesu	明日は雨が降りそうです
 watashihagakuseidesu	私は学生です
 kaigihagogosanjinihajimarimasu	会議は午後3時に始まります
 shiryouwookurimasu	資料を送ります

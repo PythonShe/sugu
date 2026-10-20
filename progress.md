@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Bench romaji fixed: `meeru` types めえる (メール is `me-ru`) and
+  降りそう is `furisou`, not `furusou`. Learned Japanese sentences 80% →
+  90%; the main set stays at 78%, since AzooKey still ranks 古そう first for
+  ふりそう, as it does 強 for きょう before の. Typo correction is not the
+  cause (checked with it off).
 - Review of D-026: an apostrophe lookup no longer offers words stored for
   another split (`fan'gan` → 方案, `xi'anqu` → 先去); it checks the split
   with the bundled syllables, and exact matches come first. 125 package
