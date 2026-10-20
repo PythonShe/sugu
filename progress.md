@@ -6,6 +6,12 @@ Running log of what was built, verified, and what is next. Newest first.
 - Cross-language proper nouns and per-app script (D-021): Japanese kanji
   forms as a Chinese script, Chinese forms after Japanese names, Sugu's own
   candidates in the script in use, a script column in the Apps pane.
+- Regression review of the refactors: no key-path changes found; fixed
+  AzooKey dropping clauses fixed before a second conversion and a delayed
+  sync export outliving a folder reset. `docs/architecture.md` describes
+  the module graph and a keystroke's path. A `SuguTests` logic-test bundle
+  (no host app) covers `TextInputClient`'s UTF-16 offsets; `scripts/ci.sh`
+  runs it. 114 package tests + 4 shell tests, CI green.
 - Maintainability track (D-024, todo §8): `InputSession` now asks the
   engine's traits (conversion phase, learning, Sugu candidates) instead of
   branching on mode or engine type, and is split into keys, composition,
