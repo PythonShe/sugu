@@ -105,4 +105,15 @@ public protocol CompositionEngine: AnyObject {
     func restore(reading: String)
     /// Committed text left of the caret, to inform ranking.
     func setLeftContext(_ text: String)
+    /// Drops input not yet part of the composition's text (a half-typed
+    /// Zhuyin syllable); false when there is none.
+    func clearPending() -> Bool
+    /// Text the composition let go of from its start (a long Zhuyin
+    /// sentence), to commit while the rest composes on.
+    func takeOverflow() -> Commit?
+}
+
+extension CompositionEngine {
+    public func clearPending() -> Bool { false }
+    public func takeOverflow() -> Commit? { nil }
 }

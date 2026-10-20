@@ -32,6 +32,8 @@ public final class ZhuyinEngine: CompositionEngine {
     private var sentences: [String: String] = [:]
     /// The last commit's choices, for a commit taken back.
     private var lastCommit: (reading: String, fixed: [Fixed])?
+    /// The start of a sentence grown past `longestSentence`, let go of.
+    private var overflow: Commit?
 
     /// Sugu's word list, the user's words and the language model, in
     /// Simplified, their script: they tell words from librime's sentences,
@@ -63,6 +65,9 @@ public final class ZhuyinEngine: CompositionEngine {
 
     /// Longest word offered at the caret, in syllables.
     private static let longestChoice = 6
+    /// Syllables a sentence holds before its start is committed, as in
+    /// McBopomofo; librime reconverts all of an unchosen run on each one.
+    static let longestSentence = 20
     private static let singleCharacterLimit = 120
     private static let wordLimit = 20
 
@@ -98,9 +103,13 @@ public final class ZhuyinEngine: CompositionEngine {
 
     // MARK: CompositionEngine
 
+    /// Symbols, and tones: one ends the pending syllable or, with none,
+    /// changes the tone of the syllable before the caret (Space, the first
+    /// tone, opens the candidate window there instead).
     public func accepts(_ character: Character) -> Bool {
         if Zhuyin.keyboard[character] != nil { return true }
-        return Zhuyin.toneKeys[character] != nil && !pending.isEmpty
+        guard Zhuyin.toneKeys[character] != nil else { return false }
+        return !pending.isEmpty || (character != " " && caret > 0)
     }
 
     public func insert(_ text: String) {
@@ -109,8 +118,8 @@ public final class ZhuyinEngine: CompositionEngine {
         for character in text {
             if let symbol = Zhuyin.keyboard[character] {
                 pending.type(symbol)
-            } else if let tone = Zhuyin.toneKeys[character], !pending.isEmpty {
-                finishPending(tone)
+            } else if let tone = Zhuyin.toneKeys[character] {
+                if !pending.isEmpty { finishPending(tone) } else if character != " ", caret > 0 { retone(caret - 1, tone) }
             }
         }
         update()
@@ -130,6 +139,52 @@ public final class ZhuyinEngine: CompositionEngine {
         caret += 1
         pending = Zhuyin.Syllable()
         reconvert()
+        letGoOfStart()
+    }
+
+    /// Gives the syllable at `index` another tone when librime knows it.
+    private func retone(_ index: Int, _ tone: Zhuyin.Tone) {
+        var syllable = syllables[index]
+        guard syllable.tone != tone else { return }
+        syllable.tone = tone
+        guard let code = syllable.code, sentence(for: code) != nil else { return }
+        syllables[index] = syllable
+        fixed.removeAll { $0.range.contains(index) }
+        reconvert()
+    }
+
+    /// Commits the start of a sentence past `longestSentence` syllables,
+    /// not splitting a chosen word, while the caret is past it.
+    private func letGoOfStart() {
+        guard syllables.count > Self.longestSentence else { return }
+        var cut = syllables.count - Self.longestSentence
+        if let word = fixed.first(where: { $0.range.lowerBound < cut && cut < $0.range.upperBound }) { cut = word.range.upperBound }
+        guard cut <= caret else { return }
+        let head = 0..<cut
+        let commit = Commit(
+            text: text(of: head),
+            reading: reading(of: head),
+            clauses: fixed.filter { $0.range.upperBound <= cut }.map { Commit.Clause(reading: reading(of: $0.range), text: $0.text) }
+        )
+        overflow = overflow.map { Commit(text: $0.text + commit.text, reading: $0.reading + commit.reading, clauses: $0.clauses + commit.clauses) } ?? commit
+        leftContext += commit.text
+        syllables.removeSubrange(head)
+        texts.removeSubrange(head)
+        caret -= cut
+        fixed = fixed.filter { $0.range.lowerBound >= cut }.map { Fixed(range: ($0.range.lowerBound - cut)..<($0.range.upperBound - cut), text: $0.text) }
+        reconvert()
+    }
+
+    public func clearPending() -> Bool {
+        guard !pending.isEmpty else { return false }
+        pending = Zhuyin.Syllable()
+        update()
+        return true
+    }
+
+    public func takeOverflow() -> Commit? {
+        defer { overflow = nil }
+        return overflow
     }
 
     public func deleteBackward() {
@@ -245,6 +300,7 @@ public final class ZhuyinEngine: CompositionEngine {
 
     public func clear() {
         session.clearComposition()
+        overflow = nil
         syllables = []
         texts = []
         pending = Zhuyin.Syllable()

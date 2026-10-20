@@ -13,7 +13,16 @@ final class ChinesePane: SettingsPane {
         let status = form.row(String(localized: "Status:"), NSStackView(views: [failed, tryAgain]))
         form.onRefresh { status.isHidden = !model.chineseFailed }
         form.popUp(String(localized: "Keyboard:"), options: ChineseKeyboard.allCases.map { ($0.title, $0) },
-                   get: { model.preferences.chineseKeyboard }, set: { model.preferences.chineseKeyboard = $0 })
+                   get: { model.preferences.chineseKeyboard }, set: { keyboard in
+                       // Zhuyin is typed in Taiwan, so it brings Taiwan's characters
+                       // to a Simplified setting.
+                       var preferences = model.preferences
+                       if keyboard == .zhuyin, preferences.chineseKeyboard != .zhuyin, preferences.chineseScript == .simplified {
+                           preferences.chineseScript = .traditionalTaiwan
+                       }
+                       preferences.chineseKeyboard = keyboard
+                       model.preferences = preferences
+                   })
         let scheme = form.popUp(String(localized: "Pinyin:"), options: PinyinScheme.allCases.map { ($0.title, $0) },
                                 get: { model.preferences.pinyinScheme }, set: { model.preferences.pinyinScheme = $0 })
         form.popUp(String(localized: "Characters:"), options: ChineseScript.allCases.map { ($0.title, $0) },

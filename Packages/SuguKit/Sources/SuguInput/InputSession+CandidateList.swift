@@ -36,6 +36,7 @@ extension InputSession {
     /// Re-reads the engine after a change and rebuilds the list.
     func refresh() {
         guard let engine = active else { publish(); return }
+        if let head = engine.takeOverflow() { commitHead(head) }
         if engine.state.isEmpty {
             active = nil
             list.clear()

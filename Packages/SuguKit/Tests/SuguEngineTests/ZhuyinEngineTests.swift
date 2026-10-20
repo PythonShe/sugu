@@ -24,8 +24,8 @@ extension RimeEngineTests {
         engine.insert("cl3")
         #expect(engine.state.markedText == "你好")
         #expect(engine.state.reading == "ni3hao3")
-        // A tone with no syllable to end is not taken.
-        #expect(!engine.accepts("3"))
+        // Space with no syllable to end is not a tone.
+        #expect(!engine.accepts(" "))
         let commit = try #require(engine.commitConverted())
         #expect(commit.text == "你好")
         #expect(commit.reading == "ni3hao3")
@@ -74,6 +74,34 @@ extension RimeEngineTests {
         engine.moveCaret(.left)
         #expect(engine.convert())
         #expect(engine.state.candidates.first?.text == "你")
+        engine.clear()
+    }
+
+    /// With no syllable pending, a tone changes the one before the caret.
+    @Test func zhuyinToneRetonesTheLastSyllable() async throws {
+        let engine = try await zhuyin()
+        engine.insert("a8 ")
+        #expect(engine.state.reading == "ma1")
+        #expect(engine.accepts("3"))
+        #expect(!engine.accepts(" "))
+        engine.insert("3")
+        #expect(engine.state.reading == "ma3")
+        #expect(engine.state.markedText == "马")
+        engine.clear()
+    }
+
+    /// A sentence past its length commits its start and composes on.
+    @Test func zhuyinLetsGoOfALongSentencesStart() async throws {
+        let engine = try await zhuyin()
+        engine.insert(String(repeating: "a8 ", count: ZhuyinEngine.longestSentence))
+        #expect(engine.takeOverflow() == nil)
+        engine.insert(Self.nihao)
+        let head = try #require(engine.takeOverflow())
+        #expect(head.reading == "ma1ma1")
+        #expect(head.text.count == 2)
+        #expect(engine.takeOverflow() == nil)
+        #expect(engine.state.reading.hasSuffix("ni3hao3"))
+        #expect(engine.state.markedText.hasSuffix("你好"))
         engine.clear()
     }
 
@@ -142,6 +170,27 @@ extension RimeEngineTests {
         _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1B}"))
         #expect(client.marked.isEmpty)
         #expect(client.document.isEmpty)
+    }
+
+    /// Esc takes the half-typed syllable, then the sentence.
+    @Test func zhuyinSessionEscapeTakesThePendingSyllableFirst() async throws {
+        let (session, client) = try await session()
+        type(Self.nihao + "a8", into: session)
+        #expect(client.marked == "你好ㄇㄚ")
+        _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1B}"))
+        #expect(client.marked == "你好")
+        _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1B}"))
+        #expect(client.marked.isEmpty)
+        #expect(client.document.isEmpty)
+    }
+
+    @Test func zhuyinSessionCommitsTheStartOfALongSentence() async throws {
+        let (session, client) = try await session()
+        type(String(repeating: "a8 ", count: ZhuyinEngine.longestSentence + 1), into: session)
+        #expect(client.document.count == 1)
+        #expect(client.marked.count == ZhuyinEngine.longestSentence)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
+        #expect(client.document.count == ZhuyinEngine.longestSentence + 1)
     }
 }
 

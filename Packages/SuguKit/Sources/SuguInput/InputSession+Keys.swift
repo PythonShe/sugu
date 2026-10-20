@@ -272,7 +272,10 @@ extension InputSession {
             engine.cancelConversion()
         }
         switch key.keyCode {
-        case VirtualKey.escape: abandonComposition(); return true
+        case VirtualKey.escape:
+            // Esc takes the half-typed syllable, then the sentence.
+            if engine.clearPending() { refresh() } else { abandonComposition() }
+            return true
         case VirtualKey.returnKey, VirtualKey.keypadEnter: commit(engine.commitConverted() ?? engine.commitRaw()); return true
         case VirtualKey.space:
             if engine.accepts(" ") { engine.insert(" ") } else { engine.convert() }

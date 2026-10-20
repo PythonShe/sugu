@@ -180,14 +180,30 @@ extension InputSession {
             vocabulary = String((vocabulary + text).suffix(Self.vocabularyLimit * 2))
         }
         let record = record ?? Commit(text: text, reading: reading)
-        var learned = false
-        if learn, mode != .english, !isSecureInput, let client, preferences.learns(in: client.bundleIdentifier), let store {
-            store.learn(record, mode: mode)
-            engines.learnedWordsDidChange()
-            learned = true
-        }
+        let learned = learn && self.learn(record)
         self.undoable = undoable ? engine.map { PendingUndo(text: text, commit: record, engine: $0, mode: mode, learned: learned) } : nil
         publish()
+    }
+
+    /// Teaches the store a commit, where this field and mode learn;
+    /// returns whether it did.
+    private func learn(_ record: Commit) -> Bool {
+        guard mode != .english, !isSecureInput, let client, preferences.learns(in: client.bundleIdentifier), let store else { return false }
+        store.learn(record, mode: mode)
+        engines.learnedWordsDidChange()
+        return true
+    }
+
+    /// Commits the start of a composition that goes on (a long Zhuyin
+    /// sentence); the field shows the rest as marked text next.
+    func commitHead(_ head: Commit) {
+        client?.commit(head.text)
+        lastTyped = head.text.last
+        if !vocabulary.isEmpty {
+            vocabulary = String((vocabulary + head.text).suffix(Self.vocabularyLimit * 2))
+        }
+        if active?.traits.learnsCommits == true { _ = learn(head) }
+        undoable = nil
     }
 
     /// Restores the last commit as a composition with its candidates open.

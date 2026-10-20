@@ -1208,6 +1208,14 @@ any call made without the owner present. Each entry: what, why, reversibility.
   in use can type it. The fuzzer runs Zhuyin keys as a variant
   (`--zhuyin`) in CI; there Return in the open window takes the
   highlighted word, and the next Return commits.
+- Keys as McBopomofo and the system's Zhuyin have them: Esc drops the
+  half-typed syllable before the sentence; a tone key with none pending
+  gives the syllable before the caret that tone, when librime knows it
+  (Space still opens the window there); past 20 syllables the start is
+  committed, not splitting a chosen word, and taught like any commit,
+  since librime reconverts all of an unchosen run on each syllable.
+  Choosing Zhuyin brings a Simplified character setting to Traditional
+  (Taiwan); any other setting stays.
 - Phases: syllables, layout and tone codes; the engine;
   the session's keys; Settings and the mode indicator; learning, bench
   and fuzz; then the owner's device checks — wanxiang's readings are
