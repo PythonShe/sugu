@@ -280,10 +280,13 @@ any call made without the owner present. Each entry: what, why, reversibility.
   or imported as full pinyin all decode. Readings with abbreviations do
   not, and those words keep the exact-reading path only.
 - librime scores a read-only phrase from its commit count alone; 2×10⁸ per
-  use places a word used once among common words. One-character words are
+  use places a word used once among common words, counted up to 9 uses
+  (librime adds one in 32-bit arithmetic and changes formula at 2×10⁹). One-character words are
   left out so one choice does not reorder a syllable in every sentence.
-- The file is rewritten 2 s after changes settle, off the main thread, and
-  the Chinese session is reopened between compositions (about 1 ms):
+- The file is rewritten at launch and 2 s after changes settle, off the
+  main thread and in order, whether or not Chinese is loaded, so cleared
+  or expired words leave it too. The Chinese session is reopened between
+  compositions (about 1 ms) until it has read the latest file:
   librime shares one open dictionary among sessions and frees it with the
   last, so `RimeEngine` now closes its session when it goes away.
 - `sugu-bench` measures it (`Bench/zh-learned.tsv`): sentences using ten

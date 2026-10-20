@@ -36,7 +36,8 @@ struct SpellingAlgebra {
         if operation == "xlit" {
             let from = Array(left), to = Array(right)
             guard from.count == to.count else { return nil }
-            return .transliterate(Dictionary(zip(from, to)) { first, _ in first })
+            // As in librime, a repeated character takes its last mapping.
+            return .transliterate(Dictionary(zip(from, to)) { _, last in last })
         }
         // librime erases on a whole match.
         guard let pattern = try? NSRegularExpression(pattern: operation == "erase" ? "^(?:\(left))$" : left) else { return nil }

@@ -58,9 +58,11 @@ public enum RimeUserDictionary {
     /// librime scores a read-only user phrase from its commit count alone,
     /// on a scale where one commit is next to nothing; 2×10⁸ per use puts
     /// a word used once among common words, enough to take its place in a
-    /// sentence. librime reads the count as a 32-bit integer.
+    /// sentence. Counted up to 9 uses: librime adds one to the count as a
+    /// 32-bit integer, and from 2×10⁹ its formula changes branch and the
+    /// weight stops growing.
     static func commits(uses: Int) -> Int {
-        min(Int(Int32.max), max(1, uses) * 200_000_000)
+        min(max(1, uses), 9) * 200_000_000
     }
 
     /// Writes `table` unless the file already holds it, keeping the file

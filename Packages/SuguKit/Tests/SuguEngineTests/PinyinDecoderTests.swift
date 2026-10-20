@@ -40,6 +40,29 @@ struct PinyinDecoderTests {
         #expect(decoder.syllables(typedAs: "zangsan", count: 2) == [["zang", "san"]])
     }
 
+    @Test func userDictionaryTable() throws {
+        let xiaohe = try decoder(RimeSchema(scheme: .xiaohe))
+        let words = [
+            RimeUserDictionary.Word(reading: "vhsjfg", text: "张三丰", count: 2),
+            // Imported full pinyin under a double-pinyin scheme.
+            RimeUserDictionary.Word(reading: "linzhixia", text: "林知夏", count: 1),
+            RimeUserDictionary.Word(reading: "ta", text: "她", count: 5),
+            RimeUserDictionary.Word(reading: "tshirt", text: "T恤", count: 1),
+            RimeUserDictionary.Word(reading: "zgr", text: "中国人", count: 1),
+        ]
+        let table = RimeUserDictionary.table(for: words, decoder: xiaohe, fullPinyin: try decoder())
+        let rows = table.split(separator: "\n").filter { !$0.hasPrefix("#") }
+        #expect(rows == ["张三丰\tzhang san feng\t400000000", "林知夏\tlin zhi xia\t200000000"].sorted().map { Substring($0) })
+    }
+
+    /// librime adds one to the count as a 32-bit integer.
+    @Test func useCountsStayInLibrimeRange() {
+        #expect(RimeUserDictionary.commits(uses: 0) == 200_000_000)
+        #expect(RimeUserDictionary.commits(uses: 9) == 1_800_000_000)
+        #expect(RimeUserDictionary.commits(uses: 1_000) == RimeUserDictionary.commits(uses: 9))
+        #expect(RimeUserDictionary.commits(uses: 1_000) < Int(Int32.max))
+    }
+
     @Test func readsRuleListsFromYAML() {
         let yaml = """
         top:

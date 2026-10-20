@@ -64,6 +64,9 @@ public final class EngineHub: EngineSource {
     private var preparing: Task<Void, Never>?
     private var userWordsRefresh: Task<Void, Never>?
     private var chineseWordsUpdate: Task<Void, Never>?
+    private var chineseWordsWrite: Task<ChineseWordsWrite, Never>?
+    /// The file changed since the open Chinese session read it.
+    private var chineseWordsNeedReload = false
     /// How long learned-word changes settle before librime's copy is
     /// rewritten, so a burst of commits rewrites it once.
     private let chineseWordsDelay: Duration
@@ -87,6 +90,8 @@ public final class EngineHub: EngineSource {
         self.chineseWordsDelay = chineseWordsDelay
         self.chineseScript = preferences.chineseScript
         self.runtime = RimeRuntime(directories: .init(shared: locations.rimeShared, user: locations.rimeUser))
+        // Brings the file in line with the store from launch.
+        updateChineseWords()
     }
 
     // MARK: EngineSource
@@ -98,6 +103,7 @@ public final class EngineHub: EngineSource {
             if let chinese { return chinese }
             let engine = RimeEngine(runtime: runtime, script: chineseScript)
             chinese = engine
+            chineseWordsNeedReload = false
             return engine
         case .japanese:
             if let japanese { return japanese }
@@ -177,29 +183,38 @@ public final class EngineHub: EngineSource {
 
     /// Rewrites librime's user dictionary from the store once changes have
     /// settled, off the main thread, and reopens the Chinese session to
-    /// read it (decision D-025). Nothing to do before Chinese is deployed:
-    /// deployment calls this when it finishes.
+    /// read it (decision D-025). The file follows the store whether or not
+    /// Chinese is loaded, so cleared or expired words leave it too.
     private func updateChineseWords(after delay: Duration? = nil) {
-        guard let store, runtime.isReady, let schema = runtime.schema else { return }
+        guard let store else { return }
         chineseWordsUpdate?.cancel()
         let delay = delay ?? chineseWordsDelay
-        let locations = locations
-        let cached = decoders?.schema == schema ? decoders : nil
         chineseWordsUpdate = Task { [weak self] in
             if delay > .zero { try? await Task.sleep(for: delay) }
             guard !Task.isCancelled, let self else { return }
+            let schema = schema
+            let locations = locations
+            let cached = decoders.flatMap { $0.schema == schema ? ($0.schema, $0.scheme, $0.fullPinyin) : nil }
             let words = store.allWords(mode: .chinese).map { RimeUserDictionary.Word(reading: $0.reading, text: $0.text, count: $0.count) }
-            let result = await Task.detached(priority: .utility) { () -> (decoders: (RimeSchema, PinyinDecoder, PinyinDecoder?)?, written: Bool) in
-                guard let decoders = cached.map({ ($0.schema, $0.scheme, $0.fullPinyin) }) ?? Self.makeDecoders(for: schema, locations: locations) else {
-                    return (nil, false)
-                }
+            // Writes land in order: an older table never replaces a newer one.
+            let previous = chineseWordsWrite
+            let write = Task.detached(priority: .utility) { () -> ChineseWordsWrite in
+                _ = await previous?.value
+                guard let decoders = cached ?? Self.makeDecoders(for: schema, locations: locations) else { return ChineseWordsWrite() }
                 let table = RimeUserDictionary.table(for: words, decoder: decoders.1, fullPinyin: decoders.2)
-                return (decoders, (try? RimeUserDictionary.write(table, in: locations.rimeUser)) ?? false)
-            }.value
+                return ChineseWordsWrite(decoders: decoders, written: (try? RimeUserDictionary.write(table, in: locations.rimeUser)) ?? false)
+            }
+            chineseWordsWrite = write
+            let result = await write.value
             if let made = result.decoders { decoders = (made.0, made.1, made.2) }
-            guard !Task.isCancelled, result.written, runtime.schema == schema else { return }
+            if result.written { chineseWordsNeedReload = true }
             await reloadChineseWords()
         }
+    }
+
+    private struct ChineseWordsWrite: Sendable {
+        var decoders: (RimeSchema, PinyinDecoder, PinyinDecoder?)?
+        var written = false
     }
 
     private nonisolated static func makeDecoders(for schema: RimeSchema, locations: Locations) -> (RimeSchema, PinyinDecoder, PinyinDecoder?)? {
@@ -210,9 +225,13 @@ public final class EngineHub: EngineSource {
         return (schema, decoder, fullPinyin)
     }
 
-    /// Reopens the Chinese session between compositions.
+    /// Reopens the Chinese session between compositions when the file
+    /// changed since it was read. A session not open yet reads the new file
+    /// when it opens; a cancelled wait leaves the flag for the next update.
     private func reloadChineseWords() async {
-        while let chinese, !chinese.reloadUserDictionary() {
+        while chineseWordsNeedReload {
+            guard let chinese else { chineseWordsNeedReload = false; return }
+            if chinese.reloadUserDictionary() { chineseWordsNeedReload = false; return }
             try? await Task.sleep(for: .seconds(1))
             if Task.isCancelled { return }
         }
