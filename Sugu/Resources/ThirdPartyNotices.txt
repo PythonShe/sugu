@@ -1077,15 +1077,15 @@ SPDX-License-Identifier: Unicode-3.0
 
 ================================================================================
 
-Tatoeba sentences v2026-07-08 (as the Japanese language model)
+Tatoeba sentences v2026-07-08 (as the Japanese and Chinese language models)
 https://tatoeba.org
 License: CC-BY-2.0-FR
 
-Sugu bundles character n-gram statistics computed from sentences by the
-contributors of Tatoeba (https://tatoeba.org), taken from the OPUS Tatoeba
-v2026-07-08 snapshot (https://opus.nlpl.eu/Tatoeba). The sentences
-themselves are not included. Licensed under Creative Commons Paternité 2.0
-France:
+Sugu bundles character n-gram statistics computed from Japanese and
+Mandarin sentences by the contributors of Tatoeba (https://tatoeba.org),
+taken from the OPUS Tatoeba v2026-07-08 snapshot
+(https://opus.nlpl.eu/Tatoeba). The sentences themselves are not included.
+Licensed under Creative Commons Paternité 2.0 France:
 
 Paternité - 2.0
 CC BY 2.0 FR

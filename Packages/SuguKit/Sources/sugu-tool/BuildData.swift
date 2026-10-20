@@ -41,7 +41,10 @@ enum BuildData {
         let english = try String(contentsOf: wanxiang.appendingPathComponent("dicts/en.dict.yaml"), encoding: .utf8)
         let words = Lexicon.englishWords(fromRimeDictionary: english, limit: 30_000)
         try (words.joined(separator: "\n") + "\n").write(to: lexicon.appendingPathComponent(Lexicon.englishWordsFile), atomically: true, encoding: .utf8)
-        print("lexicon: \(syllables.count) syllables, \(words.count) English words")
+        let jichu = try String(contentsOf: wanxiang.appendingPathComponent("dicts/jichu.dict.yaml"), encoding: .utf8)
+        let pinyinWords = Lexicon.pinyinWords(fromRimeDictionaries: [zi, jichu], minimumWeight: 1000)
+        try (pinyinWords.joined(separator: "\n") + "\n").write(to: lexicon.appendingPathComponent(Lexicon.pinyinWordsFile), atomically: true, encoding: .utf8)
+        print("lexicon: \(syllables.count) syllables, \(words.count) English words, \(pinyinWords.count) pinyin words")
     }
 
     enum BuildError: Error {

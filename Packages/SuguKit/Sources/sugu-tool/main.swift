@@ -7,7 +7,7 @@ import SuguRime
 let arguments = Array(CommandLine.arguments.dropFirst())
 let usage = """
 usage: sugu-tool build-data --wanxiang <dir> --opencc <dir> --out <dir> [--version <v>]
-       sugu-tool build-lm --corpus <file> --out <file> [--exclude <bench.tsv>]...
+       sugu-tool build-lm --corpus <file> --out <file> [--opencc <dir>] [--exclude <bench.tsv>]...
        sugu-tool convert --data <dir> (--chinese | --japanese) [--user <dir>] [--scheme <name>] [--rime-ice] [--grammar] <reading>...
 """
 
@@ -34,7 +34,8 @@ do {
     case "build-lm":
         guard let corpus = option("--corpus"), let out = option("--out") else { fail(usage) }
         let excluded = arguments.indices.filter { arguments[$0] == "--exclude" && $0 + 1 < arguments.count }.map { URL(fileURLWithPath: arguments[$0 + 1]) }
-        try BuildLanguageModel.run(corpus: URL(fileURLWithPath: corpus), output: URL(fileURLWithPath: out), excluding: excluded)
+        try BuildLanguageModel.run(corpus: URL(fileURLWithPath: corpus), output: URL(fileURLWithPath: out), excluding: excluded,
+                                   openCC: option("--opencc").map { URL(fileURLWithPath: $0) })
     case "convert":
         guard let data = option("--data") else { fail(usage) }
         let user = option("--user")

@@ -5,6 +5,10 @@ import Foundation
 public enum Lexicon {
     public static let syllablesFile = "pinyin-syllables.txt"
     public static let englishWordsFile = "english-words.txt"
+    /// Chinese words with their toneless syllables and weight, one per
+    /// line separated by tabs, for respelling sentences (ADR 0005); grouped
+    /// by syllables, heaviest first.
+    public static let pinyinWordsFile = "pinyin-words.txt"
 
     public static func load(_ name: String, in directory: URL) -> Set<String> {
         guard let text = try? String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8) else { return [] }
@@ -54,6 +58,30 @@ public enum Lexicon {
         }
         let plain = String(scalars)
         return !plain.isEmpty && plain.allSatisfy(\.isASCIILowercaseLetter) ? plain : nil
+    }
+
+    /// Lines of `pinyinWordsFile` from Rime dictionaries (word, reading,
+    /// weight): every single character, and words of two or three
+    /// syllables weighted at least `minimumWeight`. Rarer words are left
+    /// out; a sentence that needs one is not respelled.
+    public static func pinyinWords(fromRimeDictionaries texts: [String], minimumWeight: Int) -> [String] {
+        var weights: [String: Int] = [:]
+        for text in texts {
+            for line in text.split(whereSeparator: \.isNewline) {
+                let columns = line.split(separator: "\t")
+                guard columns.count >= 3, let weight = Int(columns[2]), weight > 0 else { continue }
+                let word = columns[0]
+                let syllables = columns[1].split(separator: " ").compactMap { plainSyllable($0) }
+                guard syllables.count == word.count, (1...3).contains(word.count),
+                      word.count == 1 || weight >= minimumWeight else { continue }
+                let key = "\(word)\t\(syllables.joined(separator: " "))"
+                weights[key] = max(weights[key] ?? 0, weight)
+            }
+        }
+        let entries = weights.map { (word: $0.key.prefix { $0 != "\t" }, reading: $0.key.drop { $0 != "\t" }.dropFirst(), weight: $0.value) }
+        return entries
+            .sorted { ($0.reading, -$0.weight, $0.word) < ($1.reading, -$1.weight, $1.word) }
+            .map { "\($0.word)\t\($0.reading)\t\($0.weight)" }
     }
 
     /// The most frequent lowercase English words from a Rime English
