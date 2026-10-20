@@ -1287,3 +1287,11 @@ any call made without the owner present. Each entry: what, why, reversibility.
   It would stand beside the input source's own icon with the same menu,
   two items for one input method; the native way, input modes, was
   declined in D-005. The caret indicator and the menu's checkmarks stay.
+
+## D-075 · Japanese habits (advisor pass 9) (2026-10-20)
+- Shift-Space types the other width of space from the setting, as in
+  Apple's and Google's Japanese input: full width when spaces are half,
+  half (the app's) when they are full. Space inside a composition is
+  unchanged.
+- In kana input the ね and る keys' 、。 follow the punctuation style, as
+  the period and comma keys of romaji do.

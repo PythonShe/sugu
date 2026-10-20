@@ -155,3 +155,13 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Add Word from the input menu, filled from the selection (D-074)
 - [x] ⌃. switches the punctuation width (D-074)
 - [x] Symbols by their Chinese names (D-074)
+
+## 18. Japanese habits (advisor pass 9, D-075)
+- [x] Shift-Space types the other width (D-075)
+- [x] Kana input's 、。 follow the punctuation style (D-075)
+- [ ] Repeated F9/F10 cycle case: abc → ABC → Abc
+- [ ] ⌃⇧R reconverts; ⌃I ⌃O resize the clause
+- [ ] Punctuation typed while converting commits with the conversion
+- [ ] Symbols by their Japanese names (やじるし →)
+- [ ] 人名 and 地名 on the candidates
+- [ ] 英数 twice turns the last commit into Latin; かな twice back

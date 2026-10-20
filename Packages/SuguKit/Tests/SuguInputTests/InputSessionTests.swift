@@ -421,6 +421,32 @@ struct InputSessionTests {
         #expect(client.markedText == "け゛ー")
     }
 
+    /// The ね and る keys' marks follow the punctuation style.
+    @Test func kanaInputMarksFollowThePunctuationStyle() {
+        let session = makeSession { $0.kanaInput = true; $0.japanesePunctuation = .commaPeriod }
+        session.setMode(.japanese)
+        japanese.acceptsSymbols = true
+        for (code, character) in [(0x2B, "<"), (0x2F, ">")] as [(UInt16, String)] {
+            #expect(session.handle(KeyInput(keyCode: code, characters: character, modifiers: [.shift])))
+        }
+        #expect(client.markedText == "，．")
+    }
+
+    /// Shift-Space types the other width of space.
+    @Test func shiftSpaceTypesTheOtherWidth() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        #expect(!session.handle(Key.space))
+        #expect(session.handle(KeyInput(keyCode: VirtualKey.space, characters: " ", modifiers: [.shift])))
+        #expect(client.document == "　")
+        var preferences = session.preferences
+        preferences.fullWidthSpace = true
+        session.preferences = preferences
+        #expect(session.handle(Key.space))
+        #expect(!session.handle(KeyInput(keyCode: VirtualKey.space, characters: " ", modifiers: [.shift])))
+        #expect(client.document == "　　")
+    }
+
     @Test func shiftTapCommitsTypedLettersThenSwitchesToEnglish() {
         let session = makeSession()
         type("hello", into: session)

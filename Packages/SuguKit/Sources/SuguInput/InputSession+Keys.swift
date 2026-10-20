@@ -100,7 +100,7 @@ extension InputSession {
                 return true
             }
         case .japanese:
-            if key.keyCode == VirtualKey.space { return typeFullWidthSpace(key) }
+            if key.keyCode == VirtualKey.space { return typeSpace(key) }
             guard let engine = engines.engine(for: .japanese), engine.accepts(character) else { return false }
             begin(with: engine, input: input(for: key, character: character))
             return true
@@ -123,8 +123,10 @@ extension InputSession {
         }
     }
 
-    private func typeFullWidthSpace(_ key: KeyInput) -> Bool {
-        guard preferences.fullWidthSpace, !key.modifiers.contains(.shift) else { return false }
+    /// Space types the width set for Japanese and Shift-Space the other, as
+    /// in Apple's and Google's Japanese input; a half-width one is the app's.
+    private func typeSpace(_ key: KeyInput) -> Bool {
+        guard preferences.fullWidthSpace != key.modifiers.contains(.shift) else { return false }
         commitText("　", reading: " ", learn: false)
         return true
     }
@@ -139,7 +141,13 @@ extension InputSession {
     func input(for key: KeyInput, character: Character) -> String {
         guard mode == .japanese else { return String(character) }
         if preferences.kanaInput {
-            return KanaLayout.kana(forKeyCode: key.keyCode, shift: key.modifiers.contains(.shift), jis: key.isJISKeyboard) ?? String(character)
+            // The ね and る keys' marks follow the punctuation style too.
+            switch KanaLayout.kana(forKeyCode: key.keyCode, shift: key.modifiers.contains(.shift), jis: key.isJISKeyboard) {
+            case "、": return preferences.japanesePunctuation.comma
+            case "。": return preferences.japanesePunctuation.period
+            case let kana?: return kana
+            case nil: return String(character)
+            }
         }
         return preferences.japanesePunctuation.romajiInput(for: character)
     }
