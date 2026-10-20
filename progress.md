@@ -3,6 +3,12 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Sugu's own windows (D-077): Settings reopen on the last pane, the app
+  chooser is a sheet, the mode label scales and outlines with Increase
+  Contrast, one term per setting, import results in place, ⌘M, a
+  keyboard-operable source link. Destructive confirmations were checked
+  to take no Return already. CI passes: keystroke p99 3.73 ms, footprint
+  81 MB, fuzz 0 failures.
 - Host apps (D-076): activation no longer reads the field (Chromium
   stalls), terminals keep their committed text from ⌃⌫ and 英数 twice,
   Alacritty's real bundle ID, connections closed by controller,
