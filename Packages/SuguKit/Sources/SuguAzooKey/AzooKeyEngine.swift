@@ -513,7 +513,7 @@ public final class AzooKeyEngine: CompositionEngine {
                 return
             }
             // One clause: the ranked sentences are its candidates.
-            guard let clause = firstClause(of: best, among: result.firstClauseResults, total: total) else {
+            guard let clause = best.firstClause(among: result.firstClauseResults, total: total) else {
                 focusCandidates = sentences
                 updateFollowingText()
                 publishConverting()
@@ -538,34 +538,6 @@ public final class AzooKeyEngine: CompositionEngine {
         preferredFocus = nil
         updateFollowingText()
         publishConverting()
-    }
-
-    /// The first clause of `best`: one the converter proposed, or, when
-    /// refinement rewrote that clause, the converter's clause of the same
-    /// length as `best` writes it.
-    private func firstClause(
-        of best: KanaKanjiConverterModule.Candidate,
-        among clauses: [KanaKanjiConverterModule.Candidate],
-        total: Int
-    ) -> KanaKanjiConverterModule.Candidate? {
-        let spans = clauses.filter { $0.rubyCount > 0 && $0.rubyCount < total }
-        if let proposed = spans.filter({ best.text.hasPrefix($0.text) }).max(by: { $0.value < $1.value }) {
-            return proposed
-        }
-        guard best.data.map(\.word).joined() == best.text else { return nil }
-        return spans.compactMap { clause -> KanaKanjiConverterModule.Candidate? in
-            var words: [DicdataElement] = []
-            var length = 0
-            for word in best.data where length < clause.rubyCount {
-                words.append(word)
-                length += word.ruby.count
-            }
-            guard length == clause.rubyCount, let last = words.last else { return nil }
-            return KanaKanjiConverterModule.Candidate(
-                text: words.map(\.word).joined(), value: clause.value, composingCount: clause.composingCount,
-                lastMid: last.mid, data: words
-            )
-        }.max { $0.value < $1.value }
     }
 
     private var refiner: HomophoneRefiner {
@@ -665,29 +637,8 @@ public final class AzooKeyEngine: CompositionEngine {
     /// differs from the text.
     private func candidate(_ candidate: KanaKanjiConverterModule.Candidate, index: Int) -> SuguCore.Candidate {
         SuguCore.Candidate(
-            text: candidate.text, annotation: readingHint(candidate), source: .engine(index: index), name: Self.name(of: candidate)
+            text: candidate.text, annotation: candidate.readingHint, source: .engine(index: index), name: candidate.nameKind
         )
-    }
-
-    /// Word classes of names: places, people, organizations.
-    private static let properNounClasses: Set<Int> = Set(
-        [CIDData.固有名詞, .人名一般, .人名姓, .人名名, .固有名詞組織, .地名一般].map(\.cid)
-    )
-    private static let personClasses: Set<Int> = Set([CIDData.人名一般, .人名姓, .人名名].map(\.cid))
-    private static let placeClasses: Set<Int> = [CIDData.地名一般.cid]
-
-    /// The kind of name a candidate is when all of it is one.
-    private static func name(of candidate: KanaKanjiConverterModule.Candidate) -> SuguCore.Candidate.Name? {
-        let classes = Set(candidate.data.map(\.lcid))
-        guard !classes.isEmpty, classes.isSubset(of: properNounClasses) else { return nil }
-        if classes.isSubset(of: personClasses) { return .person }
-        if classes.isSubset(of: placeClasses) { return .place }
-        return .other
-    }
-
-    private func readingHint(_ candidate: KanaKanjiConverterModule.Candidate) -> String? {
-        let reading = WidthConversion.hiragana(candidate.data.map(\.ruby).joined())
-        return reading == candidate.text || reading.isEmpty ? nil : reading
     }
 
     /// The best sentence for the unfixed input, with romaji not yet kana
