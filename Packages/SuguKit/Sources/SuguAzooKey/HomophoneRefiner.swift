@@ -44,6 +44,8 @@ final class HomophoneRefiner {
         var words = sentence.data
         guard !words.isEmpty, words.map(\.word).joined() == sentence.text else { return sentence }
         let kept = userWordCharacters(in: sentence.text)
+        // Where the word at `index` starts in `sentence.text`; words after
+        // `index` are still the sentence's own.
         var start = 0
         var value = sentence.value
         var score = value + model.logProbability(of: sentence.text, after: history)
@@ -51,8 +53,8 @@ final class HomophoneRefiner {
         while index < words.count {
             let word = words[index]
             let span = start..<(start + word.word.count)
+            start = span.upperBound
             guard Self.mayRespell(word), !kept.intersects(integersIn: span) else {
-                start = span.upperBound
                 index += 1
                 continue
             }
@@ -68,14 +70,12 @@ final class HomophoneRefiner {
                 if trialScore > choice?.score ?? score { choice = (spelling, trialValue, trialScore) }
             }
             guard let choice else {
-                start = span.upperBound
                 index += 1
                 continue
             }
             words.replaceSubrange(index...index, with: choice.elements)
             value = choice.value
             score = choice.score
-            start += choice.elements.map(\.word.count).reduce(0, +)
             index += choice.elements.count
         }
         guard words != sentence.data else { return sentence }

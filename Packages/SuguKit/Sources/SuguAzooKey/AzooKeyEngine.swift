@@ -40,10 +40,8 @@ public final class AzooKeyEngine: CompositionEngine {
     private var converter: KanaKanjiConverter
     /// The dictionary the converter and the refiner read.
     private let dictionary = DicdataStore.withDefaultDictionary()
-    private lazy var refiner = HomophoneRefiner(
-        dictionary: dictionary,
-        options: Self.options(configuration, leftContext: "", textReplacer: .empty, predictions: false)
-    )
+    /// Made on the first ranking, not with the engine.
+    private var loadedRefiner: HomophoneRefiner?
     /// Ranks the converter's sentences by how naturally they read
     /// (ADR 0005); nil ranks by the converter's costs alone.
     public var languageModel: CharacterLanguageModel?
@@ -104,7 +102,7 @@ public final class AzooKeyEngine: CompositionEngine {
             )
         }
         converter.importDynamicUserDictionary(userWords)
-        refiner.userWords = Set(words.map(\.text))
+        loadedRefiner?.userWords = Set(words.map(\.text))
     }
 
     /// A converter that has loaded a Zenzai model, made off the main thread:
@@ -505,6 +503,17 @@ public final class AzooKeyEngine: CompositionEngine {
                 lastMid: last.mid, data: words
             )
         }.max { $0.value < $1.value }
+    }
+
+    private var refiner: HomophoneRefiner {
+        if let loadedRefiner { return loadedRefiner }
+        let refiner = HomophoneRefiner(
+            dictionary: dictionary,
+            options: Self.options(configuration, leftContext: "", textReplacer: .empty, predictions: false)
+        )
+        refiner.userWords = Set(userWords.map(\.word))
+        loadedRefiner = refiner
+        return refiner
     }
 
     /// Text before the unfixed input: the document's, then fixed clauses.
