@@ -219,8 +219,10 @@ extension InputSession {
         if character == "-" { turnPage(by: -1); return true }
         if character == "=" { turnPage(by: 1); return true }
         // [ and ] take the first or last character of the highlighted word
-        // (以词定字), as Sogou and Microsoft Pinyin do.
-        if mode == .chinese, character == "[" || character == "]", let word = list.highlighted?.text, word.count > 1, word.allSatisfy(\.isHan),
+        // (以词定字), as Sogou and Microsoft Pinyin do; a numeral or date
+        // made from the input is no word to take one from.
+        if mode == .chinese, character == "[" || character == "]", let candidate = list.highlighted, candidate.source != .computed,
+           case let word = candidate.text, word.count > 1, word.allSatisfy(\.isHan),
            let chosen = character == "[" ? word.first : word.last {
             let reading = engine.state.reading
             engine.clear()
