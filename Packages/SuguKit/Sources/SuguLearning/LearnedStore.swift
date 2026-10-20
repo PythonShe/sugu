@@ -18,6 +18,7 @@ public final class LearnedStore {
 
     private let database: SQLiteDatabase
     private let clock: @Sendable () -> Date
+    private let syllabary: PinyinSyllabary?
     private var words: [Int64: LearnedWord] = [:]
     private var index: [IndexKey: [Int64]] = [:]
     private var deletions: [WordKey: WordDeletion] = [:]
@@ -33,8 +34,9 @@ public final class LearnedStore {
         var text: String
     }
 
-    /// Opens or creates the store at `url`.
-    public init(url: URL, clock: @escaping @Sendable () -> Date = Date.init) throws {
+    /// Opens or creates the store at `url`. `syllabary` lets a reading typed
+    /// with an apostrophe find words stored without one.
+    public init(url: URL, syllabary: PinyinSyllabary? = nil, clock: @escaping @Sendable () -> Date = Date.init) throws {
         let fm = FileManager.default
         let directory = url.deletingLastPathComponent()
         try fm.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -46,6 +48,7 @@ public final class LearnedStore {
         database = try SQLiteDatabase(url: url)
         try? fm.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: url.path)
         self.clock = clock
+        self.syllabary = syllabary
         try migrate()
         try loadAll()
     }
@@ -106,18 +109,33 @@ public final class LearnedStore {
     // MARK: Reading
 
     /// Words for this reading, best first. A reading typed with an
-    /// apostrophe also finds words stored without it that have a character
-    /// for every part (西安 for xi'an, not 先).
+    /// apostrophe also finds, after those, words stored without it.
     public func lookup(_ reading: String, mode: InputMode) -> [LearnedWord] {
         let normalized = LearnedWord.normalize(reading, mode: mode)
-        var ids = index[IndexKey(mode: mode, reading: normalized)] ?? []
-        if mode == .chinese, normalized.contains("'") {
-            let parts = normalized.split(separator: "'").count
-            ids += (index[IndexKey(mode: mode, reading: normalized.filter { $0 != "'" })] ?? [])
-                .filter { (words[$0]?.text.count ?? 0) >= parts }
-        }
         let now = clock()
-        return ids.compactMap { words[$0] }.sorted { $0.score(at: now) > $1.score(at: now) }
+        func ranked(_ ids: [Int64]) -> [LearnedWord] {
+            ids.compactMap { words[$0] }.sorted { $0.score(at: now) > $1.score(at: now) }
+        }
+        let exact = ranked(index[IndexKey(mode: mode, reading: normalized)] ?? [])
+        guard mode == .chinese, normalized.contains("'"), let syllabary else { return exact }
+        return exact + ranked(index[IndexKey(mode: mode, reading: normalized.filter { $0 != "'" })] ?? [])
+            .filter { Self.splits(normalized, as: $0.text.count, in: syllabary) }
+    }
+
+    /// Whether a word of `length` characters stored without the apostrophes
+    /// of `reading` was typed with the same split: its letters split into a
+    /// syllable per character one way only, and that way breaks where the
+    /// apostrophes do. 西安 under xian is found for xi'an, not 先 (one
+    /// syllable) or 先去 under xianqu for xi'anqu (xian qu), nor 方案
+    /// under fangan for fan'gan, which could be either split.
+    static func splits(_ reading: String, as length: Int, in syllabary: PinyinSyllabary) -> Bool {
+        var breaks = Set<Int>()
+        var letters = ""
+        for character in reading {
+            if character == "'" { breaks.insert(letters.count) } else { letters.append(character) }
+        }
+        let splits = syllabary.splits(of: letters, count: length)
+        return splits.count == 1 && breaks.isSubset(of: splits[0])
     }
 
     /// The best-known reading of a text, for reconversion.

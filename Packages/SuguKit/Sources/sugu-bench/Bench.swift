@@ -41,7 +41,9 @@ enum Bench {
         }
         // Learning off for the accuracy sets; the learned-words set teaches
         // words through the store directly.
-        let store = try LearnedStore(url: work.appendingPathComponent("learned.sqlite"))
+        let lexicon = data.appendingPathComponent("Lexicon")
+        let syllables = Lexicon.load(Lexicon.syllablesFile, in: lexicon)
+        let store = try LearnedStore(url: work.appendingPathComponent("learned.sqlite"), syllabary: PinyinSyllabary(syllables))
         let engines = EngineHub(
             locations: locations,
             preferences: preferences,
@@ -50,9 +52,8 @@ enum Bench {
             chineseWordsDelay: .zero
         )
         await engines.waitUntilReady()
-        let lexicon = data.appendingPathComponent("Lexicon")
         let latin = LatinInference(
-            syllables: Lexicon.load(Lexicon.syllablesFile, in: lexicon),
+            syllables: syllables,
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: lexicon)
         )
         let session = InputSession(preferences: preferences, engines: engines, store: store, latin: latin)

@@ -18,8 +18,10 @@ struct LearnedStoreTests {
 
     func makeStore() throws -> LearnedStore {
         let clock = clock
-        return try LearnedStore(url: url, clock: { clock.now })
+        return try LearnedStore(url: url, syllabary: Self.syllabary, clock: { clock.now })
     }
+
+    static let syllabary = PinyinSyllabary(["xi", "xia", "xian", "an", "n", "qu", "fan", "fang", "gan", "a"])
 
     @Test func learnsWholeCommitAndClauses() throws {
         let store = try makeStore()
@@ -61,6 +63,23 @@ struct LearnedStoreTests {
         #expect(Set(store.lookup("xi'an", mode: .chinese).map(\.text)) == ["西安", "西岸"])
         #expect(Set(store.lookup("xian", mode: .chinese).map(\.text)) == ["先", "西岸"])
         #expect(LearnedWord.normalize("fan'gan", mode: .chinese) == "fan'gan")
+        #expect(store.lookup("xi'an", mode: .chinese).first?.text == "西安")
+    }
+
+    /// A word stored without an apostrophe is found for one typed with it
+    /// only when its letters can have been split there and nowhere else.
+    @Test func apostropheLookupsKeepTheirSplit() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "先去", reading: "xianqu"), mode: .chinese)
+        store.learn(Commit(text: "方案", reading: "fangan"), mode: .chinese)
+        store.learn(Commit(text: "西岸", reading: "xian"), mode: .chinese)
+        #expect(store.lookup("xi'anqu", mode: .chinese).isEmpty)
+        #expect(store.lookup("fan'gan", mode: .chinese).isEmpty)
+        #expect(store.lookup("xi'an", mode: .chinese).map(\.text) == ["西岸"])
+        #expect(PinyinSyllabary(["xi", "xia", "an", "n"]).splits(of: "xian", count: 2) == [[2]])
+        #expect(Set(Self.syllabary.splits(of: "fangan", count: 2)) == [[3], [4]])
+        #expect(Self.syllabary.splits(of: "xianqu", count: 3) == [[2, 4]])
+        #expect(Self.syllabary.splits(of: "xianqu", count: 4).isEmpty)
         #expect(LearnedWord.normalize("zhang''san'", mode: .chinese) == "zhangsan")
     }
 

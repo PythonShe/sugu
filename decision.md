@@ -310,9 +310,19 @@ any call made without the owner present. Each entry: what, why, reversibility.
   to split differently: before a syllable starting with a, o or e, or
   between n and g (`fan'gan`). Elsewhere (`ni'hao`) it is dropped, so it
   does not split one word's uses.
-- Typing with an apostrophe also finds words stored without it that have
-  a character per part (西安 for `xi'an`, not 先). Added and imported words
-  drop every apostrophe, since import formats separate each syllable.
+- Typing with an apostrophe also finds, after the exact matches, words
+  stored without it whose letters split into a syllable per character in
+  one way only, breaking where the apostrophes do (`PinyinSyllabary`): 西安
+  under `xian` for `xi'an`, but not 先, not 先去 under `xianqu` for
+  `xi'anqu`, and not 方案 under `fangan` for `fan'gan` (either split). The
+  vowelless interjections m, n, ng are not syllables here, or `xian` would
+  also read `xia n`. Added and imported words drop every apostrophe, since
+  import formats separate each syllable.
+- Left as they are after review: a word picked for `xi'an` and for `xian`
+  is two entries, one per reading, like any word typed two ways; readings
+  typed in double pinyin get the same rule though their keys are not
+  pinyin letters, which only matters if the user types an apostrophe
+  there, and no apostrophe ever changes a double-pinyin split.
 - Words whose reading kept an apostrophe stay out of librime's user
   dictionary (D-025): librime reads `xian` both ways and would offer them
   for the bare keys. Sugu's exact-reading match serves them.

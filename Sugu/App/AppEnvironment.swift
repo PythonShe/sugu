@@ -26,7 +26,8 @@ final class AppEnvironment {
 
     private init() {
         let preferences = self.preferences.preferences
-        store = try? LearnedStore(url: locations.learnedStore)
+        let syllables = Lexicon.load(Lexicon.syllablesFile, in: locations.bundledLexicon)
+        store = try? LearnedStore(url: locations.learnedStore, syllabary: PinyinSyllabary(syllables))
         engines = EngineHub(
             locations: locations.engines,
             preferences: preferences,
@@ -34,7 +35,7 @@ final class AppEnvironment {
             version: Bundle.main.shortVersion
         )
         let latin = LatinInference(
-            syllables: Lexicon.load(Lexicon.syllablesFile, in: locations.bundledLexicon),
+            syllables: syllables,
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: locations.bundledLexicon)
         )
         session = InputSession(preferences: preferences, engines: engines, store: store, modeMemory: DefaultsModeMemory(), latin: latin)

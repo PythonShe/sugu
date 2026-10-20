@@ -3,6 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Review of D-026: an apostrophe lookup no longer offers words stored for
+  another split (`fan'gan` → 方案, `xi'anqu` → 先去); it checks the split
+  with the bundled syllables, and exact matches come first. 125 package
+  tests; CI passes (Chinese 90%, Japanese 78%, p99 3.8 ms).
 - Learned-words bench for both languages (`Bench/ja-learned.tsv` added):
   taught names and places in sentences, Chinese 0% → 83%, Japanese 30% →
   80% (AzooKey's dynamic user dictionary); main sets unchanged after
