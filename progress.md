@@ -3,6 +3,8 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- VoiceOver sees each candidate and the page buttons in the candidate
+  window and can press them; the highlighted candidate is selected.
 - Learned words also expire when the date changes and when the expiry
   setting changes, not only at launch.
 - Turning Zenzai off frees the model between compositions (D-044).

@@ -13,6 +13,8 @@ final class CandidateView: NSView {
 
     var onSelect: ((Int) -> Void)?
     var onTurnPage: ((Int) -> Void)?
+    /// VoiceOver labels of the page buttons.
+    var pageLabels = (previous: "", next: "")
 
     private struct Row {
         var frame: NSRect
@@ -45,6 +47,8 @@ final class CandidateView: NSView {
     private var scrollDistance: CGFloat = 0
     private var scrollTurned = false
     private var hoveredIndex: Int?
+    /// Built when assistive technology asks, after each update.
+    private var accessibilityElements: [Element]?
 
     override var isFlipped: Bool { true }
 
@@ -129,6 +133,7 @@ final class CandidateView: NSView {
             }
         }
         hoveredIndex = nil
+        accessibilityElements = nil
         needsDisplay = true
         return size
     }
@@ -198,6 +203,63 @@ final class CandidateView: NSView {
         guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?.withSymbolConfiguration(configuration) else { return }
         let size = image.size
         image.draw(in: NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height))
+    }
+
+    // MARK: Accessibility
+
+    /// A candidate or page button, pressable from VoiceOver.
+    /// A candidate or page button, pressable from VoiceOver.
+    private final class Element: NSAccessibilityElement {
+        private let action: @MainActor @Sendable () -> Void
+
+        init(action: @escaping @MainActor @Sendable () -> Void) {
+            self.action = action
+        }
+
+        override func accessibilityPerformPress() -> Bool {
+            // Accessibility calls arrive on the main thread.
+            let action = action
+            MainActor.assumeIsolated { action() }
+            return true
+        }
+    }
+
+    override func accessibilityChildren() -> [Any]? {
+        if let accessibilityElements { return accessibilityElements }
+        guard let presentation else { return [] }
+        var elements: [Element] = []
+        // Built after the panel is placed; an update rebuilds them.
+        func element(_ label: String, rect: NSRect, action: @escaping @MainActor @Sendable () -> Void) -> Element {
+            let element = Element(action: action)
+            element.setAccessibilityRole(.button)
+            element.setAccessibilityLabel(label)
+            element.setAccessibilityParent(self)
+            element.setAccessibilityEnabled(true)
+            element.setAccessibilityFrame(NSAccessibility.screenRect(fromView: self, rect: rect))
+            return element
+        }
+        for (index, row) in rows.enumerated() {
+            let candidate = presentation.candidates[index]
+            let label = [presentation.labels[index], candidate.text, candidate.annotation].compactMap { $0 }.joined(separator: " ")
+            let row = element(label, rect: row.frame) { [weak self] in self?.onSelect?(index) }
+            row.setAccessibilitySelected(index == presentation.highlightedIndex)
+            elements.append(row)
+        }
+        if let pager {
+            let previous = element(pageLabels.previous, rect: pager.previous) { [weak self] in self?.onTurnPage?(-1) }
+            previous.setAccessibilityEnabled(presentation.hasPreviousPage)
+            let next = element(pageLabels.next, rect: pager.next) { [weak self] in self?.onTurnPage?(1) }
+            next.setAccessibilityEnabled(presentation.hasNextPage)
+            elements += [previous, next]
+        }
+        accessibilityElements = elements
+        return elements
+    }
+
+    override func accessibilitySelectedChildren() -> [Any]? {
+        guard let index = presentation?.highlightedIndex, let elements = accessibilityChildren() as? [Element],
+              elements.indices.contains(index) else { return [] }
+        return [elements[index]]
     }
 
     // MARK: Mouse

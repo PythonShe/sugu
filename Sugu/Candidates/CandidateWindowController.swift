@@ -22,6 +22,7 @@ final class CandidateWindowController {
 
     init() {
         view.setAccessibilityLabel(String(localized: "Candidates"))
+        view.pageLabels = (String(localized: "Previous Page"), String(localized: "Next Page"))
         view.onSelect = { [unowned self] row in onSelect?(row) }
         view.onTurnPage = { [unowned self] delta in onTurnPage?(delta) }
     }
