@@ -15,6 +15,7 @@ domain language in `CONTEXT.md`.
 | Chinese engine | librime (BSD-3-Clause) + rime-wanxiang data (CC-BY-4.0) | C API; built by script into a static `.xcframework` |
 | Japanese engine | AzooKeyKanaKanjiConverter (MIT) | SwiftPM, in-process; Zenzai trait compiled in, used only once the user downloads a model |
 | Updates | Sparkle | signed feed; releases on `sugu.zheng-she.com` (R2); system-profile reporting off |
+| Home page | Astro (static) on Cloudflare Pages | `site/`, pnpm; its functions serve the releases from R2 |
 
 Verify third-party licenses from COPYING files in a clone before shipping a
 dependency.
@@ -25,6 +26,7 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu \
   -destination 'platform=macOS' build   # must pass
 swift test --package-path Packages/SuguKit   # package tests
 scripts/ci.sh         # everything: app tests, package tests, budgets
+pnpm --dir site check && pnpm --dir site build   # the home page
 ```
 
 ## 1. Architecture
@@ -81,6 +83,7 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
 | `learning` | learned-word store, inspector, dictionary import/export |
 | `docs` | README, `docs/` |
 | `workspace` | repo-root files (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, scripts) |
+| `site` | the home page in `site/` |
 
 - Combine scopes for cross-cutting changes (`shell,engines`); refine with
   sub-dimensions (`engines/rime`, `engines/azookey`).
@@ -98,7 +101,9 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
   `scripts/release.sh`), `.build-dev/` (builds of `scripts/install-dev.sh`),
   `Config/Local.xcconfig` (local signing overrides, from
   `Local.xcconfig.example`), `.cloudflare/` (the Cloudflare CLI's cache),
-  and `Sugu.xcodeproj/` except its SwiftPM `Package.resolved`.
+  `site/node_modules/`, `site/dist/`, `site/.astro/` and `site/.wrangler/`
+  (the home page's dependencies and builds), and `Sugu.xcodeproj/` except
+  its SwiftPM `Package.resolved`.
   `Packages/SuguKit/Package.resolved` is tracked.
 - Pinned third-party versions live in `scripts/versions.sh`.
 - The app icon's sources are `Assets/` (Icon Composer packages, flat SVG and

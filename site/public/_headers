@@ -1,0 +1,9 @@
+/*
+  Content-Security-Policy: default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: interest-cohort=(), camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

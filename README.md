@@ -58,6 +58,7 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' bu
 | `Bench/` | Accuracy test sets |
 | `docs/` | [Architecture](docs/architecture.md) and architecture decisions (`adr/`) |
 | `scripts/` | Dependency, data, release and install scripts |
+| `site/` | The home page at [sugu.zheng-she.com](https://sugu.zheng-she.com) (Astro, Cloudflare Pages) |
 
 ## License
 

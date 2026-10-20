@@ -1,0 +1,36 @@
+---
+import Base from '../../layouts/Base.astro';
+import type { Locale } from '../../i18n/locales';
+import { messagesFor } from '../../i18n/messages';
+import { notesHTML } from '../../lib/notes';
+import { localePaths } from '../../lib/paths';
+import { releases } from '../../lib/releases';
+
+export const getStaticPaths = localePaths;
+
+const locale = Astro.params.locale as Locale;
+const t = messagesFor(locale);
+const all = await releases();
+const date = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' });
+// The first line of the notes is their overview heading, redundant under the version.
+const body = (notes: string) => notesHTML(notes.split('\n').slice(1).join('\n'));
+---
+
+<Base locale={locale} path="changelog/" title={t.changelog.title}>
+  <div class="prose">
+    <h1>{t.changelog.title}</h1>
+    {all.length === 0 && <p class="secondary">{t.changelog.empty}</p>}
+    {all.map((release) => {
+      const notes = release.notes[locale] ?? release.notes.en;
+      return (
+        <article class="release">
+          <header>
+            <h2>{release.version}</h2>
+            <time datetime={release.date}>{date.format(new Date(`${release.date}T00:00:00Z`))}</time>
+          </header>
+          {notes && <Fragment set:html={body(notes)} />}
+        </article>
+      );
+    })}
+  </div>
+</Base>

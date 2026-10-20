@@ -1,0 +1,29 @@
+---
+import Base from '../../layouts/Base.astro';
+import type { Locale } from '../../i18n/locales';
+import { messagesFor } from '../../i18n/messages';
+import { localePaths } from '../../lib/paths';
+
+export const getStaticPaths = localePaths;
+
+const locale = Astro.params.locale as Locale;
+const t = messagesFor(locale);
+---
+
+<Base locale={locale} path="privacy/" title={t.privacy.title}>
+  <div class="prose">
+    <h1>{t.privacy.title}</h1>
+    <p class="secondary">{t.privacy.updated}</p>
+    {t.privacy.sections.map((section) => (
+      <section>
+        <h2>{section.title}</h2>
+        {section.body.map((paragraph) => <p>{paragraph}</p>)}
+        {'list' in section && section.list && (
+          <ul>
+            {section.list.map((item) => <li>{item}</li>)}
+          </ul>
+        )}
+      </section>
+    ))}
+  </div>
+</Base>

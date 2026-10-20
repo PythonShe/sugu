@@ -1,0 +1,8 @@
+# pnpm settings (pnpm reads only auth and registry settings from .npmrc).
+# Every package with a build script is answered here: esbuild and workerd
+# check and link their platform binaries, which Astro and wrangler use.
+allowBuilds:
+  esbuild: true
+  workerd: true
+
+engineStrict: true

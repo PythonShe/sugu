@@ -1,0 +1,47 @@
+---
+import Base from '../../layouts/Base.astro';
+import iconLight from '../../../../Assets/svg/sugu-icon-stroke-light.svg?url';
+import iconDark from '../../../../Assets/svg/sugu-icon-stroke-dark.svg?url';
+import type { Locale } from '../../i18n/locales';
+import { messagesFor } from '../../i18n/messages';
+import { releases } from '../../lib/releases';
+import { localePaths } from '../../lib/paths';
+
+export const getStaticPaths = localePaths;
+
+const locale = Astro.params.locale as Locale;
+const t = messagesFor(locale);
+const [latest] = await releases();
+---
+
+<Base locale={locale} path="">
+  <section class="hero">
+    <picture>
+      <source srcset={iconDark} media="(prefers-color-scheme: dark)" />
+      <img src={iconLight} alt="" width="144" height="144" />
+    </picture>
+    <h1>Sugu</h1>
+    <p class="title">{t.home.title}</p>
+    <p class="lead">{t.home.lead}</p>
+    {latest && <a class="button" href="/download/">{t.home.download}</a>}
+    <p class="meta">
+      {t.home.requirement}{latest && <> · {t.home.version(latest.version)}</>}
+    </p>
+  </section>
+
+  <ul class="features">
+    {t.home.features.map((feature) => (
+      <li>
+        <h3>{feature.title}</h3>
+        <p>{feature.body}</p>
+      </li>
+    ))}
+  </ul>
+
+  <section class="prose">
+    <h2>{t.home.install.title}</h2>
+    <ol class="steps">
+      {t.home.install.steps.map((step) => <li>{step}</li>)}
+    </ol>
+  </section>
+</Base>

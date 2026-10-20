@@ -1,0 +1,9 @@
+# Cloudflare Pages project `sugu`, at sugu.zheng-she.com (deploy-site.yml).
+name = "sugu"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
+
+# Releases, notes and the update feed, written by scripts/publish-release.sh.
+[[r2_buckets]]
+binding = "UPDATES"
+bucket_name = "sugu-updates"

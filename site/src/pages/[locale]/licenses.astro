@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import license from '../../../../LICENSE?raw';
+import notices from '../../../../Sugu/Resources/ThirdPartyNotices.txt?raw';
+import type { Locale } from '../../i18n/locales';
+import { messagesFor } from '../../i18n/messages';
+import { localePaths } from '../../lib/paths';
+
+export const getStaticPaths = localePaths;
+
+const locale = Astro.params.locale as Locale;
+const t = messagesFor(locale);
+---
+
+<Base locale={locale} path="licenses/" title={t.licenses.title}>
+  <div class="prose">
+    <h1>{t.licenses.title}</h1>
+    <p>{t.licenses.sugu}</p>
+    <h2>{t.licenses.license}</h2>
+    <pre class="notices" lang="en">{license}</pre>
+    <h2>{t.licenses.notices}</h2>
+    <pre class="notices" lang="en">{notices}</pre>
+  </div>
+</Base>
