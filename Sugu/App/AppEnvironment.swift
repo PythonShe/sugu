@@ -26,15 +26,25 @@ final class AppEnvironment {
     private var settings: SettingsWindowController?
     private var expiryDays = 0
 
+    /// The learned store, tried three times: a lock held by the copy of
+    /// Sugu an update is replacing passes within a second. Without it,
+    /// typing works and nothing is learned until the next launch.
+    private static func openStore(at url: URL, syllabary: PinyinSyllabary) -> LearnedStore? {
+        for attempt in 1...3 {
+            do {
+                return try LearnedStore(url: url, syllabary: syllabary)
+            } catch {
+                Log.learning.fault("Learned store unavailable (attempt \(attempt)): \(String(describing: error), privacy: .public)")
+                if attempt < 3 { Thread.sleep(forTimeInterval: 0.3) }
+            }
+        }
+        return nil
+    }
+
     private init() {
         let preferences = self.preferences.preferences
         let syllables = Lexicon.load(Lexicon.syllablesFile, in: locations.bundledLexicon)
-        do {
-            store = try LearnedStore(url: locations.learnedStore, syllabary: PinyinSyllabary(syllables))
-        } catch {
-            store = nil
-            Log.learning.fault("Learned store unavailable: \(String(describing: error), privacy: .public)")
-        }
+        store = Self.openStore(at: locations.learnedStore, syllabary: PinyinSyllabary(syllables))
         Log.app.notice("Sugu \(Bundle.main.shortVersion, privacy: .public) started")
         engines = EngineHub(
             locations: locations.engines,

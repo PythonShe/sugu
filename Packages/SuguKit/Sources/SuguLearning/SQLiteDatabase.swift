@@ -37,6 +37,10 @@ final class SQLiteDatabase {
             sqlite3_close(handle)
             throw Error.sqlite(code: SQLITE_CANTOPEN, message: message)
         }
+        // Another process holding the file briefly (a second Sugu during an
+        // update) waits rather than fails; short, since commits write on
+        // the main thread.
+        sqlite3_busy_timeout(handle, 200)
         try execute("PRAGMA journal_mode = WAL")
         try execute("PRAGMA foreign_keys = ON")
     }
