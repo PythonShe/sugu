@@ -1409,3 +1409,16 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - What remains of the tail (5–6 ms on sentences of a dozen syllables
   ending in an unfinished one) is librime rebuilding the sentence over
   the whole input on each key, inside its translator.
+
+## D-079 · Owner decisions (2026-10-20)
+- Corpus (D-061): the Leipzig Corpora Collection's web corpora may train
+  the bundled models under CC BY, credited in the notices. The license is
+  read from the downloaded archive itself before use; if it is not CC BY,
+  the corpus is not used.
+- Personal n-grams: built, on by default with a Learning setting. They
+  come only from the user's own commits through Sugu, never from text
+  read from the document; they live in the local learned store, follow
+  the no-learn apps and secure input like learned words, and go with
+  Delete All and Forget Last Hour.
+- rime-wanxiang's English word list stays as shipped, under wanxiang's
+  CC-BY-4.0 and credited with wanxiang.

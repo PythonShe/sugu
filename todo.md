@@ -103,7 +103,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Japanese: AzooKey's sentences ranked by the model (D-047)
 - [x] Japanese: words respelled when the model prefers another spelling (D-052)
 - [x] Live conversion no longer traps after Esc from a conversion (D-051)
-- [ ] Personal n-grams from commits in the learned store, blended with the bundled model
+- [ ] Personal n-grams from commits in the learned store, blended with the bundled model — on by default with a setting (D-079)
 - [x] Chinese: librime's sentence respelled where the model reads another spelling as clearly better (D-053; Tatoeba's grammar did not hold, D-050)
 - [x] Chinese respelling for Traditional and Japanese forms (D-054)
 - [x] Bench: 101 Japanese and 100 Chinese sentences (D-050)
@@ -111,7 +111,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [ ] Zenzai personalization from the personal model
 - [x] Bench pairs decided by the text before the caret; one-clause Japanese conversions ranked (D-057)
 - [x] Chinese: one word decided by the text before it (D-058)
-- [ ] A larger corpus for the models — the owner decides on the source and its license (D-061)
+- [ ] A larger corpus for the models — Leipzig web corpora under CC BY, license checked in the archive (D-061, D-079)
 
 
 ## 13. Shell and Settings (advisor pass 5)
@@ -132,7 +132,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Unused CC BY-SA tokenizer removed from the app; CI guards notices and share-alike data (D-072)
 - [x] Build numbers for Sparkle, clean-tree and notarization checks, preinstall stop, uninstall steps (D-072)
 - [x] Learned store waits on a lock; librime deployment verified (D-072)
-- [ ] Confirm the source of wanxiang's English word list — owner
+- [x] Confirm the source of wanxiang's English word list — kept as shipped (D-079)
 - [ ] One Sparkle update between two notarized builds — needs the release keys
 
 ## 16. Zhuyin (D-073)
