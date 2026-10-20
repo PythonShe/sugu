@@ -44,6 +44,13 @@ public struct LatinInference: Sendable {
         return .last
     }
 
+    /// Whether typed letters are a known English word or on the allow list,
+    /// for offering them as typed in Japanese mode.
+    public func isEnglishWord(_ input: String) -> Bool {
+        let lowered = input.lowercased()
+        return allowList.contains(lowered) || (lowered.count >= 3 && englishWords.contains(lowered))
+    }
+
     /// Whether the input splits into syllables, allowing the last one to be
     /// incomplete and apostrophes as separators.
     public func isPinyin(_ input: String) -> Bool {

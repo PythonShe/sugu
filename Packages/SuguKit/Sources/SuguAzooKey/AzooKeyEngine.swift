@@ -96,7 +96,9 @@ public final class AzooKeyEngine: CompositionEngine {
             requireJapanesePrediction: predictions,
             requireEnglishPrediction: false,
             keyboardLanguage: .ja_JP,
-            englishCandidateInRoman2KanaInput: true,
+            // Asks the system spell checker over XPC on every key, most of
+            // the keystroke time; Sugu offers typed English words itself.
+            englishCandidateInRoman2KanaInput: false,
             fullWidthRomanCandidate: true,
             halfWidthKanaCandidate: true,
             learningType: .nothing,

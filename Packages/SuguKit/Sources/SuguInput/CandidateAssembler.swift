@@ -44,6 +44,8 @@ struct CandidateAssembler {
             case .first: latinFirst = candidate
             case .last: latinLast = candidate
             }
+        } else if input.mode == .japanese, let latin, state.phase == .composing, latin.isEnglishWord(state.typedText) {
+            latinLast = Candidate(text: state.typedText, source: .latin)
         }
 
         var seen = Set<String>()

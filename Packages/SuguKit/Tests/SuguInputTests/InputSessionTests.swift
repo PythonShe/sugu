@@ -241,4 +241,14 @@ struct InputSessionTests {
         #expect(client.document == "你好世界")
         #expect(session.isEmpty)
     }
+
+    @Test func japaneseOffersTypedEnglishWords() {
+        let session = makeSession()
+        session.setMode(.japanese)
+        type("github", into: session)
+        #expect(session.display.candidates?.candidates.map(\.text).contains("github") == true)
+        _ = session.handle(Key.escape)
+        type("nihongo", into: session)
+        #expect(session.display.candidates?.candidates.contains { $0.source == .latin } != true)
+    }
 }
