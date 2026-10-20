@@ -341,7 +341,6 @@ extension InputSession {
     }
 }
 
-/// The commit ⌃⌫ can take back.
 /// A Japanese commit and the romaji typed for it, either of which the
 /// field shows.
 struct Retypable {
@@ -353,6 +352,7 @@ struct Retypable {
     var isRomaji: Bool
 }
 
+/// The commit ⌃⌫ can take back.
 struct PendingUndo {
     /// What was inserted into the field.
     var text: String

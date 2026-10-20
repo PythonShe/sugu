@@ -16,7 +16,7 @@ func option(_ name: String) -> String? {
 }
 
 guard let data = option("--data"), let bench = option("--bench") else {
-    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>] [--no-language-model]\n".utf8))
+    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>] [--no-language-model] [variant...]\n       sugu-bench --data <dir> --bench <dir> --fuzz <sessions> [--seed <n>] [--fuzz-session <n>] [--fuzz-trace] [variant...]\nvariants: --no-predictions --no-typo-correction --live-conversion --fuzzy-pinyin --kana-input --zhuyin --zhuyin-layout <layout> --scheme <scheme> --script <script>\n".utf8))
     exit(2)
 }
 

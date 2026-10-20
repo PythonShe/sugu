@@ -18,7 +18,8 @@ public final class EngineHub: EngineSource {
         public var rimeUser: URL
         /// AzooKey's working directory.
         public var azooKey: URL
-        /// Downloaded models (grammar, Zenzai).
+        /// Downloaded Zenzai models; the grammar model goes with librime's
+        /// user data.
         public var models: URL
         /// Bundled word lists (`Lexicon`), for the pinyin syllables.
         public var lexicon: URL

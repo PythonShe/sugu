@@ -8,8 +8,6 @@ import SuguCore
 public final class RimeEngine: CompositionEngine {
     private let session: RimeSession
     private var script: ChineseScript { session.script }
-    /// How many candidates are read from librime per update; the rest are
-    /// fetched only when the user pages past them.
     /// How many candidates are read from librime per change: the first
     /// pages, more as the highlight reaches the end, then the first pages
     /// again for the next input.

@@ -204,10 +204,7 @@ public enum ChineseScript: String, Codable, Sendable, CaseIterable {
     }
 }
 
-/// Pinyin spelling schemes. Double-pinyin layouts map each syllable to two
-/// keys; their spelling rules come from the bundled schema data.
-/// How Chinese is typed: pinyin letters, or Zhuyin symbols on the
-/// standard layout.
+/// How Chinese is typed: pinyin letters, or Zhuyin symbols.
 public enum ChineseKeyboard: String, Codable, Sendable, CaseIterable {
     case pinyin
     case zhuyin
@@ -221,6 +218,8 @@ public enum ZhuyinLayout: String, Codable, Sendable, CaseIterable {
     case ibm
 }
 
+/// Pinyin spelling schemes. Double-pinyin layouts map each syllable to two
+/// keys; their spelling rules come from the bundled schema data.
 public enum PinyinScheme: String, Codable, Sendable, CaseIterable {
     case fullPinyin
     case xiaohe

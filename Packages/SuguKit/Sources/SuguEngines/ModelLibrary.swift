@@ -57,14 +57,6 @@ public final class ModelLibrary {
             }
         }
 
-        public var homepage: URL {
-            switch self {
-            case .grammarModel: URL(string: "https://github.com/amzxyz/rime-wanxiang-data")!
-            case .rimeIce: URL(string: "https://github.com/iDvel/rime-ice")!
-            case .zenzaiModel: URL(string: "https://huggingface.co/Miwa-Keita/zenz-v3.1-small-gguf")!
-            }
-        }
-
         /// The release name shown with the item.
         public var version: String {
             switch self {

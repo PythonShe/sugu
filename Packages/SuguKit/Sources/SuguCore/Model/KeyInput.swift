@@ -24,12 +24,9 @@ public enum VirtualKey {
     public static let space: UInt16 = 0x31
     public static let delete: UInt16 = 0x33
     public static let escape: UInt16 = 0x35
-    public static let rightCommand: UInt16 = 0x36
     public static let command: UInt16 = 0x37
     public static let shift: UInt16 = 0x38
     public static let capsLock: UInt16 = 0x39
-    public static let option: UInt16 = 0x3A
-    public static let control: UInt16 = 0x3B
     public static let rightShift: UInt16 = 0x3C
     public static let keypadEnter: UInt16 = 0x4C
     public static let f6: UInt16 = 0x61
