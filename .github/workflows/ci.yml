@@ -1,6 +1,6 @@
 # Runs scripts/ci.sh. Manual only while the repository is private, where
-# macOS runner minutes are billed (decision.md D-019); add `push` and
-# `pull_request` triggers to run it on every change.
+# macOS runner minutes are billed; add `push` and `pull_request` triggers
+# to run it on every change.
 name: CI
 
 on:

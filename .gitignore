@@ -40,3 +40,6 @@ build/
 
 # Cloudflare CLI cache
 /.cloudflare/
+
+# Working notes, kept out of the repository
+/docs/internal/

@@ -4,8 +4,7 @@ Sugu is an open-source, privacy-first input method for macOS for Japanese and
 Chinese composition. Single-component repo — Swift / AppKit / InputMethodKit.
 `AGENTS.md` is a verbatim copy of `CLAUDE.md`; after editing either, re-copy it
 over the other in the same commit. Product decisions live in `docs/adr/`;
-implementation decisions in `decision.md`, the work plan in `todo.md`, and the
-build log in `progress.md`; domain language in `CONTEXT.md`.
+domain language in `CONTEXT.md`.
 
 ## 0. Tech Stack & Dev Commands
 
@@ -96,6 +95,7 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
   language models from `scripts/build-data.sh`), `dist/` (release output of
   `scripts/release.sh`), `.build-dev/` (builds of `scripts/install-dev.sh`),
   `Config/Local.xcconfig` (local signing overrides, from
-  `Local.xcconfig.example`), and `Sugu.xcodeproj/` except its SwiftPM
-  `Package.resolved`. `Packages/SuguKit/Package.resolved` is tracked.
+  `Local.xcconfig.example`), `.cloudflare/` (the Cloudflare CLI's cache),
+  and `Sugu.xcodeproj/` except its SwiftPM `Package.resolved`.
+  `Packages/SuguKit/Package.resolved` is tracked.
 - Pinned third-party versions live in `scripts/versions.sh`.
