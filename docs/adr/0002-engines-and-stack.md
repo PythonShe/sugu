@@ -13,7 +13,8 @@ library) and withdraws the AI layer of ADR 0001 from current scope.
 
 1. **No AI layer in v1.** ADR 0001 is deferred, kept as a record awaiting a
    flip decision. No provider calls, no BYOK client. Accuracy comes from
-   engines, data, and on-device learning.
+   engines, data, and on-device learning. (Narrowed by ADR 0004: Apple's
+   language models, at a level the user chooses.)
 
 2. **No MVP; both languages from the start.** Chinese and Japanese are built
    together, so the single-input-source design (ADR 0003, decision 1) is
@@ -70,7 +71,8 @@ library) and withdraws the AI layer of ADR 0001 from current scope.
 
 12. **Signed, notarized `.pkg`; updates through Sparkle** with system-profile
     reporting disabled. Update checks and user-initiated downloads (dictionaries,
-    grammar model, Zenzai) are the only network traffic Sugu makes.
+    grammar model, Zenzai) are the only network traffic Sugu makes — and,
+    since ADR 0004, Private Cloud Compute requests the user turned on.
 
 ## Considered options
 

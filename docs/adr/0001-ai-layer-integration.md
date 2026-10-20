@@ -2,6 +2,7 @@
 
 > **Deferred 2026-10-20.** Withdrawn from v1 scope by ADR 0002, decision 1.
 > Kept as a record awaiting a flip decision; nothing here binds current work.
+> ADR 0004 adds Apple's language models as user-chosen features instead.
 
 Sugu's AI layer ranks candidates; it does not compose text. This ADR records the
 complete design of that layer as settled across the design interview of

@@ -6,7 +6,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Principles
 
-- **Local-first, privacy-first** — an input method reads everything you type. Sugu is auditable and sends nothing: composition, conversion and learning stay on your Mac, and you can see and delete everything it has learned.
+- **Local-first, privacy-first** — an input method reads everything you type. Sugu is auditable and sends nothing: composition, conversion and learning stay on your Mac, and you can see and delete everything it has learned. Apple's language models can translate, rewrite and suggest conversions if you turn them on, on your Mac or, only if you choose it, in Private Cloud Compute.
 - **One input source** — Chinese, Japanese and English live in one input source, so switching never depends on macOS input-source switching.
 - **Fast and accurate, measured** — latency and memory budgets are checked by a benchmark that drives the whole input pipeline, and accuracy is measured on public test sets.
 - **Open source** — Apache-2.0. Full stop, no proprietary tier.

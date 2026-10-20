@@ -54,8 +54,9 @@ scripts/ci.sh         # everything: app tests, package tests, budgets
 ## 3. Product & License
 
 - License: **Apache-2.0**. Zero telemetry; composition, conversion, and
-  learning resolve on-device. The only network traffic is update checks and
-  user-initiated downloads.
+  learning resolve on-device. The only network traffic is update checks,
+  user-initiated downloads, and Private Cloud Compute requests the user
+  turned on (ADR 0004).
 - Budgets: keystroke to updated candidates < 5 ms p99; candidate-window draw
   < 16 ms; resident memory < 200 MB in the default configuration.
 - GPL-licensed code or data is never bundled.
