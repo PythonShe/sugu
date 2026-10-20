@@ -111,4 +111,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [ ] Zenzai personalization from the personal model
 - [x] Bench pairs decided by the text before the caret; one-clause Japanese conversions ranked (D-057)
 - [x] Chinese: one word decided by the text before it (D-058)
+- [ ] A larger corpus for the models — the owner decides on the source and its license (D-061)
 

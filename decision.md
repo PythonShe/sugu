@@ -900,3 +900,22 @@ any call made without the owner present. Each entry: what, why, reversibility.
   with live conversion, fuzzy pinyin, no predictions) under random hash
   seeds; Japanese 91%, learned words 100%, keystroke p99 2.3 ms (3.6 ms
   live). CI runs 200 fuzz sessions.
+
+## D-061 · What the remaining context misses need (2026-10-20)
+- Chinese pairs still missed with the text before them, by the model's
+  log probability after the last four characters (chosen − librime's):
+  游泳 +0.6 and 大雪 +1.7, lost to the word list's frequencies (0.3 ×
+  −1.3 and −4.1); 誓言 −3.5, 共识 −1.4, 异议 −12.3, 试用 −2.9, 实用 −5.7,
+  输血 −10.1, where the model has not seen the collocation at all
+  (没有任何意义 is in Tatoeba, 没有任何异议 is not). No margin or weight
+  fixes the second group.
+- Japanese: 描く after 絵を gains 5.7 from the model but costs 13.1 in
+  AzooKey's connections (描く is class 695, 書く 679, before のが好きです);
+  効きました and 聞きました score the same (−28.27, −28.25).
+- So the model needs more text, not tuning. The candidate found is the
+  Leipzig Corpora Collection (download corpora under CC BY by its terms
+  page, as reported by search; the site refuses automated reading, so
+  not verified here): zho-cn web 2015, 1 M sentences, 427 MB. Its
+  Wikipedia corpora are out (share-alike sources). Left for the owner:
+  whether web-crawled sentences under CC BY may train a bundled model.
+
