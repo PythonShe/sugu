@@ -524,3 +524,19 @@ any call made without the owner present. Each entry: what, why, reversibility.
   Japanese keystroke p99 3.7 ms (2.8 ms without), within the 5 ms budget;
   top-1 moved 78% → 76% on one sentence (十分 → 10分), from AzooKey's
   lattice cache being reused across the extra requests.
+
+## D-040 · Zhuyin deferred past v1 (2026-10-20)
+- wanxiang's algebra has no Zhuyin section, and rime-bopomofo is LGPL, so
+  the spelling rules would be Sugu's own (pinyin → Zhuyin keys on the
+  standard layout, tone keys 3 4 6 7). The rules are the small part.
+- Zhuyin also changes the composition model, not just the spelling:
+  digits and `- ; , . /` become syllable keys, so number keys cannot pick
+  live candidates; tone keys end syllables and narrow them; Space types
+  the first tone; and Taiwanese users expect the field to show the whole
+  converted sentence with ↓ or Space opening candidates for the character
+  at the caret (Apple Zhuyin, Microsoft Bopomofo). Learned readings,
+  `PinyinDecoder`, the Learning pane's reading column and the bench would
+  each need a Zhuyin form.
+- Shipping the spelling without that model would type Zhuyin keys into an
+  input method built for pinyin. Deferred until it can be done whole, as
+  its own mode of Chinese composition with its own test set.
