@@ -52,6 +52,7 @@ let package = Package(
             name: "SuguAzooKey",
             dependencies: [
                 "SuguCore",
+                "SuguLM",
                 .product(
                     name: "KanaKanjiConverterModuleWithDefaultDictionary",
                     package: "AzooKeyKanaKanjiConverter"
@@ -71,6 +72,7 @@ let package = Package(
             swiftSettings: swiftSettings
         ),
         .target(name: "SuguDownloads", swiftSettings: swiftSettings),
+        .target(name: "SuguLM", swiftSettings: swiftSettings),
         .target(
             name: "SuguUpdates",
             dependencies: [.product(name: "Sparkle", package: "Sparkle")],
@@ -83,12 +85,12 @@ let package = Package(
         ),
         .target(
             name: "SuguEngines",
-            dependencies: ["SuguInput", "SuguCore", "SuguRime", "SuguAzooKey", "SuguLearning", "SuguDownloads"],
+            dependencies: ["SuguInput", "SuguCore", "SuguRime", "SuguAzooKey", "SuguLearning", "SuguDownloads", "SuguLM"],
             swiftSettings: cxxSwiftSettings
         ),
         .executableTarget(
             name: "sugu-tool",
-            dependencies: ["SuguRime", "SuguAzooKey", "SuguCore"],
+            dependencies: ["SuguRime", "SuguAzooKey", "SuguCore", "SuguLM"],
             swiftSettings: cxxSwiftSettings
         ),
         .executableTarget(
@@ -113,9 +115,10 @@ let package = Package(
             swiftSettings: swiftSettings
         ),
         .testTarget(name: "SuguDownloadsTests", dependencies: ["SuguDownloads"], swiftSettings: swiftSettings),
+        .testTarget(name: "SuguLMTests", dependencies: ["SuguLM"], swiftSettings: swiftSettings),
         .testTarget(
             name: "SuguEngineTests",
-            dependencies: ["SuguEngines", "SuguDownloads", "SuguRime", "SuguAzooKey", "SuguCore"],
+            dependencies: ["SuguEngines", "SuguDownloads", "SuguRime", "SuguAzooKey", "SuguCore", "SuguLM"],
             swiftSettings: cxxSwiftSettings
         ),
     ]
