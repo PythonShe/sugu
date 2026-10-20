@@ -263,6 +263,10 @@ struct InputSessionTests {
         _ = session.handle(f9)
         _ = session.handle(Key.space)
         #expect(client.document == "ｎｉｈａｏ")
+        type("nihao", into: session)
+        _ = session.handle(f9)
+        _ = session.handle(Key.char("2"))
+        #expect(client.document.hasPrefix("ｎｉｈａｏｎｉｈａｏ"))
     }
 
     /// Keys Sugu does not bind finish the composition and reach the app.

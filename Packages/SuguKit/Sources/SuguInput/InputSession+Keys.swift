@@ -138,7 +138,14 @@ extension InputSession {
                  VirtualKey.up, VirtualKey.down, VirtualKey.tab, VirtualKey.pageUp, VirtualKey.pageDown:
                 transformed = nil
             default:
-                if key.printable.map(engine.accepts) == true { transformed = nil }
+                guard let character = key.printable else { break }
+                if engine.accepts(character) {
+                    transformed = nil
+                } else {
+                    // A digit or punctuation follows the form, not a candidate.
+                    commitHighlighted()
+                    return handleKey(key)
+                }
             }
         }
         switch key.keyCode {
