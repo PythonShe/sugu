@@ -24,6 +24,11 @@ for name in TEAM_ID DEVELOPER_ID_APPLICATION DEVELOPER_ID_INSTALLER NOTARY_PROFI
   [[ -n "${!name:-}" ]] || { echo "$name is not set" >&2; exit 2; }
 done
 
+# A release is built from committed sources, and its build number (what
+# Sparkle compares) grows with every commit.
+git diff --quiet && git diff --cached --quiet || { echo "commit or stash changes first" >&2; exit 2; }
+BUILD_NUMBER="$(git rev-list --count HEAD)"
+
 DIST="$ROOT/dist"
 WORK="$DIST/work"
 rm -rf "${WORK:?}" && mkdir -p "$WORK"
@@ -49,7 +54,8 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$WORK/Sugu.xcarchive" archive -quiet \
   CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_IDENTITY="$DEVELOPER_ID_APPLICATION" \
   SUGU_ENTITLEMENTS="$ENTITLEMENTS" SUGU_PROFILE="${DEVELOPER_ID_PROFILE:-}" \
-  OTHER_CODE_SIGN_FLAGS="--timestamp" SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY"
+  OTHER_CODE_SIGN_FLAGS="--timestamp" SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY" \
+  CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
 APP="$WORK/Sugu.xcarchive/Products/Library/Input Methods/Sugu.app"
 codesign --verify --deep --strict "$APP"
@@ -61,8 +67,12 @@ VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")"
 MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")"
 
+# notarytool exits 0 for a rejected submission too; only "Accepted" passes.
 notarize() {
-  xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" --wait
+  local output
+  output="$(xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" --wait)"
+  echo "$output"
+  grep -q "status: Accepted" <<<"$output" || { echo "notarization of $(basename "$1") was not accepted" >&2; exit 1; }
 }
 
 # Update archive: notarize the app, staple it, then archive the stapled app.

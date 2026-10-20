@@ -1,0 +1,5 @@
+#!/bin/bash
+# Runs as root before the package replaces Sugu.app: a running copy would
+# otherwise load resources from a bundle being rewritten under it.
+/usr/bin/pkill -x Sugu || true
+exit 0

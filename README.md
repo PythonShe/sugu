@@ -25,6 +25,17 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 Requires macOS 14 or later. Download `Sugu-<version>.pkg` from the [releases](https://github.com/PythonShe/sugu/releases), open it, and Sugu is selected in the input menu. It is listed under Chinese, Simplified in **System Settings › Keyboard › Input Sources**. Sugu checks for updates itself; this can be turned off in its settings.
 
+To uninstall, remove Sugu from **Input Sources**, then in Terminal:
+
+```bash
+sudo rm -rf "/Library/Input Methods/Sugu.app"
+sudo pkgutil --forget com.zheng-she.inputmethod.Sugu.pkg
+rm -rf ~/Library/Application\ Support/Sugu   # learned words and downloads
+defaults delete com.zheng-she.inputmethod.Sugu
+```
+
+Log out and back in to end the running copy.
+
 ## Building
 
 Requires Xcode 26 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen), CMake and Ninja.
