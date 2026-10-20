@@ -159,6 +159,8 @@ enum Key {
     }
     static let space = KeyInput(keyCode: VirtualKey.space, characters: " ")
     static let enter = KeyInput(keyCode: VirtualKey.returnKey, characters: "\r")
+    static let keypadEnter = KeyInput(keyCode: VirtualKey.keypadEnter, characters: "\u{3}", modifiers: [.numericPad])
+    static func keypad(_ c: Character) -> KeyInput { char(c, [.numericPad]) }
     static let escape = KeyInput(keyCode: VirtualKey.escape, characters: "\u{1B}")
     static let backspace = KeyInput(keyCode: VirtualKey.delete, characters: "\u{7F}")
     static let undo = KeyInput(keyCode: VirtualKey.delete, characters: "\u{7F}", modifiers: [.control])

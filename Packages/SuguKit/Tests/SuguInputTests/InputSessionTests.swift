@@ -315,4 +315,35 @@ struct InputSessionTests {
         type("nihao", into: session)
         #expect(session.display.candidates?.candidates.first?.text == "你好")
     }
+
+    @Test func optionKeysTypeTheirSymbolAfterFinishingTheComposition() {
+        let session = makeSession()
+        #expect(!session.handle(Key.char("¥", [.option])))
+        type("nihao", into: session)
+        #expect(!session.handle(Key.char("…", [.option])))
+        #expect(client.document == "你好")
+        #expect(client.marked.isEmpty)
+    }
+
+    @Test func numpadDigitsTypeNumbersInsteadOfSelecting() {
+        let session = makeSession()
+        #expect(!session.handle(Key.keypad("2")))
+        type("nihao", into: session)
+        #expect(!session.handle(Key.keypad("2")))
+        #expect(client.document == "你好")
+
+        session.setMode(.japanese)
+        type("toukyou", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.space)
+        #expect(!session.handle(Key.keypad("1")))
+        #expect(client.document == "你好東共")
+    }
+
+    @Test func numpadEnterCommitsTheTypedLetters() {
+        let session = makeSession()
+        type("nihao", into: session)
+        #expect(session.handle(Key.keypadEnter))
+        #expect(client.document == "nihao")
+    }
 }

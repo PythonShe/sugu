@@ -374,14 +374,15 @@ public final class InputSession {
             break
         }
         guard let character else { return true }
+        // Numpad keys type numbers; they never select.
+        if key.modifiers.contains(.numericPad) {
+            commitComposition()
+            return false
+        }
         let windowShown = converting ? showsConversionWindow : highlight != nil
         if windowShown, let digit = character.selectionDigit {
             selectOnPage(digit)
             return true
-        }
-        if key.modifiers.contains(.numericPad) {
-            commitComposition()
-            return false
         }
         if engine.accepts(character) {
             if converting || transformed != nil || highlight != nil {
