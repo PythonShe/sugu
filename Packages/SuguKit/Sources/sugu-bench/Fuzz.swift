@@ -23,8 +23,10 @@ enum Fuzz {
     }
 
     /// With `trace`, every key and the composition before it go to
-    /// standard error.
-    static func run(data: URL, sessions: Range<Int>, seed: UInt64, trace: Bool, configure: (inout Preferences) -> Void) async throws -> [Failure] {
+    /// standard error. With `soak`, the memory in use is printed every
+    /// `soak` sessions, and between sessions the main queue and run loop
+    /// run and autoreleased objects go, as between events in the app.
+    static func run(data: URL, sessions: Range<Int>, seed: UInt64, trace: Bool, soak: Int? = nil, configure: (inout Preferences) -> Void) async throws -> [Failure] {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-fuzz-\(getpid())", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: work) }
         var preferences = Preferences()
@@ -103,6 +105,16 @@ enum Fuzz {
                 } catch let failure as Failure {
                     failures.append(failure)
                     session.commitComposition()
+                }
+                if let soak {
+                    autoreleasepool { _ = RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.001)) }
+                    await Task.yield()
+                    if (number + 1) % soak == 0 {
+                        let memory = Memory.current()
+                        print(String(format: "soak %@ %d: footprint %.1f MB, resident %.1f MB", "\(mode)", number + 1, memory.footprintMB, memory.residentMB))
+                        // Shown as it happens when the output goes to a file.
+                        fflush(stdout)
+                    }
                 }
             }
         }

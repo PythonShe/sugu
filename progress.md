@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Soak: `sugu-bench --fuzz 50000` run for 54 minutes, with both engines
+  in-process. Physical footprint 66 MB at the start, 82 MB after 200
+  sessions, 90 MB at 54 minutes (peak 99 MB); resident flat at 200–230 MB
+  from 20 minutes on, most of it the mapped dictionaries. No growth to
+  chase. `--soak K` now flushes each line so a long run shows progress.
 - Proprietary (D-086, ADR 0006) and released from R2 (D-087):
   `publish-release.sh` uploads downloads, notes, `releases.json`,
   `latest.json`, then the signed feed; GitHub releases dropped.
