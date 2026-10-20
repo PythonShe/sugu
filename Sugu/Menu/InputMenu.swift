@@ -50,8 +50,10 @@ final class InputMenu {
         menu.addItem(Self.item(String(localized: "Learned Words…"), command: .learnedWords))
         menu.addItem(Self.item(String(localized: "Add Word…"), command: .addWord))
         menu.addItem(.separator())
-        if AppEnvironment.shared.updater.isAvailable {
-            menu.addItem(Self.item(String(localized: "Check for Updates…"), command: .checkForUpdates))
+        let updater = AppEnvironment.shared.updater
+        if updater.isAvailable {
+            let title = updater.hasPendingUpdate ? String(localized: "Update Available…") : String(localized: "Check for Updates…")
+            menu.addItem(Self.item(title, command: .checkForUpdates))
         }
         menu.addItem(Self.item(String(localized: "Settings…"), command: .settings))
         return menu

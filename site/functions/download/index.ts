@@ -10,3 +10,5 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   const target = new URL(`/releases/${latest.version}/Sugu-${latest.version}.pkg`, request.url);
   return new Response(null, { status: 302, headers: { Location: target.toString(), 'Cache-Control': 'no-cache' } });
 };
+
+export const onRequestHead = onRequestGet;

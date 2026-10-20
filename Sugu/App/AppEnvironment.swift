@@ -44,6 +44,7 @@ final class AppEnvironment {
     private init() {
         let preferences = self.preferences.preferences
         let syllables = Lexicon.load(Lexicon.syllablesFile, in: locations.bundledLexicon)
+        if syllables.isEmpty { Log.app.fault("Pinyin syllables missing from the bundle") }
         store = Self.openStore(at: locations.learnedStore, syllabary: PinyinSyllabary(syllables))
         Log.app.notice("Sugu \(Bundle.main.shortVersion, privacy: .public) started")
         engines = EngineHub(

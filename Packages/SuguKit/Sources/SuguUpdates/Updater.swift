@@ -4,15 +4,21 @@ import Sparkle
 /// Update checks through Sparkle. Off in builds without an update signing
 /// key (development builds), so they never offer someone else's release.
 /// No system profile is sent (Info.plist, and the delegate below).
+///
+/// Sugu runs in the background, so an update found by a scheduled check
+/// is not put in front of the app being typed in: it waits as
+/// `hasPendingUpdate` until the user asks for it.
 @MainActor
-public final class Updater: NSObject, SPUUpdaterDelegate {
+public final class Updater: NSObject, SPUUpdaterDelegate, @MainActor SPUStandardUserDriverDelegate {
     private var controller: SPUStandardUpdaterController?
+    /// A scheduled check found an update the user has not seen yet.
+    public private(set) var hasPendingUpdate = false
 
     override public init() {
         super.init()
         let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
         guard !key.isEmpty else { return }
-        controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
+        controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: self)
     }
 
     public var isAvailable: Bool { controller != nil }
@@ -27,4 +33,25 @@ public final class Updater: NSObject, SPUUpdaterDelegate {
     }
 
     nonisolated public func allowedSystemProfileKeys(for updater: SPUUpdater) -> [String]? { [] }
+
+    // MARK: Gentle reminders
+
+    public var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    /// Shown at once only when Sugu has the focus anyway.
+    public func standardUserDriverShouldHandleShowingScheduledUpdate(_ update: SUAppcastItem, andInImmediateFocus immediateFocus: Bool) -> Bool {
+        immediateFocus
+    }
+
+    public func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
+        if !handleShowingUpdate { hasPendingUpdate = true }
+    }
+
+    public func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
+        hasPendingUpdate = false
+    }
+
+    public func standardUserDriverWillFinishUpdateSession() {
+        hasPendingUpdate = false
+    }
 }

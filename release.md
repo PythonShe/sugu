@@ -21,9 +21,16 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 
 ## Built (not yet run)
 
-- [x] `release.sh`: notary profile or API key, temporary keychain, `RELEASE_VERSION` check, Developer ID / hardened runtime / staple / Gatekeeper checks, notarization log on rejection, `release.json`, signed appcast with notes.
+- [x] `release.sh`: notary profile or API key, temporary keychain, `RELEASE_VERSION` check, clean tree (untracked files too), Developer ID / hardened runtime / staple / Gatekeeper checks, notarization log on rejection or timeout, `release.json`, signed appcast with notes.
+  - Sparkle's helpers are re-signed with Developer ID (its XPC services removed: Sugu is not sandboxed), and every piece of nested code is checked for Developer ID and a timestamp.
+  - The archive's EdDSA signature is checked against the app's own `SUPublicEDKey` (`scripts/check-ed-signature.swift`), so a mismatched key pair cannot ship.
+  - Sparkle's tools are downloaded and checked against their SHA-256 on every run, never taken from a cache.
+  - The package is neither relocatable nor version checked: it always installs its own version.
 - [x] `scripts/appcast.py` (one item, `<description sparkle:format="markdown" xml:lang>` per language), `scripts/release-notes.py` (split / fallback).
 - [x] `publish-release.sh`: AWS CLI (CI) or `cf` (local); rollback guard; downloads verified byte-for-byte through the public URL; index merge keeps first dates; polls until the feed serves the new build.
+  - Every guard runs before the first upload. A list the site answers 404 for counts as empty only when the bucket has none either (checked with the AWS CLI).
+  - After a failed publish, re-run **failed jobs only**: re-running all of them rebuilds the release with different bytes (new signature timestamps), and that version can no longer be published.
+- [x] `release.yml`: publishes one tag at a time (`release-publish`); every action pinned to a commit. `deploy-site.yml` deploys `main`, also when a release calls it from its tag.
 - [x] `.github/workflows/release.yml`: prepare → notes → build (macos-26) → publish (R2) → site. Dry run = dispatch without tag, publish off.
 - [x] `.github/workflows/release-notes.yml`: Claude, four languages, end_turn + shape check, fixed fallback; body through stdin.
 - [x] `.github/workflows/deploy-site.yml`: push to `main` on site paths, after each release, manual; `pnpm check`, build, `wrangler pages deploy`; skips deploying without the Cloudflare secrets.
@@ -67,6 +74,8 @@ Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (defau
 - [ ] **Dry run** of `release.yml` (dispatch, no tag, publish off): notarizes, staples, passes Gatekeeper; notes in the four-language shape.
 - [ ] **First release `v0.9.0`** (or 1.0): install the `.pkg` from `/download/` on a clean user account; the input source registers, enables and selects (D-020).
 - [ ] **One Sparkle update between two notarized builds** (todo §15), with a second tag: offered, notes in the system language, EdDSA verified, installs into `/Library/Input Methods`, the input source and learned words survive.
+  - A scheduled check shows **Update Available…** in the input menu rather than a window behind the frontmost app.
+  - Also check: Sugu running for a second logged-in user while the update installs, and Sparkle's relaunch while macOS starts Sugu for a key.
 - [ ] **Signed feed:** an installed build rejects a feed edited after signing.
 - [ ] **Rollback guard:** publishing an older build is refused; republishing a version with different bytes is refused.
 - [ ] **Soak test** (`sugu-bench --fuzz N --soak K`): footprint flat over a long run; record the peak during a librime deploy.

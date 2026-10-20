@@ -22,8 +22,10 @@ function kind(key: string): { type: string; cache: string; download?: boolean } 
 }
 
 /**
- * An object from the bucket, for GET and HEAD, with ranges (resumed
+ * An object from the bucket, for GET and HEAD, with a single range (resumed
  * downloads) and conditional requests; anything else is not found.
+ * Preconditions and ranges are read here rather than by R2, so each failure
+ * gets its own status: 304, 412 or 416.
  */
 export async function serve(request: Request, env: Env, key: string): Promise<Response> {
   const served = kind(key);
@@ -31,41 +33,101 @@ export async function serve(request: Request, env: Env, key: string): Promise<Re
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
   }
-  const object =
-    request.method === 'HEAD'
-      ? await env.UPDATES.head(key)
-      : await env.UPDATES.get(key, { onlyIf: request.headers, range: request.headers });
-  if (!object) return new Response('Not found', { status: 404 });
+  const head = await env.UPDATES.head(key);
+  if (!head) return new Response('Not found', { status: 404 });
   const headers = new Headers({
     'Content-Type': served.type,
     'Cache-Control': served.cache,
     'Accept-Ranges': 'bytes',
-    ETag: object.httpEtag,
+    ETag: head.httpEtag,
+    'Last-Modified': head.uploaded.toUTCString(),
     'X-Content-Type-Options': 'nosniff',
   });
   if (served.download) headers.set('Content-Disposition', `attachment; filename="${key.split('/').pop()}"`);
-  // A GET whose precondition held for the copy the client has.
-  if (request.method === 'GET' && !('body' in object)) return new Response(null, { status: 304, headers });
-  const range = request.method === 'GET' ? bytes(object.range, object.size) : undefined;
-  if (range) {
-    headers.set('Content-Range', `bytes ${range.start}-${range.start + range.length - 1}/${object.size}`);
-    headers.set('Content-Length', String(range.length));
-  } else {
-    headers.set('Content-Length', String(object.size));
+
+  const status = precondition(request.headers, head);
+  if (status) return new Response(null, { status, headers });
+
+  let range = requestedRange(request.headers, head);
+  if (range === 'unsatisfiable') {
+    headers.set('Content-Range', `bytes */${head.size}`);
+    return new Response(null, { status: 416, headers });
   }
-  const body = 'body' in object ? (object as R2ObjectBody).body : null;
-  return new Response(body, { status: range ? 206 : 200, headers });
+  if (range && range.start === 0 && range.length === head.size) range = undefined;
+  if (range) headers.set('Content-Range', `bytes ${range.start}-${range.start + range.length - 1}/${head.size}`);
+  headers.set('Content-Length', String(range ? range.length : head.size));
+  if (request.method === 'HEAD') return new Response(null, { status: range ? 206 : 200, headers });
+
+  // The same object the headers describe, or none if it changed since.
+  const object = await env.UPDATES.get(key, {
+    onlyIf: { etagMatches: head.etag },
+    ...(range ? { range: { offset: range.start, length: range.length } } : {}),
+  });
+  if (!object || !('body' in object)) {
+    return new Response('Changed while being read', { status: 503, headers: { 'Retry-After': '1' } });
+  }
+  return new Response((object as R2ObjectBody).body, { status: range ? 206 : 200, headers });
 }
 
-/** The bytes R2 returned for a range request; undefined for the whole object. */
-function bytes(range: R2Range | undefined, size: number): { start: number; length: number } | undefined {
-  if (!range) return undefined;
-  if ('suffix' in range && range.suffix !== undefined) {
-    const length = Math.min(range.suffix, size);
-    return { start: size - length, length };
+/** 412 when a precondition fails, 304 when the client's copy is current. */
+function precondition(request: Headers, object: R2Object): 304 | 412 | undefined {
+  const etag = object.httpEtag;
+  // Whole seconds, as HTTP dates carry.
+  const modified = Math.floor(object.uploaded.getTime() / 1000) * 1000;
+  const ifMatch = request.get('If-Match');
+  if (ifMatch !== null) {
+    if (!matches(ifMatch, etag, false)) return 412;
+  } else {
+    const since = date(request.get('If-Unmodified-Since'));
+    if (since !== undefined && modified > since) return 412;
   }
-  const start = 'offset' in range && range.offset !== undefined ? range.offset : 0;
-  const length = 'length' in range && range.length !== undefined ? range.length : size - start;
-  if (start === 0 && length === size) return undefined;
-  return { start, length };
+  const ifNoneMatch = request.get('If-None-Match');
+  if (ifNoneMatch !== null) {
+    if (matches(ifNoneMatch, etag, true)) return 304;
+  } else {
+    const since = date(request.get('If-Modified-Since'));
+    if (since !== undefined && modified <= since) return 304;
+  }
+  return undefined;
+}
+
+/** Whether a list of entity tags names `etag`; weak tags count when `weak`. */
+function matches(list: string, etag: string, weak: boolean): boolean {
+  if (list.trim() === '*') return true;
+  const strip = (tag: string) => (weak ? tag.replace(/^W\//, '') : tag);
+  return list.split(',').some((tag) => {
+    const candidate = tag.trim();
+    if (!weak && candidate.startsWith('W/')) return false;
+    return strip(candidate) === strip(etag);
+  });
+}
+
+function date(value: string | null): number | undefined {
+  if (value === null) return undefined;
+  const time = Date.parse(value);
+  return Number.isNaN(time) ? undefined : time;
+}
+
+/**
+ * The one byte range asked for. Several ranges, a malformed header, or an
+ * If-Range for another version get the whole object, as HTTP allows.
+ */
+function requestedRange(request: Headers, object: R2Object): { start: number; length: number } | 'unsatisfiable' | undefined {
+  const header = request.get('Range');
+  if (header === null) return undefined;
+  const ifRange = request.get('If-Range');
+  if (ifRange !== null && ifRange.trim() !== object.httpEtag) return undefined;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!match || (match[1] === '' && match[2] === '')) return undefined;
+  const size = object.size;
+  if (match[1] === '') {
+    // The last n bytes.
+    const length = Math.min(Number(match[2]), size);
+    return length === 0 ? 'unsatisfiable' : { start: size - length, length };
+  }
+  const start = Number(match[1]);
+  if (start >= size) return 'unsatisfiable';
+  const end = match[2] === '' ? size - 1 : Math.min(Number(match[2]), size - 1);
+  if (end < start) return undefined;
+  return { start, length: end - start + 1 };
 }

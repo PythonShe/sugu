@@ -54,22 +54,22 @@ fi
 
 # A release is built from committed sources, and its build number (what
 # Sparkle compares) grows with every commit.
-git diff --quiet && git diff --cached --quiet || { echo "commit or stash changes first" >&2; exit 2; }
+# Untracked files count too: the project takes in whole folders.
+[[ -z "$(git status --porcelain)" ]] || { echo "commit or stash changes first, untracked files too" >&2; exit 2; }
 BUILD_NUMBER="$(git rev-list --count HEAD)"
 
 DIST="$ROOT/dist"
 WORK="$DIST/work"
 rm -rf "${WORK:?}" && mkdir -p "$WORK"
 
-# Sparkle's command-line tools, pinned and verified.
-TOOLS="$ROOT/.vendor/sparkle-$SPARKLE_VERSION"
-if [[ ! -x "$TOOLS/bin/sign_update" ]]; then
-  mkdir -p "$TOOLS"
-  curl -fsSL -o "$WORK/sparkle.tar.xz" \
-    "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
-  echo "$SPARKLE_TOOLS_SHA256  $WORK/sparkle.tar.xz" | shasum -a 256 -c -
-  tar -xJf "$WORK/sparkle.tar.xz" -C "$TOOLS" ./bin
-fi
+# Sparkle's command-line tools, pinned and verified on every release: they
+# handle the private key, so no cached copy is trusted.
+TOOLS="$WORK/sparkle"
+mkdir -p "$TOOLS"
+curl -fsSL -o "$WORK/sparkle.tar.xz" \
+  "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
+echo "$SPARKLE_TOOLS_SHA256  $WORK/sparkle.tar.xz" | shasum -a 256 -c -
+tar -xJf "$WORK/sparkle.tar.xz" -C "$TOOLS" ./bin
 
 # Dependencies, tests and budgets first.
 scripts/ci.sh
@@ -86,7 +86,28 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
 APP="$WORK/Sugu.xcarchive/Products/Library/Input Methods/Sugu.app"
+
+# Xcode signs the frameworks it embeds, but not the helpers inside
+# Sparkle's, which notarization refuses. Sugu is not sandboxed, so
+# Sparkle's XPC services go unused and are removed; the rest is signed
+# from the inside out, the app last with the entitlements it was built with.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+rm -rf "${SPARKLE:?}/XPCServices" "${SPARKLE:?}/Versions/B/XPCServices"
+for code in "$SPARKLE/Versions/B/Autoupdate" "$SPARKLE/Versions/B/Updater.app" "$SPARKLE" "$APP"; do
+  # shellcheck disable=SC2086 # SIGN_FLAGS holds several flags.
+  codesign --force --options runtime $SIGN_FLAGS --sign "$DEVELOPER_ID_APPLICATION" \
+    --preserve-metadata=entitlements "$code"
+done
+
 codesign --verify --deep --strict "$APP"
+# Every piece of code inside needs the Developer ID signature and a
+# timestamp: --verify takes ad-hoc signatures, notarization does not.
+while IFS= read -r -d '' code; do
+  [[ -d "$code" ]] || file -b "$code" | grep -q "Mach-O" || continue
+  info="$(codesign -dvv "$code" 2>&1)" || { echo "unsigned: ${code#"$APP"/}" >&2; exit 1; }
+  grep -q "Authority=Developer ID Application" <<<"$info" && grep -q "^Timestamp=" <<<"$info" \
+    || { echo "not signed with Developer ID and a timestamp: ${code#"$APP"/}" >&2; exit 1; }
+done < <(find "$APP" \( -name "*.app" -o -name "*.framework" -o -name "*.xpc" -o -name "*.dylib" -o \( -type f -perm -u+x \) \) -print0)
 SIGNATURE_INFO="$(codesign -dvv "$APP" 2>&1)"
 grep -q "Authority=Developer ID Application" <<<"$SIGNATURE_INFO" \
   || { echo "the app is not signed with Developer ID" >&2; exit 1; }
@@ -114,7 +135,8 @@ gatekeeper() {
 # notarytool exits 0 for a rejected submission too; only "Accepted" passes.
 notarize() {
   local output
-  output="$(xcrun notarytool submit "$1" "${NOTARY_AUTH[@]}" --wait --timeout 30m)"
+  # Kept on failure too (a timeout, a rejection), so the log is fetched.
+  output="$(xcrun notarytool submit "$1" "${NOTARY_AUTH[@]}" --wait --timeout 30m 2>&1)" || true
   echo "$output"
   if ! grep -q "status: Accepted" <<<"$output"; then
     echo "notarization of $(basename "$1") was not accepted" >&2
@@ -135,12 +157,15 @@ ZIP="$DIST/Sugu-$VERSION.zip"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 
 # Installer package. The bundle is not relocatable, so the installer never
-# updates some other copy of Sugu.app instead of /Library/Input Methods.
+# updates some other copy of Sugu.app instead of /Library/Input Methods,
+# and not version checked, so a package always installs its own version,
+# an older one too, rather than silently keeping what is there.
 STAGE="$WORK/root"
 mkdir -p "$STAGE"
 ditto "$APP" "$STAGE/Sugu.app"
 pkgbuild --analyze --root "$STAGE" "$WORK/components.plist"
 plutil -replace 0.BundleIsRelocatable -bool NO "$WORK/components.plist"
+plutil -replace 0.BundleIsVersionChecked -bool NO "$WORK/components.plist"
 pkgbuild --root "$STAGE" --component-plist "$WORK/components.plist" \
   --install-location "/Library/Input Methods" --scripts "$ROOT/scripts/pkg" \
   --identifier com.zheng-she.inputmethod.Sugu.pkg --version "$VERSION" "$WORK/Sugu-component.pkg"
@@ -156,6 +181,11 @@ gatekeeper install "$PKG"
 SIGN_ARGS=()
 [[ -n "${SPARKLE_PRIVATE_KEY_FILE:-}" ]] && SIGN_ARGS=(--ed-key-file "$SPARKLE_PRIVATE_KEY_FILE")
 ED_SIGNATURE="$("$TOOLS/bin/sign_update" ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} -p "$ZIP")"
+# The app accepts updates only under the public key built into it; a key
+# from another pair would strand every copy of this release.
+APP_ED_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP/Contents/Info.plist")"
+swift "$ROOT/scripts/check-ed-signature.swift" "$APP_ED_KEY" "$ED_SIGNATURE" "$ZIP" \
+  || { echo "the archive's signature does not match the app's SUPublicEDKey" >&2; exit 1; }
 cat >"$DIST/release.json" <<JSON
 {
   "version": "$VERSION",

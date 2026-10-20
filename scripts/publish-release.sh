@@ -54,54 +54,39 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK:?}"' EXIT
 build_of() { sed -n 's:.*<sparkle\:version>\([0-9]*\)</sparkle\:version>.*:\1:p' "$1" | head -1; }
 
-fetch appcast.xml "$WORK/appcast.xml"
-if [[ -f "$WORK/appcast.xml" ]]; then
-  LIVE="$(build_of "$WORK/appcast.xml")"
-  [[ -z "$LIVE" || "$BUILD" -ge "$LIVE" ]] || fail "The live feed offers build $LIVE, newer than $BUILD."
-fi
-
 if [[ -n "${R2_ACCESS_KEY_ID:-}" ]]; then
   : "${R2_ACCOUNT_ID:?}" "${R2_SECRET_ACCESS_KEY:?}"
-  put() {
+  r2() {
     # R2 does not take the checksums newer AWS CLIs send by default.
     AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
       AWS_REQUEST_CHECKSUM_CALCULATION=when_required AWS_RESPONSE_CHECKSUM_VALIDATION=when_required \
-      aws --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --region auto \
-      s3 cp "$1" "s3://$BUCKET/$2" --content-type "$3" --cache-control "$4" --only-show-errors
+      aws --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --region auto "$@"
   }
+  put() { r2 s3 cp "$1" "s3://$BUCKET/$2" --content-type "$3" --cache-control "$4" --only-show-errors; }
+  # Whether the bucket holds a file, whatever the site serves.
+  stored() { r2 s3api head-object --bucket "$BUCKET" --key "$1" >/dev/null 2>&1; }
 else
   # The Cloudflare CLI sets no Cache-Control; the site's functions do.
   put() {
     cf r2 objects put "$2" --bucket-name "$BUCKET" --file "$1" --content-type "$3" >/dev/null
   }
+  stored() { false; }
 fi
-IMMUTABLE="public, max-age=31536000, immutable"
 
-# The downloads: uploaded once, then only ever confirmed.
-for file in "$PKG" "$ZIP"; do
-  key="$PREFIX/$(basename "$file")"
-  fetch "$key" "$WORK/live"
-  if [[ -f "$WORK/live" ]]; then
-    [[ "$(shasum -a 256 <"$WORK/live")" == "$(shasum -a 256 <"$file")" ]] \
-      || fail "$key is already out with other contents; release a new version instead."
-    echo "Already published: $key"
-  else
-    put "$file" "$key" application/octet-stream "$IMMUTABLE"
-    fetch "$key" "$WORK/live"
-    [[ -f "$WORK/live" ]] && cmp -s "$WORK/live" "$file" || fail "$SITE/$key does not serve what was uploaded."
-    echo "Published: $key"
-  fi
+# Every check comes before the first upload, so a refused release leaves
+# nothing behind. A list the site does not serve counts as empty only
+# when the bucket has none either: while the hosting changes, a missing
+# answer must not let an older release through.
+for file in appcast.xml releases.json; do
+  fetch "$file" "$WORK/$file"
+  [[ -f "$WORK/$file" ]] || ! stored "$file" || fail "The bucket has $file but $SITE does not serve it."
 done
-
-if [[ -d "$DIST/notes" ]]; then
-  for file in "$DIST"/notes/*.md; do
-    [[ -f "$file" && "$(basename "$file")" != body.md ]] || continue
-    put "$file" "$PREFIX/notes/$(basename "$file")" "text/markdown; charset=utf-8" no-cache
-  done
+if [[ -f "$WORK/appcast.xml" ]]; then
+  LIVE="$(build_of "$WORK/appcast.xml")"
+  [[ -z "$LIVE" || "$BUILD" -ge "$LIVE" ]] || fail "The live feed offers build $LIVE, newer than $BUILD."
 fi
 
 # Every release, newest first; a release keeps the date it first came out.
-fetch releases.json "$WORK/releases.json"
 [[ -f "$WORK/releases.json" ]] || echo '[]' >"$WORK/releases.json"
 jq -e 'type == "array"' "$WORK/releases.json" >/dev/null || fail "The live releases.json is not a list of releases."
 TODAY="$(date -u +%Y-%m-%d)"
@@ -119,6 +104,37 @@ jq --arg version "$VERSION" --arg today "$TODAY" --arg site "$SITE/$PREFIX" \
   | sort_by(.build) | reverse' "$WORK/releases.json" >"$WORK/releases.new.json"
 jq '.[0]' "$WORK/releases.new.json" >"$WORK/latest.json"
 [[ "$(jq -r .version "$WORK/latest.json")" == "$VERSION" ]] || fail "A newer release than $VERSION is already listed."
+
+IMMUTABLE="public, max-age=31536000, immutable"
+
+# The downloads: uploaded once, then only ever confirmed. Both are
+# compared with what is out before either is uploaded.
+MISSING=()
+for file in "$PKG" "$ZIP"; do
+  key="$PREFIX/$(basename "$file")"
+  fetch "$key" "$WORK/live"
+  if [[ -f "$WORK/live" ]]; then
+    cmp -s "$WORK/live" "$file" || fail "$key is already out with other contents; release a new version instead."
+    echo "Already published: $key"
+  else
+    MISSING+=("$file")
+  fi
+done
+for file in ${MISSING[@]+"${MISSING[@]}"}; do
+  key="$PREFIX/$(basename "$file")"
+  put "$file" "$key" application/octet-stream "$IMMUTABLE"
+  fetch "$key" "$WORK/live"
+  if [[ ! -f "$WORK/live" ]] || ! cmp -s "$WORK/live" "$file"; then fail "$SITE/$key does not serve what was uploaded."; fi
+  echo "Published: $key"
+done
+
+if [[ -d "$DIST/notes" ]]; then
+  for file in "$DIST"/notes/*.md; do
+    [[ -f "$file" && "$(basename "$file")" != body.md ]] || continue
+    put "$file" "$PREFIX/notes/$(basename "$file")" "text/markdown; charset=utf-8" no-cache
+  done
+fi
+
 put "$WORK/releases.new.json" releases.json "application/json" no-cache
 put "$WORK/latest.json" latest.json "application/json" no-cache
 put "$DIST/appcast.xml" appcast.xml "application/xml" no-cache

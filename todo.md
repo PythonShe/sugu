@@ -201,7 +201,11 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Learning pane: confirm before a shorter expiry deletes words
 - [x] Input: Esc after reconversion puts the selection back; `v` expressions keep their `v`; empty syllabary does not trap
 - [x] Input: per-key cross-process calls cached; Caps Lock letters recorded; stale marked text not cleared; store opened off the first key
-- [ ] Release: re-sign Sparkle's nested code and check every signature; check the Sparkle public key against the signing key
-- [ ] Release: site deploy checks out main; publish runs one at a time; guards before uploads; status check counts untracked files; notary log kept
-- [ ] Updates: gentle reminders for a background app
-- [ ] Functions: 416 for bad ranges, 412 for failed preconditions, HEAD for /download/
+- [x] Release: re-sign Sparkle's nested code and check every signature; check the Sparkle public key against the signing key
+- [x] Release: site deploy checks out main; publish runs one at a time; guards before uploads; status check counts untracked files; notary log kept
+- [x] Updates: gentle reminders for a background app
+- [x] Functions: 416 for bad ranges, 412 for failed preconditions, HEAD for /download/
+- [ ] Engines: a Chinese redeploy waits for the composition to end; stale librime session ids are refused
+- [ ] Engines: the grammar model from an immutable URL; Zenzai reloads only for its own model; Zenzai on the memory dictionary
+- [ ] Downloads: progress reported at most every 100 ms; space checked first; files replaced atomically; rime-ice installed in one step
+- [ ] Engines: a failed librime maintenance is reported

@@ -32,6 +32,7 @@ rm -rf "${WORK:?}" && mkdir -p "$WORK/root"
 ditto "$APP" "$WORK/root/Sugu.app"
 pkgbuild --analyze --root "$WORK/root" "$WORK/components.plist"
 plutil -replace 0.BundleIsRelocatable -bool NO "$WORK/components.plist"
+plutil -replace 0.BundleIsVersionChecked -bool NO "$WORK/components.plist"
 PKG="$DERIVED/Sugu-$VERSION-dev.pkg"
 pkgbuild --root "$WORK/root" --component-plist "$WORK/components.plist" \
   --install-location "/Library/Input Methods" --scripts "$ROOT/scripts/pkg" \
