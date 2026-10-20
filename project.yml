@@ -37,6 +37,25 @@ targets:
       - path: Data/LM
         type: folder
         buildPhase: resources
+    postBuildScripts:
+      # AzooKey copies a tokenizer (CC BY-SA 4.0) for Zenzai personalization,
+      # which Sugu never turns on; share-alike data is not shipped (D-072).
+      # The script sandbox lets the phase remove only what it lists.
+      - name: Remove unused share-alike data
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer/README.md
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer/config.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer/merges.txt
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer/special_tokens_map.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer/tokenizer.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer/tokenizer_config.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AzooKeyKanaKanjiConverter_EfficientNGram.bundle/Contents/Resources/tokenizer/vocab.json
+        script: |
+          [ -d "${SCRIPT_OUTPUT_FILE_0:?}" ] || exit 0
+          for file in "${SCRIPT_OUTPUT_FILE_0:?}"/*; do rm -f "$file"; done
+          rmdir "${SCRIPT_OUTPUT_FILE_0:?}"
     dependencies:
       - package: SuguKit
         product: SuguInput

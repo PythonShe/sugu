@@ -38,7 +38,6 @@ fetch mozc-LICENSE "https://raw.githubusercontent.com/google/mozc/$MOZC_REF/LICE
 fetch cldr-LICENSE "https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_REF/LICENSE" "$CLDR_LICENSE_SHA256"
 fetch llama.cpp-LICENSE "https://raw.githubusercontent.com/azooKey/llama.cpp/$LLAMA_CPP_REF/LICENSE" "$LLAMA_CPP_LICENSE_SHA256"
 fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle/$SPARKLE_VERSION/LICENSE" "$SPARKLE_LICENSE_SHA256"
-fetch cc-by-sa-4.0.txt "https://creativecommons.org/licenses/by-sa/4.0/legalcode.txt" "$CC_BY_SA_4_SHA256"
 fetch cc-by-2.0-fr.html \
   "https://raw.githubusercontent.com/creativecommons/cc-legal-tools-data/$CC_LEGAL_TOOLS_REF/docs/licenses/by/2.0/fr/legalcode.fr.html" \
   "$CC_BY_2_FR_SHA256"
@@ -96,8 +95,6 @@ entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/moz
 entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" "$CACHE/cldr-LICENSE"
 entry "CLDR $CLDR_ANNOTATIONS_REF Chinese emoji annotations (as emoji after Chinese words)" "https://cldr.unicode.org" "Unicode-DFS-2016" "$ROOT/.vendor/cldr/LICENSE"
 entry "Tatoeba sentences $TATOEBA_OPUS_VERSION (as the Japanese and Chinese language models)" "https://tatoeba.org" "CC-BY-2.0-FR" "$TATOEBA_NOTICE"
-entry "azooKey tokenizer data: ku-nlp/gpt2-small-japanese-char tokenizer (with AzooKeyKanaKanjiConverter)" \
-  "https://huggingface.co/ku-nlp/gpt2-small-japanese-char" "CC-BY-SA-4.0" "$CACHE/cc-by-sa-4.0.txt"
 entry "llama.cpp $LLAMA_CPP_REF (azooKey build, for Zenzai)" "https://github.com/azooKey/llama.cpp" "MIT" "$CACHE/llama.cpp-LICENSE"
 entry "Sparkle $SPARKLE_VERSION" "https://sparkle-project.org" "MIT (bsdiff and other parts: BSD-style, below)" "$CACHE/sparkle-LICENSE"
 entry "SwiftyMarisa $(version swiftymarisa)" "https://github.com/ensan-hcl/SwiftyMarisa" \
