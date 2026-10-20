@@ -26,7 +26,8 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         search.placeholderString = String(localized: "Search")
         search.delegate = self
         search.widthAnchor.constraint(equalToConstant: 460).isActive = true
-        form.row(String(localized: "Words:"), search)
+        let wordsLabel = String(localized: "Words:")
+        form.row(wordsLabel, search)
 
         let table = wordsEditor.table
         wordsEditor.addColumn("text", title: String(localized: "Word"), width: 100, sortKey: "text")
@@ -41,16 +42,19 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         wordsEditor.onAdd = { [weak self] in self?.addWord() }
         wordsEditor.onRemove = { [weak self] in self?.deleteSelectedWords() }
         form.row(nil, wordsEditor)
+        wordsEditor.setAccessibilityLabel(SettingsForm.name(wordsLabel))
 
-        let actions = NSStackView(views: [
-            form.makeButton(String(localized: "Forget Last Hour")) { model.forgetLastHour() },
-            form.makeButton(String(localized: "Delete All…")) { [weak self] in
-                self?.confirm(String(localized: "Delete all learned and added words?"), action: String(localized: "Delete All"), destructive: true) {
-                    model.deleteAllWords()
-                }
-            },
-        ])
-        form.row(nil, actions)
+        let forget = form.makeButton(String(localized: "Forget Last Hour…")) { [weak self] in
+            self?.confirm(String(localized: "Forget the words learned in the last hour?"), action: String(localized: "Forget"), destructive: true) {
+                model.forgetLastHour()
+            }
+        }
+        let deleteAll = form.makeButton(String(localized: "Delete All…")) { [weak self] in
+            self?.confirm(String(localized: "Delete all learned and added words?"), action: String(localized: "Delete All"), destructive: true) {
+                model.deleteAllWords()
+            }
+        }
+        form.row(nil, NSStackView(views: [forget, deleteAll]))
 
         form.gap()
         appsEditor.addColumn("app", title: String(localized: "App"), width: 440)
@@ -70,8 +74,10 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         form.row(String(localized: "Never learn in:"), appsEditor)
 
         if !model.hasStore {
-            wordsEditor.table.isEnabled = false
+            wordsEditor.setEnabled(false)
             search.isEnabled = false
+            forget.isEnabled = false
+            deleteAll.isEnabled = false
         }
         reloadWords()
         reloadApps()
@@ -204,23 +210,23 @@ private final class AddWordSheet: NSObject {
 
         let cancel = form.makeButton(String(localized: "Cancel")) { [unowned self] in close() }
         cancel.keyEquivalent = "\u{1b}"
-        addButton = form.makeButton(String(localized: "Add")) { [unowned self] in
-            model.addWord(reading: reading, text: text, mode: mode)
-            close()
-        }
+        addButton = form.makeButton(String(localized: "Add")) { [unowned self] in add() }
         addButton.keyEquivalent = "\r"
         addButton.isEnabled = false
         let buttons = NSStackView(views: [cancel, addButton])
-        form.gap()
-        form.row(nil, buttons)
+        buttons.translatesAutoresizingMaskIntoConstraints = false
 
         let content = NSView()
         content.addSubview(form.grid)
+        content.addSubview(buttons)
         NSLayoutConstraint.activate([
             form.grid.topAnchor.constraint(equalTo: content.topAnchor, constant: 20),
-            form.grid.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -20),
             form.grid.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
             form.grid.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+            buttons.topAnchor.constraint(equalTo: form.grid.bottomAnchor, constant: 20),
+            buttons.leadingAnchor.constraint(greaterThanOrEqualTo: content.leadingAnchor, constant: 20),
+            buttons.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+            buttons.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -20),
         ])
         window.contentView = content
         window.initialFirstResponder = readingField
@@ -231,6 +237,19 @@ private final class AddWordSheet: NSObject {
 
     private func validate() {
         addButton.isEnabled = !reading.trimmingCharacters(in: .whitespaces).isEmpty && !text.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    /// Adds the word and closes, or says it could not be added and stays
+    /// open for a correction.
+    private func add() {
+        guard model.addWord(reading: reading, text: text, mode: mode) else {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "The word could not be added.")
+            alert.alertStyle = .warning
+            alert.beginSheetModal(for: window)
+            return
+        }
+        close()
     }
 
     private func close() {

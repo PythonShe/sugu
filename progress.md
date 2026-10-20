@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Settings take the standard edit and close shortcuts, name every control
+  for VoiceOver, ask before removing a download or forgetting the last
+  hour, and keep one of Chinese and Japanese on (D-068).
 - A Japanese word joined to its particle may be respelled in kana when
   the model prefers it (D-067): top-1 92%.
 - Reconvert Selection works on any Chinese text, not only learned words

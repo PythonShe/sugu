@@ -24,11 +24,12 @@ final class JapanesePane: SettingsPane {
                       get: { model.preferences.typoCorrection }, set: { model.preferences.typoCorrection = $0 })
 
         form.gap()
-        let zenzai = form.checkbox(String(localized: "Use Zenzai (Experimental)"), label: String(localized: "Neural conversion:"),
+        let zenzaiLabel = String(localized: "Neural conversion:")
+        let zenzai = form.checkbox(String(localized: "Use Zenzai (Experimental)"), label: zenzaiLabel,
                                    get: { model.preferences.zenzaiEnabled && model.isInstalled(.zenzaiModel) },
                                    set: { model.preferences.zenzaiEnabled = $0 })
         form.onRefresh { zenzai.isEnabled = model.isInstalled(.zenzaiModel) }
-        let download = DownloadControl(item: .zenzaiModel, model: model)
+        let download = DownloadControl(item: .zenzaiModel, name: SettingsForm.name(zenzaiLabel), model: model)
         zenzaiDownload = download
         form.row(nil, download)
     }

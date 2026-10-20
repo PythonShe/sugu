@@ -110,6 +110,11 @@ final class SettingsModel {
     /// A mode turned back on takes its place for the preferred languages,
     /// as on first launch.
     func setEnabled(_ mode: InputMode, _ enabled: Bool) {
+        // English alone is no input method: one of Chinese and Japanese stays.
+        guard enabled || preferences.enabledModes.contains(where: { $0 != mode && $0 != .english }) else {
+            notify(.preferences)
+            return
+        }
         let modes = Set(preferences.enabledModes.filter { $0 != mode } + (enabled ? [mode] : []) + [.english])
         let order = Preferences(preferredLanguages: Locale.preferredLanguages).enabledModes
         preferences.enabledModes = order.filter(modes.contains)
@@ -126,7 +131,12 @@ final class SettingsModel {
     func isInstalled(_ item: ModelLibrary.Item) -> Bool { state(of: item) == .installed }
     func install(_ item: ModelLibrary.Item) { environment.library.install(item) }
     func cancel(_ item: ModelLibrary.Item) { environment.library.cancel(item) }
-    func remove(_ item: ModelLibrary.Item) { environment.library.remove(item) }
+    /// Removing rime-ice switches Chinese back to Wanxiang, which it was
+    /// already using without it.
+    func remove(_ item: ModelLibrary.Item) {
+        environment.library.remove(item)
+        if item == .rimeIce { preferences.chineseDictionary = .wanxiang }
+    }
 
     // MARK: Learned words
 

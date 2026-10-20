@@ -31,11 +31,16 @@ final class SettingsForm {
     // MARK: Rows
 
     /// Adds a row; `label` names the row or, for later rows of a group, is nil.
+    /// A row of several controls is a group VoiceOver reads by the label.
     @discardableResult
     func row(_ label: String?, _ view: NSView) -> NSGridRow {
         let title = label.map { NSTextField(labelWithString: $0) }
         if let label {
-            view.setAccessibilityLabel(label.trimmingCharacters(in: CharacterSet(charactersIn: ":：")))
+            if view is NSStackView && !(view is TableEditor) || view is NSGridView {
+                view.setAccessibilityElement(true)
+                view.setAccessibilityRole(.group)
+            }
+            view.setAccessibilityLabel(Self.name(label))
         }
         let row = grid.addRow(with: [title ?? NSGridCell.emptyContentView, view])
         if view is NSScrollView || view is NSStackView && (view as? NSStackView)?.orientation == .vertical {
@@ -43,6 +48,11 @@ final class SettingsForm {
             row.yPlacement = .top
         }
         return row
+    }
+
+    /// A row label without its colon, as VoiceOver reads it.
+    static func name(_ label: String) -> String {
+        label.trimmingCharacters(in: CharacterSet(charactersIn: ":："))
     }
 
     /// Space between groups of rows.
@@ -208,12 +218,21 @@ class SettingsPane: NSViewController {
 
     /// Asks before doing something that cannot be undone or that exposes data.
     func confirm(_ message: String, action title: String, destructive: Bool = false, then perform: @escaping () -> Void) {
+        NSAlert.confirm(message, action: title, destructive: destructive, in: view.window, then: perform)
+    }
+}
+
+extension NSAlert {
+    /// Asks before doing something that cannot be undone or that exposes
+    /// data, as a sheet on `window`.
+    @MainActor
+    static func confirm(_ message: String, action title: String, destructive: Bool, in window: NSWindow?, then perform: @escaping () -> Void) {
         let alert = NSAlert()
         alert.messageText = message
         let button = alert.addButton(withTitle: title)
         button.hasDestructiveAction = destructive
         alert.addButton(withTitle: String(localized: "Cancel"))
-        guard let window = view.window else {
+        guard let window else {
             if alert.runModal() == .alertFirstButtonReturn { perform() }
             return
         }

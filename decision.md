@@ -1028,3 +1028,25 @@ any call made without the owner present. Each entry: what, why, reversibility.
 - Japanese 91% → 92%, characters 98.7% → 99.1%; learned words 100%,
   context pairs 71%; the same with live conversion.
 
+
+## D-068 · Settings: standard commands, named controls, confirmations (2026-10-20)
+- Sugu runs as an agent with no menu bar, so its windows had no ⌘W and
+  text fields no ⌘Z/⌘X/⌘C/⌘V/⌘A. A hidden main menu (File: Close; Edit)
+  gives them the standard key equivalents. No Quit: the system runs the
+  input method, and ⌘Q in Settings would stop typing everywhere.
+- A row of several controls (stack or grid) is an accessibility group
+  named by its row label; a table editor passes the label to its table;
+  the text-size slider is named and its icons hidden; a download control
+  is a group named for its item, so its button is never a bare
+  "Download".
+- Removing a download and Forget Last Hour ask first, as Delete All and
+  Reset do. Export no longer asks before its save panel: choosing where
+  to save is already the confirmation.
+- Removing rime-ice switches the dictionary back to Wanxiang, which the
+  engine already used without it, so the pop-up shows what is in use.
+- Unchecking the last of Chinese and Japanese is refused: English alone
+  is no input method.
+- The Add Word sheet's buttons sit bottom-trailing outside the form, and a
+  word the store refuses (an empty normalized reading) says so and keeps
+  the sheet open. Delete removes selected table rows. From the advisor
+  survey (pass 5).

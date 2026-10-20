@@ -66,20 +66,18 @@ final class DictionariesPane: SettingsPane {
     }
 
     private func exportDictionary() {
-        confirm(String(localized: "Export your dictionary as plain text?"), action: String(localized: "Export…")) { [weak self] in
-            guard let self, let window = view.window else { return }
-            let panel = NSSavePanel()
-            panel.nameFieldStringValue = String(localized: "Sugu Dictionary") + ".txt"
-            panel.allowedContentTypes = [.plainText]
-            let data = model.exportDictionary(includeLearned: includeLearnedInExport)
-            panel.beginSheetModal(for: window) { response in
-                guard response == .OK, let url = panel.url else { return }
-                MainActor.assumeIsolated {
-                    do {
-                        try data.write(to: url, options: .atomic)
-                    } catch {
-                        self.presentError(message: error.localizedDescription)
-                    }
+        guard let window = view.window else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = String(localized: "Sugu Dictionary") + ".txt"
+        panel.allowedContentTypes = [.plainText]
+        let data = model.exportDictionary(includeLearned: includeLearnedInExport)
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let url = panel.url else { return }
+            MainActor.assumeIsolated {
+                do {
+                    try data.write(to: url, options: .atomic)
+                } catch {
+                    self?.presentError(message: error.localizedDescription)
                 }
             }
         }

@@ -25,7 +25,9 @@ final class AdvancedPane: SettingsPane {
         checkNow.isEnabled = model.updatesAvailable
 
         form.gap()
-        form.row(String(localized: "Version:"), NSTextField(labelWithString: model.version))
+        let version = NSTextField(labelWithString: model.version)
+        version.isSelectable = true
+        form.row(String(localized: "Version:"), version)
         let link = NSTextField(labelWithAttributedString: NSAttributedString(string: "github.com/PythonShe/sugu", attributes: [
             .link: URL(string: "https://github.com/PythonShe/sugu")!,
         ]))

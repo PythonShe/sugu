@@ -2,19 +2,25 @@ import AppKit
 import SuguEngines
 
 /// The controls for one downloadable item: its size and license, and the
-/// action its state allows (download, cancel, remove, retry).
+/// action its state allows (download, cancel, remove, retry). VoiceOver
+/// reads them as a group named for the item.
 @MainActor
 final class DownloadControl: NSStackView {
     private let item: ModelLibrary.Item
+    private let name: String
     private let model: SettingsModel
     private let detail = NSTextField(labelWithString: "")
     private let progress = NSProgressIndicator()
     private let button = NSButton(title: "", target: nil, action: nil)
 
-    init(item: ModelLibrary.Item, model: SettingsModel) {
+    init(item: ModelLibrary.Item, name: String, model: SettingsModel) {
         self.item = item
+        self.name = name
         self.model = model
         super.init(frame: .zero)
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
+        setAccessibilityLabel(name)
         orientation = .horizontal
         spacing = 8
         alignment = .firstBaseline
@@ -77,7 +83,11 @@ final class DownloadControl: NSStackView {
         switch model.state(of: item) {
         case .notInstalled, .failed: model.install(item)
         case .downloading, .installing: model.cancel(item)
-        case .installed: model.remove(item)
+        case .installed:
+            let model = model, item = item
+            NSAlert.confirm(String(localized: "Remove “\(name)”?"), action: String(localized: "Remove"), destructive: true, in: window) {
+                model.remove(item)
+            }
         }
     }
 }

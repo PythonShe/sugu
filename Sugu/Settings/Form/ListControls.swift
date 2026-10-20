@@ -1,10 +1,11 @@
 import AppKit
 import SuguCore
 
-/// A bordered table with the standard add and remove buttons under it.
+/// A bordered table with the standard add and remove buttons under it;
+/// Delete removes the selected rows too.
 @MainActor
 final class TableEditor: NSStackView {
-    let table = NSTableView()
+    let table = EditableTableView()
     private let scroll = NSScrollView()
     private let buttons = NSSegmentedControl()
     var onAdd: (() -> Void)?
@@ -37,6 +38,10 @@ final class TableEditor: NSStackView {
         buttons.setWidth(24, forSegment: 1)
         buttons.target = self
         buttons.action = #selector(buttonPressed)
+        table.onDelete = { [weak self] in
+            guard let self, buttons.isEnabled, buttons.isEnabled(forSegment: 1) else { return }
+            onRemove?()
+        }
         addArrangedSubview(scroll)
         addArrangedSubview(buttons)
     }
@@ -45,6 +50,16 @@ final class TableEditor: NSStackView {
 
     func setRemoveEnabled(_ enabled: Bool) {
         buttons.setEnabled(enabled, forSegment: 1)
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        table.isEnabled = enabled
+        buttons.isEnabled = enabled
+    }
+
+    /// The row's label names the table, which VoiceOver reaches directly.
+    override func setAccessibilityLabel(_ accessibilityLabel: String?) {
+        table.setAccessibilityLabel(accessibilityLabel)
     }
 
     @objc private func buttonPressed() {
@@ -62,6 +77,20 @@ final class TableEditor: NSStackView {
         column.width = max(width, column.minWidth)
         if let sortKey { column.sortDescriptorPrototype = NSSortDescriptor(key: sortKey, ascending: true) }
         table.addTableColumn(column)
+    }
+}
+
+/// A table that reports the Delete and Forward Delete keys.
+@MainActor
+final class EditableTableView: NSTableView {
+    var onDelete: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        if let onDelete, event.specialKey == .delete || event.specialKey == .deleteForward, !selectedRowIndexes.isEmpty {
+            onDelete()
+        } else {
+            super.keyDown(with: event)
+        }
     }
 }
 

@@ -27,16 +27,18 @@ final class ChinesePane: SettingsPane {
         ], get: { model.preferences.chineseDictionary }, set: { model.preferences.chineseDictionary = $0 })
         dictionary.autoenablesItems = false
         form.onRefresh { dictionary.item(at: 1)?.isEnabled = model.isInstalled(.rimeIce) }
-        let ice = DownloadControl(item: .rimeIce, model: model)
+        let iceLabel = String(localized: "rime-ice:")
+        let ice = DownloadControl(item: .rimeIce, name: SettingsForm.name(iceLabel), model: model)
         downloads.append(ice)
-        form.row(String(localized: "rime-ice:"), ice)
+        form.row(iceLabel, ice)
 
         form.gap()
-        let grammar = form.checkbox(String(localized: "Use the grammar model"), label: String(localized: "Grammar model:"),
+        let grammarLabel = String(localized: "Grammar model:")
+        let grammar = form.checkbox(String(localized: "Use the grammar model"), label: grammarLabel,
                                     get: { model.preferences.useGrammarModel && model.isInstalled(.grammarModel) },
                                     set: { model.preferences.useGrammarModel = $0 })
         form.onRefresh { grammar.isEnabled = model.isInstalled(.grammarModel) }
-        let grammarDownload = DownloadControl(item: .grammarModel, model: model)
+        let grammarDownload = DownloadControl(item: .grammarModel, name: SettingsForm.name(grammarLabel), model: model)
         downloads.append(grammarDownload)
         form.row(nil, grammarDownload)
     }
