@@ -5,15 +5,17 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
     private let editor = TableEditor(height: 200, width: 460)
     private var apps: [String] = []
     private let modes: [InputMode?] = [nil, .chinese, .japanese, .english]
+    private let scripts: [ChineseScript?] = [nil] + ChineseScript.allCases
 
     override func build() {
         let model = model
         form.checkbox(String(localized: "Remember the mode for each app"),
                       get: { model.preferences.rememberModePerApp }, set: { model.preferences.rememberModePerApp = $0 })
         form.gap()
-        editor.addColumn("app", title: String(localized: "App"), width: 200)
-        editor.addColumn("mode", title: String(localized: "Mode"), width: 130)
-        editor.addColumn("escape", title: String(localized: "Esc to English"), width: 100)
+        editor.addColumn("app", title: String(localized: "App"), width: 150)
+        editor.addColumn("mode", title: String(localized: "Mode"), width: 100)
+        editor.addColumn("script", title: String(localized: "Chinese Script"), width: 120)
+        editor.addColumn("escape", title: String(localized: "Esc to English"), width: 90)
         editor.table.dataSource = self
         editor.table.delegate = self
         editor.onAdd = { [weak self] in self?.addApps() }
@@ -59,14 +61,21 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
         case "app":
             return AppInfo.cell(for: bundleID, in: tableView)
         case "mode":
-            let popUp = NSPopUpButton(frame: .zero, pullsDown: false)
-            popUp.controlSize = .small
-            popUp.isBordered = false
-            popUp.addItems(withTitles: modes.map { $0?.localizedName ?? String(localized: "Automatic") })
-            popUp.selectItem(at: modes.firstIndex(of: rule.defaultMode) ?? 0)
+            let popUp = cellPopUp(titles: modes.map { $0?.localizedName ?? String(localized: "Automatic") },
+                                  selected: modes.firstIndex(of: rule.defaultMode) ?? 0)
+            popUp.setAccessibilityLabel(String(localized: "Mode"))
             form.bind(popUp) { [weak self] control in
                 guard let self, let index = (control as? NSPopUpButton)?.indexOfSelectedItem else { return }
                 model.preferences.appRules[bundleID]?.defaultMode = modes[index]
+            }
+            return popUp
+        case "script":
+            let popUp = cellPopUp(titles: scripts.map { $0?.title ?? String(localized: "Default") },
+                                  selected: scripts.firstIndex(of: rule.chineseScript) ?? 0)
+            popUp.setAccessibilityLabel(String(localized: "Chinese Script"))
+            form.bind(popUp) { [weak self] control in
+                guard let self, let index = (control as? NSPopUpButton)?.indexOfSelectedItem else { return }
+                model.preferences.appRules[bundleID]?.chineseScript = scripts[index]
             }
             return popUp
         case "escape":
@@ -80,5 +89,14 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
         default:
             return nil
         }
+    }
+
+    private func cellPopUp(titles: [String], selected: Int) -> NSPopUpButton {
+        let popUp = NSPopUpButton(frame: .zero, pullsDown: false)
+        popUp.controlSize = .small
+        popUp.isBordered = false
+        popUp.addItems(withTitles: titles)
+        popUp.selectItem(at: selected)
+        return popUp
     }
 }

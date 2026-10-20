@@ -505,6 +505,28 @@
         }
       }
     },
+    "Chinese Script": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中国語の字形"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文字形"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文字形"
+          }
+        }
+      }
+    },
     "Choose…": {
       "extractionState": "manual",
       "localizations": {
@@ -616,6 +638,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "資料檔案夾："
+          }
+        }
+      }
+    },
+    "Default": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デフォルト"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設"
           }
         }
       }
