@@ -126,7 +126,7 @@ final class AppleLanguageAssistant: LanguageAssistant {
                 return try await session.respond(to: prompt, generating: type).content
             } catch {
                 // The description of a refusal can quote the prompt; log the kind only.
-                Log.app.error("Language model request failed: \(String(describing: type(of: error)), privacy: .public)")
+                Log.app.error("Language model request failed: \(String(describing: Swift.type(of: error)), privacy: .public)")
             }
         }
         return nil
