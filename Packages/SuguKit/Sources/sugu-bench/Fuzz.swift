@@ -180,7 +180,8 @@ enum Fuzz {
         case 55..<60:
             return printable(Character(UnicodeScalar(UInt8(97 + random.next(below: 26)))), shift: random.next(below: 4) == 0)
         case 60..<68: return ("␣", KeyInput(keyCode: VirtualKey.space, characters: " "))
-        case 68..<74: return ("⌫", KeyInput(keyCode: VirtualKey.delete, characters: "\u{7f}"))
+        case 68..<73: return ("⌫", KeyInput(keyCode: VirtualKey.delete, characters: "\u{7f}"))
+        case 73..<74: return ("⇧⌫", KeyInput(keyCode: VirtualKey.delete, characters: "\u{7f}", modifiers: .shift))
         case 74..<78: return printable(Character(String(1 + random.next(below: 9))))
         case 78..<81: return special("←", VirtualKey.left)
         case 81..<84: return special("→", VirtualKey.right)

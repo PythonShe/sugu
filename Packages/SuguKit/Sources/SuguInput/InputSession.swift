@@ -72,8 +72,13 @@ public final class InputSession {
     private var lastCJKMode: InputMode
     /// The engine composing right now (a language engine or the `v`
     /// expression engine).
-    var active: (any CompositionEngine)?
+    var active: (any CompositionEngine)? {
+        didSet { if active == nil { forgotten = [] } }
+    }
     var list = CandidateList()
+    /// Candidates forgotten during this composition, kept out of the list
+    /// though an engine still has them until it reads its words again.
+    var forgotten: Set<String> = []
     /// Japanese shows the candidate window from the second conversion key.
     var showsConversionWindow = false
     /// Text a function key (F6–F10) turned the composition into.

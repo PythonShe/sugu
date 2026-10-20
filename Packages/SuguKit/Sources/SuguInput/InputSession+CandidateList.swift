@@ -68,7 +68,7 @@ extension InputSession {
             chineseText: { [engines] in engines.chineseText($0) },
             offersChineseForms: preferences.enabledModes.contains(.chinese)
         ))
-        return mergingSuggestions(into: candidates, reading: state.reading)
+        return mergingSuggestions(into: candidates, reading: state.reading).filter { !forgotten.contains($0.text) }
     }
 
     func publish() {

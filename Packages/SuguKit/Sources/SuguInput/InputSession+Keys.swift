@@ -69,6 +69,8 @@ extension InputSession {
             return false
         }
         guard let engine = active, !engine.state.isEmpty else { return start(key) }
+        // ⇧⌫ on a learned candidate forgets it; elsewhere it is ⌫.
+        if key.keyCode == VirtualKey.delete, key.modifiers.contains(.shift), forgetHighlighted() { return true }
         switch composition(of: engine) {
         case .live: return handleLive(key, engine: engine)
         case .staged: return handleStaged(key, engine: engine)

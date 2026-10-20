@@ -147,3 +147,12 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Latin letters and punctuation inside the sentence (D-073)
 - [x] Eten and IBM layouts (D-073)
 - [ ] Taiwanese readings and forms — check on device
+
+## 17. Habits from other input methods (advisor pass 8, D-074)
+- [x] ⇧⌫ forgets a learned candidate (D-074)
+- [ ] Google's z-symbols in romaji (z. … z/ ・ zh ←)
+- [ ] `[` `]` commit the first or last character of the highlighted Chinese word
+- [ ] Add Word from the input menu, filled from the selection
+- [ ] ⌃. switches the punctuation width
+- [ ] Symbols by their Chinese names
+- [ ] The mode in the menu bar

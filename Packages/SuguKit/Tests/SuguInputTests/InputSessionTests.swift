@@ -200,6 +200,26 @@ struct InputSessionTests {
         #expect(session.isEmpty)
     }
 
+    /// ⇧⌫ forgets a learned candidate; on any other it is ⌫.
+    @Test func shiftDeleteForgetsALearnedCandidate() {
+        let session = makeSession()
+        store.learn(Commit(text: "拟好", reading: "nihao"), mode: .chinese)
+        _ = store.addUserWord(reading: "nihao", text: "你号", mode: .chinese)
+        type("nihao", into: session)
+        #expect(session.display.candidates?.candidates.prefix(2).map(\.text) == ["你号", "拟好"])
+        _ = session.handle(KeyInput(keyCode: VirtualKey.tab, characters: "\t"))
+        let shiftDelete = KeyInput(keyCode: VirtualKey.delete, characters: "\u{7f}", modifiers: [.shift])
+        #expect(session.handle(shiftDelete))
+        #expect(store.lookup("nihao", mode: .chinese).map(\.text) == ["你号"])
+        #expect(session.display.candidates?.candidates.contains { $0.text == "拟好" } == false)
+        #expect(client.markedText == "nihao")
+        // A word the user added stays, and the key deletes.
+        #expect(session.display.candidates?.candidates.first?.text == "你号")
+        #expect(session.handle(shiftDelete))
+        #expect(client.markedText == "niha")
+        #expect(store.lookup("nihao", mode: .chinese).map(\.text) == ["你号"])
+    }
+
     @Test func secureInputPassesEverythingThrough() {
         let session = makeSession()
         session.isSecureInput = true

@@ -1240,3 +1240,13 @@ any call made without the owner present. Each entry: what, why, reversibility.
   and fuzz; then the owner's device checks — wanxiang's readings are
   mainland ones, so Taiwanese readings (垃圾 ㄌㄜˋ ㄙㄜˋ) and the s2tw
   forms need a native check before Zhuyin is offered.
+
+## D-074 · Habits from other input methods (advisor pass 8) (2026-10-20)
+- ⇧⌫ on a highlighted candidate that is a learned word forgets it, as
+  ⌃⌦ takes a word out of Google Japanese Input's and ATOK's history:
+  every learned use of its text in the mode goes (the script's form
+  matched for Chinese); words the user added or pinned stay, and on any
+  other candidate the key is ⌫, so a held Shift still deletes. An engine
+  that had the word from the learned store keeps it until it reads its
+  words again (librime between compositions), so the text stays out of
+  the list for the rest of the composition.

@@ -152,6 +152,25 @@ extension InputSession {
         }
     }
 
+    /// Forgets the highlighted candidate as a learned word, as ⌃⌦ takes a
+    /// word out of Google's and ATOK's history: its learned uses in this
+    /// mode go, words the user added or pinned stay. False when it is no
+    /// learned word.
+    func forgetHighlighted() -> Bool {
+        guard let candidate = list.highlighted, let store else { return false }
+        let shown = candidate.text
+        let ids = store.allWords(mode: mode)
+            .filter { $0.kind == .learned && !$0.pinned && ($0.text == shown || (mode == .chinese && engines.chineseText($0.text) == shown)) }
+            .map(\.id)
+        guard !ids.isEmpty else { return false }
+        store.delete(ids: ids)
+        engines.learnedWordsDidChange()
+        forgotten.insert(shown)
+        undoable = nil
+        refresh()
+        return true
+    }
+
     /// The learned word a candidate shows, before script conversion.
     private func learnedText(shown: String, reading: String) -> String {
         guard mode == .chinese, let words = store?.lookup(reading, mode: mode) else { return shown }
