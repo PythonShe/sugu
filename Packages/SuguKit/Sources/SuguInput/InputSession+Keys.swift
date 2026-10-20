@@ -85,8 +85,8 @@ extension InputSession {
             return false
         case .chinese:
             if typesZhuyin {
-                guard Zhuyin.keyboard[character] != nil else { break }
-                begin(with: engines.engine(for: .chinese) ?? loading, input: String(character))
+                guard let typed = zhuyinKey(for: character), Zhuyin.keyboard[typed] != nil else { break }
+                begin(with: engines.engine(for: .chinese) ?? loading, input: String(typed))
                 return true
             }
             if character == ComputedCandidates.chineseNumberPrefix {
@@ -236,6 +236,12 @@ extension InputSession {
 
     var typesZhuyin: Bool { mode == .chinese && preferences.chineseKeyboard == .zhuyin }
 
+    /// The standard layout's key for a key of the Zhuyin layout in use,
+    /// which the engines read; nil for a key with no symbol or tone.
+    func zhuyinKey(for character: Character) -> Character? {
+        Zhuyin.standardKeys(for: preferences.zhuyinLayout)[character]
+    }
+
     /// The sentence stays converted as syllables are typed. Space ends a
     /// syllable with the first tone, and between syllables opens the
     /// candidate window on the words at the caret, as ↓ does; there digits
@@ -296,9 +302,12 @@ extension InputSession {
             commitComposition()
             return false
         }
-        if engine.accepts(character) {
-            engine.insert(String(character))
-            refresh()
+        if let typed = zhuyinKey(for: character) {
+            // A tone with no syllable to take it does nothing.
+            if engine.accepts(typed) {
+                engine.insert(String(typed))
+                refresh()
+            }
             return true
         }
         // Punctuation, and letters typed with Shift, join the sentence, as

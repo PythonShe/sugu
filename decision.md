@@ -1226,6 +1226,15 @@ any call made without the owner present. Each entry: what, why, reversibility.
   never the whole (`Commit.mayBeWord`); ⌃⌫ brings it back with them.
   Ctrl punctuation is left out: ⌃; and ⌃[ are F8 and Esc, and Shift
   types the rest.
+- Layouts: the standard (大千), Eten (倚天) and IBM, from McBopomofo's
+  Mandarin library (MIT) and checked to place every symbol and tone once.
+  The session turns each key of the layout in use into the standard
+  layout's key with that symbol or tone, so the engines, the loading
+  buffer and the bench know one layout. A key of the layout that the
+  sentence cannot take (a tone with no syllable) does nothing rather than
+  reach the app. Hsu (許氏) and Eten 26, whose keys stand for two symbols
+  by position, are left out. Settings show the layout under the
+  keyboard, dimmed for pinyin; CI fuzzes Eten and IBM.
 - Phases: syllables, layout and tone codes; the engine;
   the session's keys; Settings and the mode indicator; learning, bench
   and fuzz; then the owner's device checks — wanxiang's readings are

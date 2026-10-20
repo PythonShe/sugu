@@ -238,6 +238,20 @@ extension RimeEngineTests {
         #expect(client.document == "你好，A")
     }
 
+    /// Other layouts' keys type the same syllables.
+    @Test func zhuyinSessionTypesOnTheEtenLayout() async throws {
+        let (session, client) = try await session()
+        var preferences = session.preferences
+        preferences.zhuyinLayout = .eten
+        session.preferences = preferences
+        type("ne3hz3", into: session)
+        #expect(client.marked == "你好")
+        _ = session.handle(KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
+        // 1 is a tone there, which starts nothing.
+        #expect(!session.handle(KeyInput(keyCode: 0, characters: "1")))
+        #expect(client.document == "你好")
+    }
+
     @Test func zhuyinSessionCommitsTheStartOfALongSentence() async throws {
         let (session, client) = try await session()
         type(String(repeating: "a8 ", count: ZhuyinEngine.longestSentence + 1), into: session)

@@ -39,3 +39,7 @@ swift run --package-path Packages/SuguKit -c release sugu-bench \
   --data Data --bench Bench --fuzz 200 2>/dev/null
 swift run --package-path Packages/SuguKit -c release sugu-bench \
   --data Data --bench Bench --fuzz 200 --zhuyin 2>/dev/null
+for layout in eten ibm; do
+  swift run --package-path Packages/SuguKit -c release sugu-bench \
+    --data Data --bench Bench --fuzz 50 --zhuyin --zhuyin-layout "$layout" 2>/dev/null
+done

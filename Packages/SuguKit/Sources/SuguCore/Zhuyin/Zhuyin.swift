@@ -42,11 +42,49 @@ public enum Zhuyin {
     /// Keys that end a syllable with its tone.
     public static let toneKeys: [Character: Tone] = [" ": .first, "6": .second, "3": .third, "4": .fourth, "7": .neutral]
 
-    /// The keys that type a toned syllable on the standard layout.
-    public static func keys(typing syllable: Syllable) -> String {
-        let symbols = String(syllable.symbols.compactMap { symbol in keyboard.first { $0.value == symbol }?.key })
-        guard let tone = syllable.tone, let key = toneKeys.first(where: { $0.value == tone })?.key else { return symbols }
-        return symbols + String(key)
+    /// The standard layout's key for each key of `layout`, the one with
+    /// the same symbol or tone, which is what Sugu's Zhuyin engine reads.
+    public static func standardKeys(for layout: ZhuyinLayout) -> [Character: Character] {
+        switch layout {
+        case .standard: standardKeys
+        case .eten: etenKeys
+        case .ibm: ibmKeys
+        }
+    }
+
+    private static let standardKeys = keys(symbols: keyboard, tones: toneKeys)
+    /// Eten's (倚天) and IBM's layouts, as McBopomofo's Mandarin library
+    /// (MIT) and the layouts' own charts place the symbols.
+    private static let etenKeys = keys(symbols: [
+        "b": "ㄅ", "p": "ㄆ", "m": "ㄇ", "f": "ㄈ", "d": "ㄉ", "t": "ㄊ", "n": "ㄋ", "l": "ㄌ",
+        "v": "ㄍ", "k": "ㄎ", "h": "ㄏ", "g": "ㄐ", "7": "ㄑ", "c": "ㄒ",
+        ",": "ㄓ", ".": "ㄔ", "/": "ㄕ", "j": "ㄖ", ";": "ㄗ", "'": "ㄘ", "s": "ㄙ",
+        "e": "ㄧ", "x": "ㄨ", "u": "ㄩ",
+        "a": "ㄚ", "o": "ㄛ", "r": "ㄜ", "w": "ㄝ", "i": "ㄞ", "q": "ㄟ", "z": "ㄠ", "y": "ㄡ",
+        "8": "ㄢ", "9": "ㄣ", "0": "ㄤ", "-": "ㄥ", "=": "ㄦ",
+    ], tones: [" ": .first, "2": .second, "3": .third, "4": .fourth, "1": .neutral])
+    private static let ibmKeys = keys(symbols: [
+        "1": "ㄅ", "2": "ㄆ", "3": "ㄇ", "4": "ㄈ", "5": "ㄉ", "6": "ㄊ", "7": "ㄋ", "8": "ㄌ",
+        "9": "ㄍ", "0": "ㄎ", "-": "ㄏ", "q": "ㄐ", "w": "ㄑ", "e": "ㄒ",
+        "r": "ㄓ", "t": "ㄔ", "y": "ㄕ", "u": "ㄖ", "i": "ㄗ", "o": "ㄘ", "p": "ㄙ",
+        "a": "ㄧ", "s": "ㄨ", "d": "ㄩ",
+        "f": "ㄚ", "g": "ㄛ", "h": "ㄜ", "j": "ㄝ", "k": "ㄞ", "l": "ㄟ", ";": "ㄠ", "z": "ㄡ",
+        "x": "ㄢ", "c": "ㄣ", "v": "ㄤ", "b": "ㄥ", "n": "ㄦ",
+    ], tones: [" ": .first, "m": .second, ",": .third, ".": .fourth, "/": .neutral])
+
+    private static func keys(symbols: [Character: Character], tones: [Character: Tone]) -> [Character: Character] {
+        let symbolKeys = Dictionary(uniqueKeysWithValues: keyboard.map { ($0.value, $0.key) })
+        let toneKeys = Dictionary(uniqueKeysWithValues: toneKeys.map { ($0.value, $0.key) })
+        return symbols.compactMapValues { symbolKeys[$0] }.merging(tones.compactMapValues { toneKeys[$0] }) { first, _ in first }
+    }
+
+    /// The keys that type a toned syllable on `layout`.
+    public static func keys(typing syllable: Syllable, on layout: ZhuyinLayout = .standard) -> String {
+        var keys = String(syllable.symbols.compactMap { symbol in keyboard.first { $0.value == symbol }?.key })
+        if let tone = syllable.tone, let key = toneKeys.first(where: { $0.value == tone })?.key { keys.append(key) }
+        guard layout != .standard else { return keys }
+        let layoutKeys = Dictionary(standardKeys(for: layout).map { ($0.value, $0.key) }) { first, _ in first }
+        return String(keys.compactMap { layoutKeys[$0] })
     }
 
     private static let initials: [Character: String] = [

@@ -73,6 +73,18 @@ struct ZhuyinTests {
 extension ZhuyinTests {
     @Test func syllablesTypeOnTheirKeys() throws {
         let syllables = try #require(Zhuyin.syllables(ofCodes: "ni3hao3ma1de5"))
-        #expect(syllables.map(Zhuyin.keys(typing:)).joined() == "su3cl3a8 2k7")
+        #expect(syllables.map { Zhuyin.keys(typing: $0) }.joined() == "su3cl3a8 2k7")
+        #expect(syllables.map { Zhuyin.keys(typing: $0, on: .eten) }.joined() == "ne3hz3ma dr1")
+        #expect(syllables.map { Zhuyin.keys(typing: $0, on: .ibm) }.joined() == "7a,-;,3f 5h/")
+    }
+
+    /// Every layout has a key for each symbol and tone, and no key twice.
+    @Test func layoutsHaveEverySymbolAndTone() {
+        let standard = Set(Zhuyin.keyboard.keys).union(Zhuyin.toneKeys.keys)
+        for layout in ZhuyinLayout.allCases {
+            let keys = Zhuyin.standardKeys(for: layout)
+            #expect(Set(keys.values) == standard, "\(layout)")
+            #expect(keys.count == standard.count, "\(layout)")
+        }
     }
 }

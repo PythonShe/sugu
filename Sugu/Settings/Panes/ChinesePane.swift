@@ -25,13 +25,19 @@ final class ChinesePane: SettingsPane {
                    })
         let scheme = form.popUp(String(localized: "Pinyin:"), options: PinyinScheme.allCases.map { ($0.title, $0) },
                                 get: { model.preferences.pinyinScheme }, set: { model.preferences.pinyinScheme = $0 })
+        let layout = form.popUp(String(localized: "Zhuyin:"), options: ZhuyinLayout.allCases.map { ($0.title, $0) },
+                                get: { model.preferences.zhuyinLayout }, set: { model.preferences.zhuyinLayout = $0 })
         form.popUp(String(localized: "Characters:"), options: ChineseScript.allCases.map { ($0.title, $0) },
                    get: { model.preferences.chineseScript }, set: { model.preferences.chineseScript = $0 })
 
         form.gap()
         form.row(String(localized: "Fuzzy pinyin:"), fuzzyGrid())
-        // Pinyin's schemes and fuzzy sounds have no part in Zhuyin.
-        form.onRefresh { scheme.isEnabled = model.preferences.chineseKeyboard == .pinyin }
+        // Pinyin's schemes and fuzzy sounds have no part in Zhuyin, nor
+        // Zhuyin's layouts in pinyin.
+        form.onRefresh {
+            scheme.isEnabled = model.preferences.chineseKeyboard == .pinyin
+            layout.isEnabled = model.preferences.chineseKeyboard == .zhuyin
+        }
 
         form.gap()
         let dictionary = form.popUp(String(localized: "Dictionary:"), options: [
@@ -92,6 +98,16 @@ extension ChineseKeyboard {
         switch self {
         case .pinyin: String(localized: "Pinyin")
         case .zhuyin: String(localized: "Zhuyin")
+        }
+    }
+}
+
+extension ZhuyinLayout {
+    var title: String {
+        switch self {
+        case .standard: String(localized: "Standard")
+        case .eten: String(localized: "Eten")
+        case .ibm: String(localized: "IBM")
         }
     }
 }

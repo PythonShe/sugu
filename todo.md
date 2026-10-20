@@ -145,4 +145,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Zhuyin reconversion from text (toned readings), respelling, and a Zhuyin bench run (D-073)
 - [x] Esc takes the pending syllable, tones retone the last one, long sentences commit their start, Taiwan's characters by default (D-073)
 - [x] Latin letters and punctuation inside the sentence (D-073)
+- [x] Eten and IBM layouts (D-073)
 - [ ] Taiwanese readings and forms — check on device

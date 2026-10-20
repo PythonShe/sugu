@@ -18,6 +18,7 @@ public struct Preferences: Codable, Sendable, Equatable {
 
     // MARK: Chinese
     public var chineseKeyboard: ChineseKeyboard = .pinyin
+    public var zhuyinLayout: ZhuyinLayout = .standard
     public var pinyinScheme: PinyinScheme = .fullPinyin
     public var chineseScript: ChineseScript = .simplified
     public var fuzzyPinyin: Set<FuzzyPinyin> = []
@@ -94,6 +95,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.leftContextRanking, into: &leftContextRanking)
         load(.documentVocabulary, into: &documentVocabulary)
         load(.chineseKeyboard, into: &chineseKeyboard)
+        load(.zhuyinLayout, into: &zhuyinLayout)
         load(.pinyinScheme, into: &pinyinScheme)
         load(.chineseScript, into: &chineseScript)
         load(.fuzzyPinyin, into: &fuzzyPinyin)
@@ -209,6 +211,14 @@ public enum ChineseScript: String, Codable, Sendable, CaseIterable {
 public enum ChineseKeyboard: String, Codable, Sendable, CaseIterable {
     case pinyin
     case zhuyin
+}
+
+/// Where the Zhuyin symbols are on the keyboard: the standard (大千)
+/// layout, Eten's (倚天), or IBM's.
+public enum ZhuyinLayout: String, Codable, Sendable, CaseIterable {
+    case standard
+    case eten
+    case ibm
 }
 
 public enum PinyinScheme: String, Codable, Sendable, CaseIterable {

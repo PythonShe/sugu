@@ -69,7 +69,7 @@ enum Fuzz {
                 var zhuyin: Bool { session.mode == .chinese && preferences.chineseKeyboard == .zhuyin }
                 do {
                     for _ in 0..<random.next(below: 60) + 5 {
-                        let (name, action) = randomAction(&random, mode: mode, zhuyin: mode == .chinese && preferences.chineseKeyboard == .zhuyin)
+                        let (name, action) = randomAction(&random, mode: mode, zhuyin: mode == .chinese && preferences.chineseKeyboard == .zhuyin ? preferences.zhuyinLayout : nil)
                         keys.append(name)
                         if trace { FileHandle.standardError.write(Data("  \(name) → \(session.display.segments.map(\.text).joined())\n".utf8)) }
                         // In Zhuyin, Return in the candidate window takes the
@@ -128,8 +128,11 @@ enum Fuzz {
     private static let japaneseSyllables = "a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n nn ga gi gu ge go za ji zu ze zo da de do ba bi bu be bo pa pi pu pe po kya kyu kyo sha shu sho cha chu cho ryo tt kk xtu -".split(separator: " ")
     private static let pinyinSyllables = "a o e ai ei ao ou an en ang eng er ba bo bai bei bao ban ben bang beng bi bie biao bian bin bing bu ca ce cai cao can cang ci cu cha che chi chu chuan da de dai dao dan dang deng di dian ding du dui duo fa fo fei fan fen fang feng fu ga ge gai gao gan gen gang gong gu gua guo ha he hai hao han hen hang hong hu hua huo ji jia jie jian jin jing ju jue ka ke kai kan kang kong ku kuai la le lai lao lan lang li lian liang lin ling lu lv lve ma me mai mao man men mang mi mian ming mu na ne nai nan nen ni nian nin nu nv pa po pai pao pan pen pi pian pin ping pu qi qia qian qin qing qu quan ran ren ri rou ru sa se san sen si su shi shang shen sheng shu ta te tai tan tang ti tian ting tu tong wa wo wai wan wen wang wu xi xia xian xin xing xu xue ya ye yao yan yin ying yong yu yuan za ze zai zan zi zu zhi zhang zhe zheng zhong zhu '".split(separator: " ")
 
-    private static let zhuyinSymbols = Zhuyin.keyboard.keys.sorted()
-    private static let zhuyinTones: [Character] = Zhuyin.toneKeys.keys.filter { $0 != " " }.sorted()
+    /// A Zhuyin layout's symbol keys and its tone keys other than Space.
+    private static func zhuyinKeys(_ layout: ZhuyinLayout) -> (symbols: [Character], tones: [Character]) {
+        let keys = Zhuyin.standardKeys(for: layout)
+        return (keys.filter { Zhuyin.keyboard[$0.value] != nil }.keys.sorted(), keys.filter { $0.key != " " && Zhuyin.toneKeys[$0.value] != nil }.keys.sorted())
+    }
 
     enum Action {
         case key(KeyInput)
@@ -143,7 +146,7 @@ enum Fuzz {
 
     /// What a person might do while composing, with its name for the
     /// failure report.
-    private static func randomAction(_ random: inout SplitMix, mode: InputMode, zhuyin: Bool) -> (String, Action) {
+    private static func randomAction(_ random: inout SplitMix, mode: InputMode, zhuyin: ZhuyinLayout?) -> (String, Action) {
         switch random.next(below: 1000) {
         case 0..<10: return ("⇧tap", .shiftTap)
         case 10..<15: return ("⌃␣", .switchLanguage)
@@ -155,7 +158,7 @@ enum Fuzz {
     }
 
     /// A key a person might press while composing.
-    private static func randomKey(_ random: inout SplitMix, mode: InputMode, zhuyin: Bool) -> (String, KeyInput) {
+    private static func randomKey(_ random: inout SplitMix, mode: InputMode, zhuyin: ZhuyinLayout?) -> (String, KeyInput) {
         func special(_ name: String, _ keyCode: UInt16, _ modifiers: KeyModifiers = []) -> (String, KeyInput) {
             (name, KeyInput(keyCode: keyCode, characters: "", modifiers: modifiers))
         }
@@ -164,9 +167,10 @@ enum Fuzz {
             return (String(typed), KeyInput(keyCode: keyCodes[character] ?? 0, characters: String(typed), charactersIgnoringModifiers: String(character), modifiers: shift ? .shift : []))
         }
         switch random.next(below: 100) {
-        case 0..<55 where zhuyin && mode == .chinese:
+        case 0..<55 where zhuyin != nil && mode == .chinese:
             // Symbols three times as often as tones, as syllables have them.
-            let keys = random.next(below: 4) == 0 ? zhuyinTones : zhuyinSymbols
+            let layout = zhuyinKeys(zhuyin ?? .standard)
+            let keys = random.next(below: 4) == 0 ? layout.tones : layout.symbols
             return printable(keys[random.next(below: keys.count)])
         case 0..<55:
             let syllables = mode == .japanese ? japaneseSyllables : pinyinSyllables

@@ -73,7 +73,7 @@ enum Bench {
             // librime ranks it highest under, as reconversion finds it.
             let cases = try load(bench.appendingPathComponent("zh.tsv")).compactMap { test -> Case? in
                 guard let codes = engines.chineseReading(of: test.expected), let syllables = Zhuyin.syllables(ofCodes: codes) else { return nil }
-                return Case(typed: syllables.map(Zhuyin.keys(typing:)).joined(), expected: test.expected)
+                return Case(typed: syllables.map { Zhuyin.keys(typing: $0, on: preferences.zhuyinLayout) }.joined(), expected: test.expected)
             }
             report.chinese = measure(session, mode: .chinese, cases: cases, zhuyin: true)
         } else {

@@ -1050,6 +1050,29 @@
         }
       }
     },
+    "Eten": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倚天"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倚天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倚天"
+          }
+        }
+      }
+    },
     "Export:": {
       "extractionState": "manual",
       "localizations": {
@@ -1411,6 +1434,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "橫排"
+          }
+        }
+      }
+    },
+    "IBM": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IBM"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IBM"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IBM"
           }
         }
       }
@@ -3000,6 +3046,29 @@
         }
       }
     },
+    "Standard": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大千"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大千"
+          }
+        }
+      }
+    },
     "Status:": {
       "extractionState": "manual",
       "localizations": {
@@ -3868,6 +3937,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "注音"
+          }
+        }
+      }
+    },
+    "Zhuyin:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注音："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注音："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注音："
           }
         }
       }
