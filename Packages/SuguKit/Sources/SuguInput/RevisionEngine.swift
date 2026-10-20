@@ -7,7 +7,7 @@ import SuguCore
 final class RevisionEngine: CompositionEngine {
     let original: String
     let task: TextTask
-    let traits = EngineTraits(hasConversionPhase: false, learnsCommits: false, takesSuguCandidates: false, revisesText: true)
+    let traits = EngineTraits(composition: .live, learnsCommits: false, takesSuguCandidates: false, revisesText: true)
     private(set) var state = CompositionState.empty
     private var results: [String] = []
 

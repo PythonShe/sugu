@@ -171,6 +171,12 @@ public final class SentenceRespeller {
     }
     private var longestUserWord = 0
 
+    /// Whether `text` (Simplified) is a word of the list read as
+    /// `syllables`, or one of the user's.
+    public func knows(_ text: String, readAs syllables: [String]) -> Bool {
+        userWords.contains(text) || words.logProbability(of: text, readAs: syllables[...]) != nil
+    }
+
     /// Characters of the text before a sentence that the model conditions on.
     public var contextLength: Int { model.order - 1 }
 

@@ -12,7 +12,8 @@ extension InputSession {
         let waiting = loading.state
         let shownForm = transformed
         begin(with: engine, input: waiting.reading)
-        let caretFromEnd = waiting.reading.count - waiting.caret
+        // Zhuyin keys are not one character each; its caret stays at the end.
+        let caretFromEnd = engine.traits.composition == .live ? waiting.reading.count - waiting.caret : 0
         if caretFromEnd > 0 {
             for _ in 0..<caretFromEnd { engine.moveCaret(.left) }
             refresh()
@@ -43,7 +44,9 @@ extension InputSession {
             commitHighlighted()
             return
         }
-        if !engine.traits.hasConversionPhase {
+        if composition(of: engine) == .sentence {
+            commit(engine.commitConverted() ?? engine.commitRaw())
+        } else if composition(of: engine) == .live {
             commitHighlighted()
             // A partial selection (a phrase for the first syllables) leaves
             // the rest composing; focus is leaving, so commit all of it.
@@ -85,7 +88,7 @@ extension InputSession {
             commitText(transformed, reading: reading, learn: false)
             return
         }
-        guard let index = list.highlight ?? (engine.traits.hasConversionPhase ? nil : 0),
+        guard let index = list.highlight ?? (composition(of: engine) == .live ? 0 : nil),
               list.candidates.indices.contains(index) else {
             commit(engine.commitConverted() ?? engine.commitRaw())
             return

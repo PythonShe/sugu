@@ -8,11 +8,14 @@ import SuguCore
 final class LoadingEngine: CompositionEngine {
     private var text = ""
     private var caret = 0
-    let traits = EngineTraits(hasConversionPhase: false, learnsCommits: false, takesSuguCandidates: false)
+    let traits = EngineTraits(composition: .live, learnsCommits: false, takesSuguCandidates: false)
     private(set) var state = CompositionState.empty
+    /// Holds Zhuyin keys, tones and Space among them, rather than letters.
+    var holdsZhuyin = false
 
     func accepts(_ character: Character) -> Bool {
-        character.isASCIILowercaseLetter || (character == "'" && !text.isEmpty)
+        if holdsZhuyin { return Zhuyin.keyboard[character] != nil || (Zhuyin.toneKeys[character] != nil && !text.isEmpty) }
+        return character.isASCIILowercaseLetter || (character == "'" && !text.isEmpty)
     }
 
     func insert(_ input: String) {

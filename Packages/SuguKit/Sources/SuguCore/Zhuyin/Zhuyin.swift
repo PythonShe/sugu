@@ -197,12 +197,10 @@ public enum Zhuyin {
         }
     }
 
-    /// The syllable that pinyin (toneless, ü as v) is written as, for the
-    /// syllables of `syllabary`.
-    public static func syllables(of syllabary: some Sequence<String>) -> [String: Syllable] {
+    /// Every syllable the symbols spell, by its pinyin (toneless, ü as v).
+    private static let byPinyin: [String: Syllable] = {
         var byPinyin: [String: Syllable] = [:]
-        let slots: [Character?] = [nil] + Array(initials.keys)
-        for initial in slots {
+        for initial in [nil] + Array(initials.keys) as [Character?] {
             for medial in [nil] + Array(medials) as [Character?] {
                 for final in [nil] + Array(finals.keys) as [Character?] {
                     let syllable = Syllable(initial: initial, medial: medial, final: final)
@@ -211,8 +209,33 @@ public enum Zhuyin {
                 }
             }
         }
+        return byPinyin
+    }()
+
+    /// The syllable that pinyin (toneless, ü as v) is written as, for the
+    /// syllables of `syllabary`.
+    public static func syllables(of syllabary: some Sequence<String>) -> [String: Syllable] {
         let known = Set(syllabary)
         return byPinyin.filter { known.contains($0.key) }
+    }
+
+    /// The toned syllables of a reading written as codes (`ni3hao3`); nil
+    /// when it is not one.
+    public static func syllables(ofCodes reading: String) -> [Syllable]? {
+        var result: [Syllable] = []
+        var letters = ""
+        for character in reading {
+            if character.isASCIILowercaseLetter {
+                letters.append(character)
+            } else if let digit = character.wholeNumberValue, let tone = Tone(rawValue: digit), var syllable = byPinyin[letters] {
+                syllable.tone = tone
+                result.append(syllable)
+                letters = ""
+            } else {
+                return nil
+            }
+        }
+        return letters.isEmpty && !result.isEmpty ? result : nil
     }
 
     /// The code librime reads for a tone-marked pinyin syllable of the

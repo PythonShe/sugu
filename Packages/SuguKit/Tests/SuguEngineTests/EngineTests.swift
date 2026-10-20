@@ -26,7 +26,7 @@ private func languageModel(_ sentences: [String]) throws -> CharacterLanguageMod
 
 /// librime keeps process-wide state, so every test shares one runtime.
 @MainActor
-private enum Shared {
+enum Shared {
     static let user = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-engine-tests-\(getpid())")
     static let runtime = RimeRuntime(directories: .init(shared: dataDirectory.appendingPathComponent("Rime"), user: user))
 }

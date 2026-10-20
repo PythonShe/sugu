@@ -69,7 +69,11 @@ extension InputSession {
             return false
         }
         guard let engine = active, !engine.state.isEmpty else { return start(key) }
-        return engine.traits.hasConversionPhase ? handleStaged(key, engine: engine) : handleLive(key, engine: engine)
+        switch composition(of: engine) {
+        case .live: return handleLive(key, engine: engine)
+        case .staged: return handleStaged(key, engine: engine)
+        case .sentence: return handleSentence(key, engine: engine)
+        }
     }
 
     // MARK: Starting a composition
@@ -80,6 +84,11 @@ extension InputSession {
         case .english:
             return false
         case .chinese:
+            if typesZhuyin {
+                guard Zhuyin.keyboard[character] != nil else { break }
+                begin(with: engines.engine(for: .chinese) ?? loading, input: String(character))
+                return true
+            }
             if character == ComputedCandidates.chineseNumberPrefix {
                 begin(with: expression, input: String(character))
                 return true
@@ -88,16 +97,27 @@ extension InputSession {
                 begin(with: engines.engine(for: .chinese) ?? loading, input: String(character))
                 return true
             }
-            if ChinesePunctuator.handles(character) {
-                typePunctuation(character)
-                return true
-            }
-            return false
         case .japanese:
             if key.keyCode == VirtualKey.space { return typeFullWidthSpace(key) }
             guard let engine = engines.engine(for: .japanese), engine.accepts(character) else { return false }
             begin(with: engine, input: input(for: key, character: character))
             return true
+        }
+        if ChinesePunctuator.handles(punctuation(for: character)) {
+            typePunctuation(punctuation(for: character))
+            return true
+        }
+        return false
+    }
+
+    /// Zhuyin types , . on their own keys as symbols; with Shift they are
+    /// the punctuation, as in the Taiwanese input methods.
+    private func punctuation(for character: Character) -> Character {
+        guard typesZhuyin else { return character }
+        switch character {
+        case "<": return ","
+        case ">": return "."
+        default: return character
         }
     }
 
@@ -203,6 +223,88 @@ extension InputSession {
         }
         // Anything else: finish the composition and let the key through.
         commitHighlighted()
+        return false
+    }
+
+    // MARK: Sentence (Zhuyin)
+
+    /// How the composition in `engine` takes keys; letters typed while
+    /// librime is set up wait as Zhuyin keys when Zhuyin is in use.
+    func composition(of engine: any CompositionEngine) -> EngineTraits.Composition {
+        engine === loading && typesZhuyin ? .sentence : engine.traits.composition
+    }
+
+    var typesZhuyin: Bool { mode == .chinese && preferences.chineseKeyboard == .zhuyin }
+
+    /// The sentence stays converted as syllables are typed. Space ends a
+    /// syllable with the first tone, and between syllables opens the
+    /// candidate window on the words at the caret, as ↓ does; there digits
+    /// choose and Return takes the highlighted word.
+    private func handleSentence(_ key: KeyInput, engine: any CompositionEngine) -> Bool {
+        if engine.state.phase == .converting {
+            switch key.keyCode {
+            case VirtualKey.escape, VirtualKey.delete: engine.cancelConversion(); refresh(); return true
+            case VirtualKey.returnKey, VirtualKey.keypadEnter: commitHighlighted(); return true
+            case VirtualKey.space: turnPage(by: key.modifiers.contains(.shift) ? -1 : 1); return true
+            case VirtualKey.pageUp: turnPage(by: -1); return true
+            case VirtualKey.pageDown: turnPage(by: 1); return true
+            case VirtualKey.tab: moveHighlight(by: key.modifiers.contains(.shift) ? -1 : 1); return true
+            case VirtualKey.up: verticalLayout ? moveHighlight(by: -1) : turnPage(by: -1); return true
+            case VirtualKey.down: verticalLayout ? moveHighlight(by: 1) : turnPage(by: 1); return true
+            case VirtualKey.left, VirtualKey.right:
+                let forward = key.keyCode == VirtualKey.right
+                if verticalLayout {
+                    engine.cancelConversion()
+                    engine.moveCaret(forward ? .right : .left)
+                    refresh()
+                } else {
+                    moveHighlight(by: forward ? 1 : -1)
+                }
+                return true
+            default:
+                break
+            }
+            if let character = key.printable, !key.modifiers.contains(.numericPad), let digit = character.selectionDigit {
+                selectOnPage(digit)
+                return true
+            }
+            // Anything else goes on with the sentence.
+            engine.cancelConversion()
+        }
+        switch key.keyCode {
+        case VirtualKey.escape: abandonComposition(); return true
+        case VirtualKey.returnKey, VirtualKey.keypadEnter: commit(engine.commitConverted() ?? engine.commitRaw()); return true
+        case VirtualKey.space:
+            if engine.accepts(" ") { engine.insert(" ") } else { engine.convert() }
+            refresh()
+            return true
+        case VirtualKey.down: engine.convert(); refresh(); return true
+        case VirtualKey.delete: engine.deleteBackward(); refresh(); return true
+        case VirtualKey.forwardDelete: engine.deleteForward(); refresh(); return true
+        case VirtualKey.home: engine.moveCaret(.start); refresh(); return true
+        case VirtualKey.end: engine.moveCaret(.end); refresh(); return true
+        case VirtualKey.left: engine.moveCaret(.left); refresh(); return true
+        case VirtualKey.right: engine.moveCaret(.right); refresh(); return true
+        case VirtualKey.up, VirtualKey.tab, VirtualKey.pageUp, VirtualKey.pageDown: return true
+        default:
+            break
+        }
+        guard let character = key.printable, !key.modifiers.contains(.numericPad) else {
+            commitComposition()
+            return false
+        }
+        if engine.accepts(character) {
+            engine.insert(String(character))
+            refresh()
+            return true
+        }
+        commitComposition()
+        // Punctuation follows the sentence; anything else goes to the app.
+        let mark = punctuation(for: character)
+        if ChinesePunctuator.handles(mark) {
+            typePunctuation(mark)
+            return true
+        }
         return false
     }
 
@@ -353,8 +455,9 @@ extension InputSession {
         case VirtualKey.f10: text = typed
         default: return nil
         }
-        // F6–F8 (and ⌃J ⌃K ⌃;) have no form in Chinese; they do nothing.
-        guard let text else { return true }
+        // F6–F8 (and ⌃J ⌃K ⌃;) have no form in Chinese, nor F9 and F10
+        // in Zhuyin, whose keys are not its text; they do nothing.
+        guard let text, active.map(composition(of:)) != .sentence else { return true }
         transformed = text
         list.highlight = nil
         publish()

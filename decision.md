@@ -1161,7 +1161,27 @@ any call made without the owner present. Each entry: what, why, reversibility.
   so a Zhuyin engine keeps the syllables, the caret and the fixed spans,
   and asks librime for each unfixed run's sentence and for the words at
   the caret.
-- Phases: syllables, layout and tone codes (this entry); the engine;
+- The engine (`ZhuyinEngine`) keeps the syllables, the pending one, the
+  caret and the chosen words, and converts each run between chosen words
+  as one librime input, syllables split by `'`; a syllable librime has no
+  character for is not ended by its tone key. The window offers words
+  that end at the caret (start, at the start), longest first. librime
+  1.17 makes a sentence whenever no word covers all of an input and
+  cannot be told not to, offering it alone at that length, so a lone
+  candidate longer than a character is shown only when Sugu's word list
+  or the user's words have it.
+- Commits carry their reading as codes (`ni3hao3`): the learned store
+  folds case and spaces out of Chinese readings, and Bopomofo without the
+  first tone's mark does not split back into syllables (ㄧㄚ is ya or yi a).
+  Words learned in Zhuyin therefore do not yet reach pinyin, nor pinyin's
+  reach Zhuyin; nor does reconversion, which has no tones to go on.
+- The session composes Zhuyin in a third way (`EngineTraits.composition`
+  `.sentence`): Space ends a syllable with the first tone and between
+  syllables opens the window, as ↓ does; there digits choose, Space and
+  the arrows page and move, Return takes the highlighted word and Esc or
+  ⌫ closes it. Digits outside it are symbols and tones; Shift-comma and
+  Shift-period are the comma and full stop.
+- Phases: syllables, layout and tone codes; the engine;
   the session's keys; Settings and the mode indicator; learning, bench
   and fuzz; then the owner's device checks — wanxiang's readings are
   mainland ones, so Taiwanese readings (垃圾 ㄌㄜˋ ㄙㄜˋ) and the s2tw

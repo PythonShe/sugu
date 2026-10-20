@@ -38,10 +38,19 @@ public struct Commit: Sendable, Equatable {
 /// How an engine composes, which decides how the input session binds keys
 /// and treats what it commits.
 public struct EngineTraits: Sendable, Equatable {
-    /// Typing shows predictions and Space converts in a phase of its own,
-    /// clause by clause (AzooKey). Without it, candidates are live while
-    /// typing and the first is chosen by default (librime, expressions).
-    public var hasConversionPhase: Bool
+    public enum Composition: Sendable, Equatable {
+        /// Candidates are live while typing and the first is chosen by
+        /// default (pinyin, expressions).
+        case live
+        /// Typing shows predictions and Space converts in a phase of its
+        /// own, clause by clause (Japanese).
+        case staged
+        /// The whole input stays converted as it is typed, and the
+        /// candidate window opens on the words at the caret (Zhuyin).
+        case sentence
+    }
+
+    public var composition: Composition
     /// Commits teach the learned store and ⌃⌫ can take them back into the
     /// engine.
     public var learnsCommits: Bool
@@ -52,8 +61,8 @@ public struct EngineTraits: Sendable, Equatable {
     /// being translated): Esc puts it back as it was.
     public var revisesText: Bool
 
-    public init(hasConversionPhase: Bool, learnsCommits: Bool, takesSuguCandidates: Bool, revisesText: Bool = false) {
-        self.hasConversionPhase = hasConversionPhase
+    public init(composition: Composition, learnsCommits: Bool, takesSuguCandidates: Bool, revisesText: Bool = false) {
+        self.composition = composition
         self.learnsCommits = learnsCommits
         self.takesSuguCandidates = takesSuguCandidates
         self.revisesText = revisesText

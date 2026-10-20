@@ -125,6 +125,7 @@ public final class InputSession {
     private func applyPreferences() {
         endSuggestions()
         punctuator.width = preferences.punctuationWidth
+        loading.holdsZhuyin = preferences.chineseKeyboard == .zhuyin
         list.pageSize = max(1, min(10, preferences.candidatesPerPage))
         if var latin = assembler.latin {
             latin.allowList = Set(preferences.latinAllowList.map { $0.lowercased() })

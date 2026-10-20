@@ -5,7 +5,7 @@ extension InputSession {
 
     var verticalLayout: Bool { preferences.candidateLayout == .vertical }
     /// Whether the active engine's first candidate is chosen by default.
-    private var hasLiveCandidates: Bool { active.map { !$0.traits.hasConversionPhase } ?? false }
+    private var hasLiveCandidates: Bool { active.map { composition(of: $0) == .live } ?? false }
 
     func moveHighlight(by delta: Int) {
         guard let next = list.index(movingHighlightBy: delta) else { return }
@@ -48,7 +48,7 @@ extension InputSession {
         if state.phase == .converting {
             let index = state.highlightedIndex.flatMap { engineIndex in list.candidates.firstIndex { $0.engineIndex == engineIndex } }
             list.setHighlight(index ?? 0)
-        } else if !engine.traits.hasConversionPhase {
+        } else if composition(of: engine) == .live {
             list.setHighlight(list.isEmpty ? nil : 0)
         } else {
             list.setHighlight(nil)
@@ -84,7 +84,7 @@ extension InputSession {
                 caret = state.caret
                 // Show a highlighted prediction inline while it is chosen, and
                 // Sugu's own candidates, which replace the whole reading.
-                if engine.traits.hasConversionPhase, let highlighted = list.highlighted,
+                if composition(of: engine) == .staged, let highlighted = list.highlighted,
                    state.phase == .composing || highlighted.engineIndex == nil {
                     segments = [CompositionSegment(highlighted.text, role: .focused)]
                     caret = highlighted.text.count
@@ -94,9 +94,10 @@ extension InputSession {
             if transformed != nil {
                 showWindow = false
             } else if state.phase == .converting {
-                showWindow = showsConversionWindow
+                // Zhuyin opens the window only to choose.
+                showWindow = showsConversionWindow || composition(of: engine) == .sentence
             } else {
-                showWindow = !engine.traits.hasConversionPhase || preferences.japanesePredictions
+                showWindow = composition(of: engine) != .staged || preferences.japanesePredictions
             }
             let page = list.currentPage
             if showWindow, !page.rows.isEmpty {
@@ -106,7 +107,7 @@ extension InputSession {
                     page: list.page,
                     hasPreviousPage: page.hasPrevious,
                     hasNextPage: page.hasNext,
-                    isPrediction: state.phase == .composing && engine.traits.hasConversionPhase
+                    isPrediction: state.phase == .composing && composition(of: engine) == .staged
                 )
             }
         }

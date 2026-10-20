@@ -83,7 +83,7 @@ public final class AzooKeyEngine: CompositionEngine {
     /// candidates are requested.
     private var preferredFocus: KanaKanjiConverterModule.Candidate?
 
-    public let traits = EngineTraits(hasConversionPhase: true, learnsCommits: true, takesSuguCandidates: true)
+    public let traits = EngineTraits(composition: .staged, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
     /// Built once: constructing it reads the emoji dictionary from disk,
     /// which cost more than the conversion itself on every keystroke.

@@ -6,9 +6,8 @@ import SuguCore
 /// `CompositionState` after every change.
 @MainActor
 public final class RimeEngine: CompositionEngine {
-    private let runtime: RimeRuntime
-    private var session: RimeSessionId = 0
-    private var script: ChineseScript
+    private let session: RimeSession
+    private var script: ChineseScript { session.script }
     /// How many candidates are read from librime per update; the rest are
     /// fetched only when the user pages past them.
     private var candidateLimit: Int
@@ -37,35 +36,17 @@ public final class RimeEngine: CompositionEngine {
         }
     }
 
-    public let traits = EngineTraits(hasConversionPhase: false, learnsCommits: true, takesSuguCandidates: true)
+    public let traits = EngineTraits(composition: .live, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
 
     public init(runtime: RimeRuntime, script: ChineseScript = .simplified, candidateLimit: Int = 30) {
-        self.runtime = runtime
-        self.script = script
+        session = RimeSession(runtime: runtime, script: script)
         self.candidateLimit = candidateLimit
-    }
-
-    isolated deinit {
-        // A session left open would also keep the user dictionary it read
-        // open for sessions created later.
-        if session != 0 { _ = api.destroy_session?(session) }
-    }
-
-    private var api: RimeApi { runtime.api }
-
-    /// Creates the session lazily; librime drops sessions on redeploy.
-    private func ensureSession() -> Bool {
-        if session != 0, api.find_session?(session) ?? 0 != 0 { return true }
-        guard let id = try? runtime.makeSession() else { return false }
-        session = id
-        applyScript()
-        return true
     }
 
     /// Opens the librime session ahead of the first key.
     public func openSession() {
-        _ = ensureSession()
+        _ = session.open()
     }
 
     /// Reopens the session so librime reads the user dictionary again,
@@ -74,23 +55,13 @@ public final class RimeEngine: CompositionEngine {
     /// with the last, so the old session goes before the new one opens.
     public func reloadUserDictionary() -> Bool {
         guard state.isEmpty else { return false }
-        if session != 0 {
-            _ = api.destroy_session?(session)
-            session = 0
-        }
-        return ensureSession()
+        session.destroy()
+        return session.open()
     }
 
     public func setScript(_ script: ChineseScript) {
-        self.script = script
-        if session != 0 { applyScript(); refresh() }
-    }
-
-    private func applyScript() {
-        let active = RimeSchema.option(for: script)
-        for filter in RimeSchema.scriptFilters {
-            api.set_option?(session, filter.option, filter.option == active ? 1 : 0)
-        }
+        session.script = script
+        if session.isOpen { refresh() }
     }
 
     // MARK: CompositionEngine
@@ -101,10 +72,10 @@ public final class RimeEngine: CompositionEngine {
     }
 
     public func insert(_ text: String) {
-        guard ensureSession() else { return }
+        guard session.open() else { return }
         respelledHighlighted = true
         for scalar in text.unicodeScalars where scalar.isASCII {
-            _ = api.process_key?(session, Int32(scalar.value), 0)
+            session.processKey(Int32(scalar.value))
         }
         refresh()
     }
@@ -129,25 +100,25 @@ public final class RimeEngine: CompositionEngine {
     public func resizeFocus(by delta: Int) {}
 
     public func highlight(_ index: Int) {
-        guard session != 0 else { return }
+        guard session.isOpen else { return }
         if respelled != nil {
             respelledHighlighted = index == 0
             if index == 0 { refresh(); return }
         }
         let index = librimeIndex(index)
         ensureLoaded(upTo: index)
-        _ = api.highlight_candidate?(session, index)
+        session.highlight(index)
         refresh()
     }
 
     public func select(_ index: Int) -> SelectionResult {
-        guard session != 0 else { return .continued }
+        guard session.isOpen else { return .continued }
         if index == 0, let commit = commitRespelled() { return .committed(commit) }
         let index = librimeIndex(index)
         ensureLoaded(upTo: index)
-        let reading = currentInput()
-        _ = api.select_candidate?(session, index)
-        if let text = takeCommit() {
+        let reading = session.input
+        session.select(index)
+        if let text = session.takeCommit() {
             refresh()
             return .committed(Commit(text: text, reading: reading))
         }
@@ -156,15 +127,15 @@ public final class RimeEngine: CompositionEngine {
     }
 
     public func commitConverted() -> Commit? {
-        guard session != 0, !state.isEmpty else { return nil }
+        guard session.isOpen, !state.isEmpty else { return nil }
         if respelledHighlighted, let commit = commitRespelled() { return commit }
-        let reading = currentInput()
+        let reading = session.input
         // Select the highlighted candidate of each remaining segment.
         var guardCount = 0
-        while api.get_input?(session) != nil, !currentInput().isEmpty, guardCount < 64 {
+        while !session.input.isEmpty, guardCount < 64 {
             let index = librimeIndex(state.highlightedIndex ?? 0)
-            _ = api.select_candidate?(session, index)
-            if let text = takeCommit() {
+            session.select(index)
+            if let text = session.takeCommit() {
                 refresh()
                 return Commit(text: text, reading: reading)
             }
@@ -176,24 +147,24 @@ public final class RimeEngine: CompositionEngine {
     }
 
     public func commitRaw() -> Commit? {
-        guard session != 0, !state.isEmpty else { return nil }
-        let reading = currentInput()
+        guard session.isOpen, !state.isEmpty else { return nil }
+        let reading = session.input
         clear()
         return Commit(text: reading, reading: reading)
     }
 
     public func clear() {
-        if session != 0 { api.clear_composition?(session) }
+        session.clearComposition()
         respelled = nil
         respelledHighlighted = true
         state = .empty
     }
 
     public func restore(reading: String) {
-        guard ensureSession() else { return }
+        guard session.open() else { return }
         respelledHighlighted = true
-        api.clear_composition?(session)
-        _ = api.set_input?(session, reading)
+        session.clearComposition()
+        session.setInput(reading)
         refresh()
     }
 
@@ -205,7 +176,7 @@ public final class RimeEngine: CompositionEngine {
     /// librime's composition is cleared rather than committed.
     private func commitRespelled() -> Commit? {
         guard let respelled else { return nil }
-        let reading = currentInput()
+        let reading = session.input
         clear()
         return Commit(text: respelled, reading: reading)
     }
@@ -218,23 +189,10 @@ public final class RimeEngine: CompositionEngine {
     // MARK: Reading librime state
 
     private func send(_ keycode: Int32) {
-        guard session != 0 else { return }
+        guard session.isOpen else { return }
         respelledHighlighted = true
-        _ = api.process_key?(session, keycode, 0)
+        session.processKey(keycode)
         refresh()
-    }
-
-    private func currentInput() -> String {
-        guard let input = api.get_input?(session) else { return "" }
-        return String(cString: input)
-    }
-
-    private func takeCommit() -> String? {
-        var commit = RimeCommit()
-        commit.data_size = RimeAPI.dataSize(of: RimeCommit.self)
-        guard api.get_commit?(session, &commit) ?? 0 != 0 else { return nil }
-        defer { _ = api.free_commit?(&commit) }
-        return commit.text.map { String(cString: $0) }
     }
 
     private func ensureLoaded(upTo index: Int) {
@@ -245,37 +203,34 @@ public final class RimeEngine: CompositionEngine {
 
     /// Mirrors librime's context into `state`.
     private func refresh() {
-        guard session != 0 else { state = .empty; return }
-        var context = RimeContext()
-        context.data_size = RimeAPI.dataSize(of: RimeContext.self)
-        guard api.get_context?(session, &context) ?? 0 != 0 else { state = .empty; return }
-        defer { _ = api.free_context?(&context) }
-
-        let composition = context.composition
-        guard composition.length > 0, let preeditPointer = composition.preedit else {
+        guard let mirrored = session.withContext({ context -> (segments: [CompositionSegment], caret: Int, highlighted: Int, confirmed: Bool)? in
+            let composition = context.composition
+            guard composition.length > 0, let preeditPointer = composition.preedit else { return nil }
+            let bytes = Array(UnsafeBufferPointer(start: UnsafeRawPointer(preeditPointer).assumingMemoryBound(to: UInt8.self), count: Int(composition.length)))
+            func text(_ range: Range<Int>) -> String {
+                let clamped = max(0, min(range.lowerBound, bytes.count))..<max(0, min(range.upperBound, bytes.count))
+                return String(decoding: bytes[clamped], as: UTF8.self)
+            }
+            let selStart = Int(composition.sel_start)
+            let selEnd = Int(composition.sel_end)
+            var segments: [CompositionSegment] = []
+            let confirmed = text(0..<selStart)
+            if !confirmed.isEmpty { segments.append(CompositionSegment(confirmed, role: .converted)) }
+            let active = text(selStart..<max(selStart, selEnd))
+            if !active.isEmpty { segments.append(CompositionSegment(active, role: .input)) }
+            let rest = text(max(selStart, selEnd)..<bytes.count)
+            if !rest.isEmpty { segments.append(CompositionSegment(rest, role: .input)) }
+            let caret = text(0..<Int(composition.cursor_pos)).count
+            let menu = context.menu
+            let highlighted = Int(menu.page_no) * Int(menu.page_size) + Int(menu.highlighted_candidate_index)
+            return (segments, caret, highlighted, !confirmed.isEmpty)
+        }), let mirrored else {
             state = .empty
             return
         }
-        let bytes = Array(UnsafeBufferPointer(start: UnsafeRawPointer(preeditPointer).assumingMemoryBound(to: UInt8.self), count: Int(composition.length)))
-        func text(_ range: Range<Int>) -> String {
-            let clamped = max(0, min(range.lowerBound, bytes.count))..<max(0, min(range.upperBound, bytes.count))
-            return String(decoding: bytes[clamped], as: UTF8.self)
-        }
-        let selStart = Int(composition.sel_start)
-        let selEnd = Int(composition.sel_end)
-        var segments: [CompositionSegment] = []
-        let confirmed = text(0..<selStart)
-        if !confirmed.isEmpty { segments.append(CompositionSegment(confirmed, role: .converted)) }
-        let active = text(selStart..<max(selStart, selEnd))
-        if !active.isEmpty { segments.append(CompositionSegment(active, role: .input)) }
-        let rest = text(max(selStart, selEnd)..<bytes.count)
-        if !rest.isEmpty { segments.append(CompositionSegment(rest, role: .input)) }
-        let caret = text(0..<Int(composition.cursor_pos)).count
-
-        let menu = context.menu
-        var highlighted = Int(menu.page_no) * Int(menu.page_size) + Int(menu.highlighted_candidate_index)
-        var candidates = readCandidates()
-        respelled = confirmed.isEmpty ? candidates.first.flatMap { respell($0.text) } : nil
+        var highlighted = mirrored.highlighted
+        var candidates = session.candidates(limit: candidateLimit)
+        respelled = mirrored.confirmed ? nil : candidates.first.flatMap { respell($0.text) }
         if let respelled {
             candidates = [Candidate(text: respelled, source: .engine(index: 0))] + candidates.map {
                 Candidate(text: $0.text, annotation: $0.annotation, source: .engine(index: ($0.engineIndex ?? 0) + 1))
@@ -284,12 +239,12 @@ public final class RimeEngine: CompositionEngine {
         }
 
         state = CompositionState(
-            segments: segments,
-            caret: caret,
+            segments: mirrored.segments,
+            caret: mirrored.caret,
             candidates: candidates,
             highlightedIndex: highlighted,
             phase: .composing,
-            reading: currentInput()
+            reading: session.input
         )
     }
 
@@ -304,7 +259,7 @@ public final class RimeEngine: CompositionEngine {
         // none when the candidate covers only part of it. Fuzzy pinyin can
         // mean that librime read a derived spelling (zong for zhong), so
         // those follow the readings as typed.
-        let readings = respelling.decoder.syllables(typedAs: currentInput(), count: sentence.count, limit: 16, fewestDerivedOnly: false)
+        let readings = respelling.decoder.syllables(typedAs: session.input, count: sentence.count, limit: 16, fewestDerivedOnly: false)
         guard !readings.isEmpty else { return nil }
         let context = String(leftContext.suffix(respelling.respeller.contextLength))
         guard script != .simplified else {
@@ -317,20 +272,5 @@ public final class RimeEngine: CompositionEngine {
         guard Set([original.count, before.count, after.count, converted.count]).count == 1 else { return nil }
         let result = String(original.indices.map { after[$0] == before[$0] ? original[$0] : converted[$0] })
         return result == sentence ? nil : result
-    }
-
-    private func readCandidates() -> [Candidate] {
-        var iterator = RimeCandidateListIterator()
-        guard api.candidate_list_begin?(session, &iterator) ?? 0 != 0 else { return [] }
-        defer { api.candidate_list_end?(&iterator) }
-        var result: [Candidate] = []
-        result.reserveCapacity(candidateLimit)
-        while result.count < candidateLimit, api.candidate_list_next?(&iterator) ?? 0 != 0 {
-            let candidate = iterator.candidate
-            let text = candidate.text.map { String(cString: $0) } ?? ""
-            let comment = candidate.comment.map { String(cString: $0) }
-            result.append(Candidate(text: text, annotation: comment?.isEmpty == false ? comment : nil, source: .engine(index: Int(iterator.index))))
-        }
-        return result
     }
 }
