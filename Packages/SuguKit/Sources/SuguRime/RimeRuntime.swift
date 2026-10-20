@@ -50,7 +50,8 @@ public final class RimeRuntime {
         try await task.value
     }
 
-    public var isReady: Bool { isInitialized && deployment == nil }
+    /// True once a deployment succeeded and none is running.
+    public var isReady: Bool { isInitialized && deployment == nil && schema != nil }
 
     private func deploy(_ schema: RimeSchema, version: String) async throws {
         try FileManager.default.createDirectory(at: directories.user, withIntermediateDirectories: true)

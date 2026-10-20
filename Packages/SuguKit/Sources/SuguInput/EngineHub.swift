@@ -57,6 +57,10 @@ public final class EngineHub: EngineProvider {
     private var userWordsRefresh: Task<Void, Never>?
     /// Set when the last Chinese deployment failed, for the settings window.
     public private(set) var chineseError: (any Error)?
+    /// The schema whose deployment failed; not retried until settings or
+    /// installed data change it, so a broken deploy does not repeat on
+    /// every keystroke.
+    private var failedSchema: RimeSchema?
 
     public init(locations: Locations, preferences: Preferences, store: LearnedStore?, version: String) {
         self.locations = locations
@@ -104,14 +108,16 @@ public final class EngineHub: EngineProvider {
     /// Starts loading the engine for a mode in the background, so it is
     /// ready by the first keystroke.
     public func warmUp(_ mode: InputMode) {
-        guard mode == .chinese, preparing == nil, !runtime.isReady || runtime.schema != schema else { return }
         let schema = schema
+        guard mode == .chinese, preparing == nil, schema != failedSchema, !runtime.isReady || runtime.schema != schema else { return }
         preparing = Task {
             do {
                 try await runtime.prepare(schema, version: version)
                 chineseError = nil
+                failedSchema = nil
             } catch {
                 chineseError = error
+                failedSchema = schema
             }
             preparing = nil
             // Settings may have changed while deploying.
@@ -176,7 +182,9 @@ public final class EngineHub: EngineProvider {
 
     /// Reloads the Chinese engine after a model was installed or removed.
     public func modelsDidChange() {
-        if schema != runtime.schema { chinese = nil; warmUp(.chinese) }
+        // Only redeploy Chinese if it was in use; otherwise it loads with the
+        // new data on first use.
+        if schema != runtime.schema, runtime.isReady || preparing != nil { chinese = nil; warmUp(.chinese) }
         japanese?.update(japaneseConfiguration)
     }
 }

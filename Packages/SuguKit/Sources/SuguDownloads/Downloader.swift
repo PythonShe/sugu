@@ -24,6 +24,8 @@ public enum Downloader {
         }
         let digest = try await Task.detached(priority: .utility) { try sha256(of: staging) }.value
         guard digest == download.sha256 else { throw DownloadError.checksumMismatch }
+        // The checksum runs detached; a cancel during it must not install.
+        try Task.checkCancellation()
         try? fm.removeItem(at: destination)
         try fm.moveItem(at: staging, to: destination)
     }

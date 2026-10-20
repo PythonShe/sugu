@@ -113,7 +113,10 @@ public final class ModelLibrary {
                 set(item, .installed)
                 engines.modelsDidChange()
             } catch is CancellationError {
-                set(item, isInstalled(item) ? .installed : .notInstalled)
+                // A cancel can arrive after the files were moved in.
+                let installed = isInstalled(item)
+                set(item, installed ? .installed : .notInstalled)
+                if installed { engines.modelsDidChange() }
             } catch {
                 set(item, .failed(Self.failure(for: error)))
             }
@@ -125,8 +128,21 @@ public final class ModelLibrary {
         tasks[item]?.cancel()
     }
 
+    /// Removes an installed item. A download still running is cancelled
+    /// and allowed to finish unwinding first, so it cannot move files back
+    /// in after they were deleted.
     public func remove(_ item: Item) {
-        cancel(item)
+        let running = tasks[item]
+        running?.cancel()
+        Task {
+            await running?.value
+            deleteFiles(of: item)
+            set(item, .notInstalled)
+            engines.modelsDidChange()
+        }
+    }
+
+    private func deleteFiles(of item: Item) {
         let fm = FileManager.default
         let locations = engines.locations
         switch item {
@@ -138,8 +154,6 @@ public final class ModelLibrary {
         case .zenzaiModel:
             try? fm.removeItem(at: locations.zenzaiModel)
         }
-        set(item, .notInstalled)
-        engines.modelsDidChange()
     }
 
     private func perform(_ item: Item) async throws {
@@ -162,6 +176,7 @@ public final class ModelLibrary {
             set(item, .installing)
             let extracted = work.appendingPathComponent("extracted", isDirectory: true)
             try await ZipArchive.extract(archive, to: extracted)
+            try Task.checkCancellation()
             try? fm.removeItem(at: locations.rimeIceTables)
             try fm.createDirectory(at: locations.rimeIceTables, withIntermediateDirectories: true)
             for table in RimeSchema.rimeIceTables {
