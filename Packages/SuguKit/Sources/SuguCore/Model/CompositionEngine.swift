@@ -18,6 +18,9 @@ public struct Commit: Sendable, Equatable {
     /// Clause-level pairs (reading → text) when the engine knows them; used
     /// for learning. Empty when only the whole commit is known.
     public var clauses: [Clause]
+    /// Whether the whole commit may be learned as a word; not when it holds
+    /// text typed as is, such as punctuation in a Zhuyin sentence.
+    public var mayBeWord: Bool
 
     public struct Clause: Sendable, Equatable {
         public var reading: String
@@ -28,10 +31,11 @@ public struct Commit: Sendable, Equatable {
         }
     }
 
-    public init(text: String, reading: String, clauses: [Clause] = []) {
+    public init(text: String, reading: String, clauses: [Clause] = [], mayBeWord: Bool = true) {
         self.text = text
         self.reading = reading
         self.clauses = clauses
+        self.mayBeWord = mayBeWord
     }
 }
 
@@ -111,9 +115,13 @@ public protocol CompositionEngine: AnyObject {
     /// Text the composition let go of from its start (a long Zhuyin
     /// sentence), to commit while the rest composes on.
     func takeOverflow() -> Commit?
+    /// Puts text typed as is (punctuation, a Latin letter) into the
+    /// composition at the caret; false when the engine does not keep it.
+    func insertLiteral(_ text: String) -> Bool
 }
 
 extension CompositionEngine {
     public func clearPending() -> Bool { false }
     public func takeOverflow() -> Commit? { nil }
+    public func insertLiteral(_ text: String) -> Bool { false }
 }

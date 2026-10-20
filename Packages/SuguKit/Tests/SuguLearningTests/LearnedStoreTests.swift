@@ -33,6 +33,14 @@ struct LearnedStoreTests {
         #expect(store.lookup("きょうは", mode: .chinese).isEmpty)
     }
 
+    /// A commit holding text typed as is teaches only its clauses.
+    @Test func learnsOnlyClausesOfACommitThatIsNoWord() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "事，好", reading: "shi4，hao3", clauses: [.init(reading: "shi4", text: "事")], mayBeWord: false), mode: .chinese)
+        #expect(store.lookup("shi4", mode: .chinese).map(\.text) == ["事"])
+        #expect(store.count == 1)
+    }
+
     /// The store records its schema version, and a store made before
     /// versions existed is brought to it with its words.
     @Test func storeCarriesItsSchemaVersion() throws {

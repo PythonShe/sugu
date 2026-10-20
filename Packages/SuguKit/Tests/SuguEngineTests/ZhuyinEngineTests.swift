@@ -105,6 +105,38 @@ extension RimeEngineTests {
         engine.clear()
     }
 
+    /// Punctuation stays in the sentence and splits it; words stop at it.
+    @Test func zhuyinKeepsLiteralsInTheSentence() async throws {
+        let engine = try await zhuyin()
+        engine.insert(Self.nihao)
+        #expect(engine.insertLiteral("，"))
+        #expect(!engine.convert())
+        engine.insert("a8 ")
+        #expect(engine.state.markedText == "你好，妈")
+        #expect(engine.convert())
+        #expect(engine.state.candidates.allSatisfy { $0.text.count == 1 })
+        engine.cancelConversion()
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text == "你好，妈")
+        #expect(commit.reading == "ni3hao3，ma1")
+        #expect(!commit.mayBeWord)
+        // A commit taken back comes back with its literal.
+        engine.restore(reading: commit.reading)
+        #expect(engine.state.markedText == "你好，妈")
+        engine.clear()
+    }
+
+    /// A literal ends the half-typed syllable with the first tone.
+    @Test func zhuyinLiteralEndsThePendingSyllable() async throws {
+        let engine = try await zhuyin()
+        engine.insert("a8")
+        #expect(engine.insertLiteral("A"))
+        #expect(engine.state.markedText == "妈A")
+        engine.deleteBackward()
+        #expect(engine.state.markedText == "妈")
+        engine.clear()
+    }
+
     @Test func zhuyinRestoresItsReading() async throws {
         let engine = try await zhuyin()
         engine.restore(reading: "ni3hao3")
@@ -156,9 +188,9 @@ extension RimeEngineTests {
         // ㄅ is 1 and ㄚ is 8; 3 is the third tone.
         type("183", into: session)
         #expect(client.marked == "把")
-        // Shift-comma is the comma, after the sentence.
+        // Shift-comma is the comma, in the sentence.
         _ = session.handle(KeyInput(keyCode: 0, characters: "<", modifiers: [.shift]))
-        #expect(client.document == "把，")
+        #expect(client.marked == "把，")
     }
 
     @Test func zhuyinSessionStartsOnlyOnZhuyinKeys() async throws {
@@ -182,6 +214,17 @@ extension RimeEngineTests {
         _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1B}"))
         #expect(client.marked.isEmpty)
         #expect(client.document.isEmpty)
+    }
+
+    @Test func zhuyinSessionKeepsPunctuationAndLettersInTheSentence() async throws {
+        let (session, client) = try await session()
+        type(Self.nihao, into: session)
+        _ = session.handle(KeyInput(keyCode: 0, characters: "<", modifiers: [.shift]))
+        _ = session.handle(KeyInput(keyCode: 0, characters: "A", modifiers: [.shift]))
+        #expect(client.marked == "你好，A")
+        #expect(client.document.isEmpty)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
+        #expect(client.document == "你好，A")
     }
 
     @Test func zhuyinSessionCommitsTheStartOfALongSentence() async throws {

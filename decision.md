@@ -1216,6 +1216,14 @@ any call made without the owner present. Each entry: what, why, reversibility.
   since librime reconverts all of an unchosen run on each syllable.
   Choosing Zhuyin brings a Simplified character setting to Traditional
   (Taiwan); any other setting stays.
+- Punctuation (Shift-comma and the rest the punctuator maps) and letters
+  typed with Shift join the sentence as literals: they end a pending
+  syllable with the first tone, split the sentence into runs librime
+  converts apart, and stop the words offered at the caret. The commit
+  reads them as typed between the codes and teaches its chosen words,
+  never the whole (`Commit.mayBeWord`); ⌃⌫ brings it back with them.
+  Ctrl punctuation is left out: ⌃; and ⌃[ are F8 and Esc, and Shift
+  types the rest.
 - Phases: syllables, layout and tone codes; the engine;
   the session's keys; Settings and the mode indicator; learning, bench
   and fuzz; then the owner's device checks — wanxiang's readings are

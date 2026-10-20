@@ -159,8 +159,8 @@ enum Fuzz {
         func special(_ name: String, _ keyCode: UInt16, _ modifiers: KeyModifiers = []) -> (String, KeyInput) {
             (name, KeyInput(keyCode: keyCode, characters: "", modifiers: modifiers))
         }
-        func printable(_ character: Character, shift: Bool = false) -> (String, KeyInput) {
-            let typed = shift ? Character(character.uppercased()) : character
+        func printable(_ character: Character, shift: Bool = false, typing shifted: Character? = nil) -> (String, KeyInput) {
+            let typed = shifted ?? (shift ? Character(character.uppercased()) : character)
             return (String(typed), KeyInput(keyCode: keyCodes[character] ?? 0, characters: String(typed), charactersIgnoringModifiers: String(character), modifiers: shift ? .shift : []))
         }
         switch random.next(below: 100) {
@@ -189,10 +189,12 @@ enum Fuzz {
         case 93..<96: return ("⎋", KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
         case 96..<98: return ("⏎", KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
         default:
-            let punctuation = Array(",.?!-[]")[random.next(below: 7)]
+            let punctuation = Array(",.?!-[]<>")[random.next(below: 9)]
             switch punctuation {
-            case "?": return printable("/", shift: true)
-            case "!": return printable("1", shift: true)
+            case "?": return printable("/", shift: true, typing: "?")
+            case "!": return printable("1", shift: true, typing: "!")
+            case "<": return printable(",", shift: true, typing: "<")
+            case ">": return printable(".", shift: true, typing: ">")
             default: return printable(punctuation)
             }
         }

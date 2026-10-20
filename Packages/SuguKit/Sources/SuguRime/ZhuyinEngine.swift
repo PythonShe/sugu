@@ -16,6 +16,10 @@ public final class ZhuyinEngine: CompositionEngine {
     /// librime's text does not split one per syllable.
     private var syllables: [Zhuyin.Syllable] = []
     private var texts: [String] = []
+    /// Text typed as is, by position, where `syllables` has an empty
+    /// syllable: punctuation and Latin letters stay in the sentence and
+    /// split it into runs librime converts apart.
+    private var literals: [String?] = []
     /// The syllable being typed, before the caret's syllable.
     private var pending = Zhuyin.Syllable()
     /// Position among the syllables.
@@ -30,8 +34,8 @@ public final class ZhuyinEngine: CompositionEngine {
     /// librime's sentences by input, for the session: a choice or a new
     /// syllable reconverts only the run it changed.
     private var sentences: [String: String] = [:]
-    /// The last commit's choices, for a commit taken back.
-    private var lastCommit: (reading: String, fixed: [Fixed])?
+    /// The last commit's choices and literals, for a commit taken back.
+    private var lastCommit: (reading: String, syllables: [Zhuyin.Syllable], literals: [String?], fixed: [Fixed])?
     /// The start of a sentence grown past `longestSentence`, let go of.
     private var overflow: Commit?
 
@@ -131,19 +135,37 @@ public final class ZhuyinEngine: CompositionEngine {
         var syllable = pending
         syllable.tone = tone
         guard let code = syllable.code, sentence(for: code) != nil else { return }
+        pending = Zhuyin.Syllable()
+        add(syllable, literal: nil)
+    }
+
+    /// Ends the pending syllable with the first tone, then keeps `text`;
+    /// false when the pending syllable cannot end.
+    public func insertLiteral(_ text: String) -> Bool {
+        guard !text.isEmpty, session.open() else { return false }
+        closeChoices()
+        if !pending.isEmpty { finishPending(.first) }
+        guard pending.isEmpty else { return false }
+        add(Zhuyin.Syllable(), literal: text)
+        update()
+        return true
+    }
+
+    private func add(_ syllable: Zhuyin.Syllable, literal: String?) {
         // Typing inside a chosen word undoes the choice.
         fixed.removeAll { $0.range.lowerBound < caret && caret < $0.range.upperBound }
         fixed = fixed.map { $0.range.lowerBound >= caret ? Fixed(range: ($0.range.lowerBound + 1)..<($0.range.upperBound + 1), text: $0.text) : $0 }
         syllables.insert(syllable, at: caret)
-        texts.insert("", at: caret)
+        literals.insert(literal, at: caret)
+        texts.insert(literal ?? "", at: caret)
         caret += 1
-        pending = Zhuyin.Syllable()
         reconvert()
         letGoOfStart()
     }
 
     /// Gives the syllable at `index` another tone when librime knows it.
     private func retone(_ index: Int, _ tone: Zhuyin.Tone) {
+        guard literals[index] == nil else { return }
         var syllable = syllables[index]
         guard syllable.tone != tone else { return }
         syllable.tone = tone
@@ -161,14 +183,11 @@ public final class ZhuyinEngine: CompositionEngine {
         if let word = fixed.first(where: { $0.range.lowerBound < cut && cut < $0.range.upperBound }) { cut = word.range.upperBound }
         guard cut <= caret else { return }
         let head = 0..<cut
-        let commit = Commit(
-            text: text(of: head),
-            reading: reading(of: head),
-            clauses: fixed.filter { $0.range.upperBound <= cut }.map { Commit.Clause(reading: reading(of: $0.range), text: $0.text) }
-        )
-        overflow = overflow.map { Commit(text: $0.text + commit.text, reading: $0.reading + commit.reading, clauses: $0.clauses + commit.clauses) } ?? commit
+        let commit = self.commit(of: head)
+        overflow = overflow.map { Commit(text: $0.text + commit.text, reading: $0.reading + commit.reading, clauses: $0.clauses + commit.clauses, mayBeWord: false) } ?? commit
         leftContext += commit.text
         syllables.removeSubrange(head)
+        literals.removeSubrange(head)
         texts.removeSubrange(head)
         caret -= cut
         fixed = fixed.filter { $0.range.lowerBound >= cut }.map { Fixed(range: ($0.range.lowerBound - cut)..<($0.range.upperBound - cut), text: $0.text) }
@@ -210,6 +229,7 @@ public final class ZhuyinEngine: CompositionEngine {
 
     private func removeSyllable(at index: Int) {
         syllables.remove(at: index)
+        literals.remove(at: index)
         texts.remove(at: index)
         fixed.removeAll { $0.range.contains(index) }
         fixed = fixed.map { $0.range.lowerBound > index ? Fixed(range: ($0.range.lowerBound - 1)..<($0.range.upperBound - 1), text: $0.text) : $0 }
@@ -280,20 +300,28 @@ public final class ZhuyinEngine: CompositionEngine {
             clear()
             return Commit(text: text, reading: text)
         }
-        let commit = Commit(
-            text: texts.joined(),
-            reading: reading(of: syllables.indices),
-            clauses: fixed.map { Commit.Clause(reading: reading(of: $0.range), text: $0.text) }
-        )
-        lastCommit = (commit.reading, fixed)
+        let commit = commit(of: syllables.indices)
+        lastCommit = (commit.reading, syllables, literals, fixed)
         clear()
         return commit
+    }
+
+    /// The text of `range`, read as its codes with its literals as typed,
+    /// teaching the words chosen in it; the whole only without literals.
+    private func commit(of range: Range<Int>) -> Commit {
+        Commit(
+            text: text(of: range),
+            reading: reading(of: range),
+            clauses: fixed.filter { $0.range.upperBound <= range.upperBound && $0.range.lowerBound >= range.lowerBound }
+                .map { Commit.Clause(reading: reading(of: $0.range), text: $0.text) },
+            mayBeWord: literals[range].allSatisfy { $0 == nil }
+        )
     }
 
     /// The syllables as written in Bopomofo, which teaches nothing.
     public func commitRaw() -> Commit? {
         guard !state.isEmpty else { return nil }
-        let raw = syllables.map(\.text).joined() + pending.symbols
+        let raw = syllables.indices.map { literals[$0] ?? syllables[$0].text }.joined() + pending.symbols
         clear()
         return Commit(text: raw, reading: raw)
     }
@@ -302,6 +330,7 @@ public final class ZhuyinEngine: CompositionEngine {
         session.clearComposition()
         overflow = nil
         syllables = []
+        literals = []
         texts = []
         pending = Zhuyin.Syllable()
         caret = 0
@@ -310,15 +339,21 @@ public final class ZhuyinEngine: CompositionEngine {
         state = .empty
     }
 
-    /// Restores a reading written as codes (`ni3hao3`), with the choices
-    /// it was committed with when it is the last commit.
+    /// Restores a reading written as codes (`ni3hao3`), any literals as
+    /// typed, with the choices it was committed with when it is the last
+    /// commit.
     public func restore(reading: String) {
         clear()
-        guard session.open(), let restored = Zhuyin.syllables(ofCodes: reading) else { return }
-        syllables = restored
-        texts = Array(repeating: "", count: restored.count)
-        caret = restored.count
-        if let lastCommit, lastCommit.reading == reading { fixed = lastCommit.fixed }
+        guard session.open() else { return }
+        if let lastCommit, lastCommit.reading == reading {
+            (syllables, literals, fixed) = (lastCommit.syllables, lastCommit.literals, lastCommit.fixed)
+        } else {
+            guard let restored = Zhuyin.syllables(ofCodes: reading) else { return }
+            syllables = restored
+            literals = Array(repeating: nil, count: restored.count)
+        }
+        texts = Array(repeating: "", count: syllables.count)
+        caret = syllables.count
         reconvert()
         update()
     }
@@ -401,7 +436,7 @@ public final class ZhuyinEngine: CompositionEngine {
     // MARK: Conversion
 
     private func reading(of range: some Sequence<Int>) -> String {
-        range.compactMap { syllables[$0].code }.joined()
+        range.compactMap { literals[$0] ?? syllables[$0].code }.joined()
     }
 
     /// The codes librime reads for `range`, split where the syllables are.
@@ -421,13 +456,16 @@ public final class ZhuyinEngine: CompositionEngine {
         return sentence
     }
 
-    /// Converts every run of syllables between the chosen words.
+    /// Converts every run of syllables between the chosen words and the
+    /// literals.
     private func reconvert() {
         var start = 0
-        for word in fixed + [Fixed(range: syllables.count..<syllables.count, text: "")] {
-            if start < word.range.lowerBound { convertRun(start..<word.range.lowerBound) }
-            place(word.text, in: word.range)
-            start = word.range.upperBound
+        let literalSpans = literals.indices.compactMap { index in literals[index].map { Fixed(range: index..<(index + 1), text: $0) } }
+        let spans = (fixed + literalSpans).sorted { $0.range.lowerBound < $1.range.lowerBound }
+        for span in spans + [Fixed(range: syllables.count..<syllables.count, text: "")] {
+            if start < span.range.lowerBound { convertRun(start..<span.range.lowerBound) }
+            place(span.text, in: span.range)
+            start = span.range.upperBound
         }
     }
 
@@ -502,7 +540,11 @@ public final class ZhuyinEngine: CompositionEngine {
     /// longest first.
     private func words(at position: Int) -> [Fixed] {
         var result: [Fixed] = []
-        let longest = min(Self.longestChoice, position == 0 ? syllables.count : position)
+        // Words stop at literals.
+        let reach = position == 0
+            ? (literals.firstIndex { $0 != nil } ?? syllables.count)
+            : position - ((literals[..<position].lastIndex { $0 != nil }).map { $0 + 1 } ?? 0)
+        let longest = min(Self.longestChoice, reach)
         guard longest > 0 else { return [] }
         for length in stride(from: longest, through: 1, by: -1) {
             let range = position == 0 ? 0..<length : (position - length)..<position

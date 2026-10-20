@@ -301,14 +301,25 @@ extension InputSession {
             refresh()
             return true
         }
-        commitComposition()
-        // Punctuation follows the sentence; anything else goes to the app.
+        // Punctuation, and letters typed with Shift, join the sentence, as
+        // in the Taiwanese input methods; anything else goes to the app.
         let mark = punctuation(for: character)
-        if ChinesePunctuator.handles(mark) {
-            typePunctuation(mark)
+        let letter = key.modifiers.contains(.shift) && character.isASCIILetter
+        guard ChinesePunctuator.handles(mark) || letter else {
+            commitComposition()
+            return false
+        }
+        let state = engine.state
+        let previous = state.markedText.prefix(state.caret).last ?? lastTyped ?? lastCharacterBeforeCaret()
+        let text = letter ? String(character) : punctuator.output(for: mark, after: previous)
+        if engine.insertLiteral(text) {
+            refresh()
             return true
         }
-        return false
+        commitComposition()
+        guard !letter else { return false }
+        commitText(text, reading: String(mark), learn: false)
+        return true
     }
 
     // MARK: Staged conversion (AzooKey)

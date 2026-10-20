@@ -256,7 +256,7 @@ public final class LearnedStore {
     /// learned emoji would take that word's place.
     private static func pairs(learnedFrom commit: Commit) -> [(String, String)] {
         var pairs = commit.clauses.filter { $0.text != $0.reading }.map { ($0.reading, $0.text) }
-        if commit.text.count <= maximumWordLength, commit.text != commit.reading, !pairs.contains(where: { $0.1 == commit.text }) {
+        if commit.mayBeWord, commit.text.count <= maximumWordLength, commit.text != commit.reading, !pairs.contains(where: { $0.1 == commit.text }) {
             pairs.append((commit.reading, commit.text))
         }
         return pairs.filter { !containsEmoji($0.1) }

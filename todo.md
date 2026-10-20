@@ -144,5 +144,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Learned words across keyboards: toned user dictionary for librime, Learning pane showing Bopomofo (D-073)
 - [x] Zhuyin reconversion from text (toned readings), respelling, and a Zhuyin bench run (D-073)
 - [x] Esc takes the pending syllable, tones retone the last one, long sentences commit their start, Taiwan's characters by default (D-073)
-- [ ] Latin letters and punctuation inside the sentence; Ctrl punctuation
+- [x] Latin letters and punctuation inside the sentence (D-073)
 - [ ] Taiwanese readings and forms — check on device
