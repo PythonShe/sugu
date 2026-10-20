@@ -177,7 +177,7 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [ ] Check on device: the login window and Wi-Fi sheets see no composition, Alacritty takes punctuation, hidePalettes on screen lock, a click elsewhere commits in TextEdit and Chrome
 
 ## 20. Sugu's own windows (advisor pass 11, D-077)
-- [x] Return cancels destructive confirmations (D-077)
+- [x] Destructive confirmations take no Return (AppKit's own, D-077)
 - [x] Settings reopen on the pane last shown (D-077)
 - [x] The app chooser is a sheet (D-077)
 - [x] The mode label follows the candidate text size and Increase Contrast (D-077)

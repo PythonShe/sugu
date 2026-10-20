@@ -1372,8 +1372,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
 
 ## D-077 · Sugu's own windows (advisor pass 11) (2026-10-20)
 - Confirmations of what cannot be undone (Delete All, Forget Last Hour,
-  Reset, removing a download) keep the destructive button's style but
-  give Return to Cancel, as the HIG asks for data loss.
+  Reset, removing a download) already follow the HIG: AppKit gives a
+  destructive first button no Return, and Esc stays on Cancel (checked
+  headlessly); nothing is overridden.
 - Settings reopen on the pane last shown (user defaults, `SettingsPane`);
   a request for a pane (Learned Words…, Add Word…) still opens that one.
 - The app chooser in Apps and Learning is a sheet on the Settings window,

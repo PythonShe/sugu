@@ -230,14 +230,9 @@ extension NSAlert {
     static func confirm(_ message: String, action title: String, destructive: Bool, in window: NSWindow?, then perform: @escaping () -> Void) {
         let alert = NSAlert()
         alert.messageText = message
-        let button = alert.addButton(withTitle: title)
-        button.hasDestructiveAction = destructive
-        let cancel = alert.addButton(withTitle: String(localized: "Cancel"))
-        if destructive {
-            // Return keeps what would be lost.
-            button.keyEquivalent = ""
-            cancel.keyEquivalent = "\r"
-        }
+        // A destructive button takes no Return; Esc still cancels.
+        alert.addButton(withTitle: title).hasDestructiveAction = destructive
+        alert.addButton(withTitle: String(localized: "Cancel"))
         guard let window else {
             if alert.runModal() == .alertFirstButtonReturn { perform() }
             return

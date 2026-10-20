@@ -11,11 +11,10 @@ final class ModeIndicatorController {
     var textSize: CGFloat = 16
 
     private let label = NSTextField(labelWithString: "")
+    private let content = BorderedView()
     private lazy var panel: FloatingPanel = {
-        let content = BorderedView()
         label.textColor = .labelColor
         label.alignment = .center
-        label.autoresizingMask = [.width, .minYMargin, .maxYMargin]
         content.addSubview(label)
         let panel = FloatingPanel(content: content)
         panel.ignoresMouseEvents = true
@@ -37,6 +36,7 @@ final class ModeIndicatorController {
         let anchor = rect == .zero ? NSRect(origin: NSEvent.mouseLocation, size: .zero) : rect
         panel.alphaValue = 1
         panel.place(size: NSSize(width: side, height: side), below: anchor)
+        content.needsDisplay = true
         panel.orderFrontRegardless()
         if NSWorkspace.shared.isVoiceOverEnabled {
             NSAccessibility.post(element: label, notification: .announcementRequested, userInfo: [
