@@ -245,13 +245,14 @@ public final class EngineHub: EngineSource {
         }
     }
 
-    /// Waits for a pending rewrite of librime's user dictionary (for tools
+    /// Waits until both engines have the store's latest words (for tools
     /// and tests).
-    public func waitForChineseWords() async {
+    public func waitForLearnedWords() async {
         while let task = chineseWordsUpdate {
             await task.value
             if chineseWordsUpdate == task { break }
         }
+        while let task = userWordsRefresh { await task.value }
     }
 
     public func apply(_ preferences: Preferences) {

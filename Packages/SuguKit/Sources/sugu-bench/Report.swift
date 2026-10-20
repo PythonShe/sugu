@@ -27,6 +27,12 @@ struct LanguageResult: Codable {
     var keysPerCharacter: Double { characters == 0 ? 0 : Double(keysTyped) / Double(characters) }
 }
 
+struct LearnedResult: Codable {
+    var before: LanguageResult
+    var after = LanguageResult()
+    var mainSet = LanguageResult()
+}
+
 struct Memory: Codable {
     var footprintMB: Double
     var residentMB: Double
@@ -53,11 +59,8 @@ struct Report: Codable {
     var chinese = LanguageResult()
     var japanese = LanguageResult()
     var memory = Memory(footprintMB: 0, residentMB: 0)
-    /// Sentences using words the user taught, before and after teaching
-    /// them, and the main Chinese set again afterwards.
-    var learnedBefore: LanguageResult?
-    var learnedAfter: LanguageResult?
-    var chineseAfterLearning: LanguageResult?
+    /// Sentences using words the user taught, by language (zh, ja).
+    var learned: [String: LearnedResult] = [:]
 
     var keystrokeP99: Double { percentile(chinese.keystrokes + japanese.keystrokes, 0.99) }
 
@@ -81,11 +84,11 @@ struct Report: Codable {
             return text
         }
         var sections = [line("Chinese", chinese), line("Japanese", japanese)]
-        if let learnedBefore, let learnedAfter, let chineseAfterLearning {
-            sections.append(String(format: "Learned words: top-1 %.0f%% before learning, %.0f%% after; Chinese set after learning %.0f%%",
-                                   learnedBefore.topOneRate * 100, learnedAfter.topOneRate * 100, chineseAfterLearning.topOneRate * 100))
-            if !learnedAfter.failures.isEmpty {
-                sections.append("  misses after learning:\n" + learnedAfter.failures.map { "    \($0)" }.joined(separator: "\n"))
+        for (name, result) in learned.sorted(by: { $0.key > $1.key }) {
+            sections.append(String(format: "Learned words (%@): top-1 %.0f%% before learning, %.0f%% after; main set after learning %.0f%%",
+                                   name, result.before.topOneRate * 100, result.after.topOneRate * 100, result.mainSet.topOneRate * 100))
+            if !result.after.failures.isEmpty {
+                sections.append("  misses after learning:\n" + result.after.failures.map { "    \($0)" }.joined(separator: "\n"))
             }
         }
         return (sections + [

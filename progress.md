@@ -3,6 +3,10 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Learned-words bench for both languages (`Bench/ja-learned.tsv` added):
+  taught names and places in sentences, Chinese 0% → 83%, Japanese 30% →
+  80% (AzooKey's dynamic user dictionary); main sets unchanged after
+  learning (90%, 78%).
 - Learned readings keep a needed apostrophe (D-026): 西安 picked for
   `xi'an` is no longer offered first for `xian`.
 - Chinese learned words take part in librime's sentences (D-025): a

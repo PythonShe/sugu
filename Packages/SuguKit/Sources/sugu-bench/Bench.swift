@@ -64,17 +64,21 @@ enum Bench {
         report.japanese = measure(session, mode: .japanese, cases: try load(bench.appendingPathComponent("ja.tsv")))
         report.memory = Memory.current()
 
-        let learnedSet = bench.appendingPathComponent("zh-learned.tsv")
-        if FileManager.default.fileExists(atPath: learnedSet.path) {
-            let (words, cases) = try loadLearned(learnedSet)
-            report.learnedBefore = measure(session, mode: .chinese, cases: cases)
+        // Words the user taught, in sentences: before teaching them, after,
+        // and the main set again after, per language.
+        for (mode, name) in [(InputMode.chinese, "zh"), (.japanese, "ja")] {
+            let set = bench.appendingPathComponent("\(name)-learned.tsv")
+            guard FileManager.default.fileExists(atPath: set.path) else { continue }
+            let (words, cases) = try loadLearned(set)
+            var result = LearnedResult(before: measure(session, mode: mode, cases: cases))
             for (reading, text) in words {
-                store.learn(Commit(text: text, reading: reading), mode: .chinese)
+                store.learn(Commit(text: text, reading: reading), mode: mode)
             }
             engines.learnedWordsDidChange()
-            await engines.waitForChineseWords()
-            report.learnedAfter = measure(session, mode: .chinese, cases: cases)
-            report.chineseAfterLearning = measure(session, mode: .chinese, cases: try load(bench.appendingPathComponent("zh.tsv")))
+            await engines.waitForLearnedWords()
+            result.after = measure(session, mode: mode, cases: cases)
+            result.mainSet = measure(session, mode: mode, cases: try load(bench.appendingPathComponent("\(name).tsv")))
+            report.learned[name] = result
         }
         return report
     }
