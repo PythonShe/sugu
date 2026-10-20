@@ -83,7 +83,7 @@ extension InputSession {
         case .japanese:
             if key.keyCode == VirtualKey.space { return typeFullWidthSpace(key) }
             guard let engine = engines.engine(for: .japanese), engine.accepts(character) else { return false }
-            begin(with: engine, input: input(for: character))
+            begin(with: engine, input: input(for: key, character: character))
             return true
         }
     }
@@ -99,11 +99,31 @@ extension InputSession {
         commitText(punctuator.output(for: character, after: previous), reading: String(character), learn: false)
     }
 
-    /// Romaji input maps symbol keys to Japanese symbols; kana input and
-    /// pinyin pass keys through.
-    func input(for character: Character) -> String {
-        guard mode == .japanese, !preferences.kanaInput else { return String(character) }
+    /// Romaji input maps symbol keys to Japanese symbols; kana input types
+    /// the kana of the physical key; pinyin passes keys through.
+    func input(for key: KeyInput, character: Character) -> String {
+        guard mode == .japanese else { return String(character) }
+        if preferences.kanaInput {
+            return KanaLayout.kana(forKeyCode: key.keyCode, shift: key.modifiers.contains(.shift), jis: key.isJISKeyboard) ?? String(character)
+        }
         return preferences.japanesePunctuation.romajiInput(for: character)
+    }
+
+    /// Types input into the composition. In kana input a voicing mark
+    /// joins the kana before the caret (か゛ → が) when it takes one.
+    func insert(_ input: String, into engine: any CompositionEngine) {
+        let state = engine.state
+        if mode == .japanese, preferences.kanaInput, let mark = input.first, input.count == 1,
+           mark == KanaLayout.voicedMark || mark == KanaLayout.semiVoicedMark,
+           state.phase == .composing, state.caret > 0, state.caret <= state.reading.count {
+            let before = state.reading[state.reading.index(state.reading.startIndex, offsetBy: state.caret - 1)]
+            if let voiced = KanaLayout.applying(mark, to: before) {
+                engine.deleteBackward()
+                engine.insert(String(voiced))
+                return
+            }
+        }
+        engine.insert(input)
     }
 
     // MARK: Live candidates (librime, expressions)
@@ -143,7 +163,7 @@ extension InputSession {
         // What the engine takes is input, even digits and operators in an
         // expression; only the rest selects or turns pages.
         if engine.accepts(character) {
-            engine.insert(input(for: character))
+            insert(input(for: key, character: character), into: engine)
             refresh()
             return true
         }
@@ -246,10 +266,10 @@ extension InputSession {
                 // Typing on after a choice commits it and starts afresh.
                 commitComposition()
                 guard let fresh = engines.engine(for: mode) else { return true }
-                begin(with: fresh, input: input(for: character))
+                begin(with: fresh, input: input(for: key, character: character))
                 return true
             }
-            engine.insert(input(for: character))
+            insert(input(for: key, character: character), into: engine)
             refresh()
             return true
         }

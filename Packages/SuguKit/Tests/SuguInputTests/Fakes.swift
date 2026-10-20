@@ -55,6 +55,8 @@ final class FakeEngine: CompositionEngine {
     /// Readings whose first candidate covers only their start, as librime
     /// selects a phrase for the first syllables and keeps composing.
     var partial: [String: (consumed: Int, text: String)] = [:]
+    /// Takes every printable key, as AzooKey does in kana input.
+    var acceptsSymbols = false
     private var input = ""
     private var selected = ""
     private var converting = false
@@ -67,7 +69,9 @@ final class FakeEngine: CompositionEngine {
         self.converts = converts
     }
 
-    func accepts(_ character: Character) -> Bool { character.isASCIILowercaseLetter || character == "'" }
+    func accepts(_ character: Character) -> Bool {
+        character.isASCIILowercaseLetter || character == "'" || (acceptsSymbols && !character.isWhitespace)
+    }
     func insert(_ text: String) { input += text; converting = false; refresh() }
     func deleteBackward() { if !input.isEmpty { input.removeLast() }; refresh() }
     func deleteForward() {}

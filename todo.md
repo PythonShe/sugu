@@ -72,3 +72,13 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Engine traits on `CompositionEngine`; `InputSession` asks the engine, not the mode or its type
 - [x] Split `InputSession` along its seams; `CandidateList` and `PendingUndo` types
 - [x] Tests: AzooKey clause navigation, session navigation and paging, `ShiftTapDetector` and `DictionarySync` moved into the package and tested
+
+## 9. v1 gaps (advisor pass 2)
+- [x] Kana input types the kana of each physical key, JIS or ANSI, with voicing marks (D-033)
+- [ ] First run follows the preferred languages: Japanese-first users start in Japanese
+- [ ] Traditional Chinese punctuation: 「」『』 for the Taiwan and Hong Kong scripts
+- [ ] Input menu: Chinese script, pause learning, Check for Updates
+- [ ] Candidate window: width cap with truncation, hover highlight
+- [ ] Undo after commit: verify the deletion in hosts that ignore the replacement range
+- [ ] Zhuyin, if wanxiang or librime algebra supports it under a compatible license
+- [ ] Japanese live conversion, as a preference

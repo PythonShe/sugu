@@ -1,4 +1,5 @@
 import AppKit
+import Carbon
 import SuguCore
 
 /// Turns AppKit key events into Sugu's platform-free key model.
@@ -8,7 +9,8 @@ enum KeyTranslator {
             keyCode: event.keyCode,
             characters: event.characters ?? "",
             charactersIgnoringModifiers: event.charactersIgnoringModifiers,
-            modifiers: modifiers(from: event.modifierFlags)
+            modifiers: modifiers(from: event.modifierFlags),
+            isJISKeyboard: KBGetLayoutType(Int16(LMGetKbdType())) == kKeyboardJIS
         )
     }
 

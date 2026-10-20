@@ -13,6 +13,18 @@ struct TextTests {
         #expect(WidthConversion.halfWidthKatakana("がっこう。") == "ｶﾞｯｺｳ｡")
     }
 
+    @Test func kanaLayout() {
+        #expect(KanaLayout.kana(forKeyCode: 0x11, shift: false, jis: true) == "か")
+        #expect(KanaLayout.kana(forKeyCode: 0x11, shift: true, jis: true) == "か")
+        #expect(KanaLayout.kana(forKeyCode: 0x06, shift: true, jis: false) == "っ")
+        #expect(KanaLayout.kana(forKeyCode: 0x5D, shift: false, jis: true) == "ー")
+        #expect(KanaLayout.kana(forKeyCode: 0x27, shift: true, jis: false) == "ろ")
+        #expect(KanaLayout.kana(forKeyCode: 0x31, shift: false, jis: true) == nil)
+        #expect(KanaLayout.applying(KanaLayout.voicedMark, to: "う") == "ゔ")
+        #expect(KanaLayout.applying(KanaLayout.semiVoicedMark, to: "ひ") == "ぴ")
+        #expect(KanaLayout.applying(KanaLayout.semiVoicedMark, to: "か") == nil)
+    }
+
     @Test func automaticPunctuationWidth() {
         var punctuator = ChinesePunctuator()
         #expect(punctuator.output(for: ",", after: "好") == "，")

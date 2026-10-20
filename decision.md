@@ -437,3 +437,16 @@ any call made without the owner present. Each entry: what, why, reversibility.
   30% → 90% without it). Zenzai reranks AzooKey's lattice by the language
   model and rewrites the result, and the dynamic user dictionary does not
   bind it.
+
+## D-033 · Kana input maps physical keys (2026-10-20)
+- Kana input was selectable but typed the Latin layout's letters, so
+  AzooKey's direct input received `asdf`. The session now looks up the
+  kana for the key's virtual key code (`KanaLayout`), so the Latin layout
+  in use does not matter.
+- JIS keyboards use the JIS kana layout. ANSI and ISO keyboards use the
+  arrangement the Mac's Japanese input method uses there, which moves け,
+  む, ろ, ー, the voicing marks and 「」 to keys an ANSI keyboard has (the
+  same table as AzooKey's `defaultKanaUS`). The shell reads the keyboard
+  type from `KBGetLayoutType(LMGetKbdType())` per key.
+- ゛ and ゜ join the kana before the caret when it takes them (か゛ → が,
+  は゜ → ぱ, う゛ → ゔ); otherwise they are typed as they are.

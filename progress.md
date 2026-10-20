@@ -3,6 +3,9 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-20
+- Kana input types kana by physical key on JIS and ANSI keyboards, with
+  voicing marks joining the kana before them (D-033). Advisor pass 2
+  listed the remaining v1 gaps (todo §9).
 - Review of D-027–D-032 fixed: failed redeploys no longer look ready,
   no engine for a schema already replaced, hand-off keeps the caret, Space
   waits while Chinese loads, a Zenzai model replaced mid-load is reloaded,

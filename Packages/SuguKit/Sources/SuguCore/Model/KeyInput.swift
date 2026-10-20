@@ -60,12 +60,16 @@ public struct KeyInput: Sendable, Equatable {
     /// still applied by the layout where it changes the character).
     public var charactersIgnoringModifiers: String
     public var modifiers: KeyModifiers
+    /// The physical keyboard is JIS, which places kana input's keys
+    /// differently from ANSI and ISO keyboards.
+    public var isJISKeyboard: Bool
 
-    public init(keyCode: UInt16, characters: String, charactersIgnoringModifiers: String? = nil, modifiers: KeyModifiers = []) {
+    public init(keyCode: UInt16, characters: String, charactersIgnoringModifiers: String? = nil, modifiers: KeyModifiers = [], isJISKeyboard: Bool = false) {
         self.keyCode = keyCode
         self.characters = characters
         self.charactersIgnoringModifiers = charactersIgnoringModifiers ?? characters
         self.modifiers = modifiers
+        self.isJISKeyboard = isJISKeyboard
     }
 
     /// The single printable character of this key, if it produces one.

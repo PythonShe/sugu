@@ -243,6 +243,27 @@ struct InputSessionTests {
         #expect(session.mode == .english)
     }
 
+    @Test func kanaInputTypesTheKanaOfEachKey() {
+        let session = makeSession { $0.kanaInput = true }
+        session.setMode(.japanese)
+        japanese.acceptsSymbols = true
+        // か゛ joins as が; ゛ after あ stays as typed. JIS places ゛ on @.
+        for (code, character) in [(0x11, "t"), (0x21, "@"), (0x14, "3"), (0x21, "@"), (0x03, "f"), (0x1E, "[")] as [(UInt16, String)] {
+            #expect(session.handle(KeyInput(keyCode: code, characters: character, isJISKeyboard: true)))
+        }
+        #expect(client.markedText == "があ゛ぱ")
+    }
+
+    @Test func kanaInputFollowsTheANSIArrangement() {
+        let session = makeSession { $0.kanaInput = true }
+        session.setMode(.japanese)
+        japanese.acceptsSymbols = true
+        for (code, character, modifiers) in [(0x27, "'", []), (0x21, "[", []), (0x1E, "}", [.shift])] as [(UInt16, String, KeyModifiers)] {
+            #expect(session.handle(KeyInput(keyCode: code, characters: character, modifiers: modifiers)))
+        }
+        #expect(client.markedText == "げー")
+    }
+
     @Test func modeIsRememberedPerApp() {
         let session = makeSession()
         session.setMode(.japanese)
