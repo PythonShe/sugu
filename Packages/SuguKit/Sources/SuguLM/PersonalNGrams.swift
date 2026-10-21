@@ -32,7 +32,7 @@ public final class PersonalNGrams {
     /// same gives the same n-grams.
     public static func grams(of text: String, after context: String, order: Int = 5) -> [String] {
         let typed = CharacterLanguageModel.scalars(text)
-        let scalars = CharacterLanguageModel.scalars(context).suffix(order - 1) + typed
+        let scalars = Array(CharacterLanguageModel.scalars(context).suffix(order - 1)) + typed
         let start = scalars.count - typed.count
         var grams: [String] = []
         for end in start..<scalars.count {

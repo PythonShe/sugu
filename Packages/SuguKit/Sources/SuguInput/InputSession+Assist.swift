@@ -69,7 +69,13 @@ extension InputSession {
             try? await Task.sleep(for: Self.suggestionPause)
             // Asked again after the pause: the field, the settings and the
             // composition may all have changed.
-            guard !Task.isCancelled, let self, let assistant, suggestionRequest() == request else { return }
+            guard !Task.isCancelled, let self else { return }
+            guard let assistant, suggestionRequest() == request else {
+                // Stale: ask for what the composition is now.
+                pendingSuggestion = nil
+                scheduleSuggestions()
+                return
+            }
             let result = await assistant.suggestions(for: request)
             guard !Task.isCancelled else { return }
             pendingSuggestion = nil

@@ -12,10 +12,8 @@ public final class ScriptConverter {
     /// not load.
     public init?(configurations: [URL]) {
         for url in configurations {
-            guard let handle = opencc_open(url.path), Int(bitPattern: handle) != -1 else {
-                handles.forEach { _ = opencc_close($0) }
-                return nil
-            }
+            // deinit closes the handles already open.
+            guard let handle = opencc_open(url.path), Int(bitPattern: handle) != -1 else { return nil }
             handles.append(handle)
         }
     }

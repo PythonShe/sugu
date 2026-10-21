@@ -80,6 +80,7 @@ public enum SuguDictionaryFile {
     }
 
     private static func sanitize(_ value: String) -> String {
-        value.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ")
+        // Every line break the reader splits on, not only \n.
+        String(value.map { $0 == "\t" || $0.isNewline ? " " : $0 })
     }
 }

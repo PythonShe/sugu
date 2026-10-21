@@ -257,14 +257,18 @@ final class AddWordSheet: NSObject {
 
     private nonisolated(unsafe) static var key = 0
 
+    private func trimmed(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func validate() {
-        addButton.isEnabled = !reading.trimmingCharacters(in: .whitespaces).isEmpty && !text.trimmingCharacters(in: .whitespaces).isEmpty
+        addButton.isEnabled = !trimmed(reading).isEmpty && !trimmed(text).isEmpty
     }
 
     /// Adds the word and closes, or says it could not be added and stays
     /// open for a correction.
     private func add() {
-        guard model.addWord(reading: reading, text: text, mode: mode) else {
+        guard model.addWord(reading: trimmed(reading), text: trimmed(text), mode: mode) else {
             let alert = NSAlert()
             alert.messageText = String(localized: "The word could not be added.")
             alert.alertStyle = .warning

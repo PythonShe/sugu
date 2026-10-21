@@ -35,6 +35,8 @@ final class SQLiteDatabase {
         guard sqlite3_open_v2(url.path, &handle, flags, nil) == SQLITE_OK else {
             let message = handle.map { String(cString: sqlite3_errmsg($0)) } ?? "open failed"
             sqlite3_close(handle)
+            // deinit runs after a throwing init too; it must not close again.
+            handle = nil
             throw Error.sqlite(code: SQLITE_CANTOPEN, message: message)
         }
         // Another process holding the file briefly (a second Sugu during an

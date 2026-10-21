@@ -566,7 +566,8 @@ public final class LearnedStore {
                     if word.count == 0, word.kind == .learned, !word.pinned {
                         try database.run("DELETE FROM words WHERE id = ?", [.integer(id)])
                         removeFromMemory(id)
-                        try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: clock()))
+                        // Dated at its first use, as `unlearn` does.
+                        try remember(WordDeletion(mode: word.mode, reading: word.reading, text: word.text, kind: word.kind, deletedAt: word.firstUsed))
                     } else {
                         try database.run("UPDATE words SET count = ? WHERE id = ?", [.integer(Int64(word.count)), .integer(id)])
                         words[id] = word

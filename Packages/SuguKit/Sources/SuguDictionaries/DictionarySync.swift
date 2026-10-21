@@ -128,9 +128,11 @@ public final class DictionarySync {
                 pullError = error
             }
             do {
+                // This write covers an export already scheduled, not one
+                // scheduled while it runs.
+                pendingExport?.cancel()
                 try await write(sync)
                 guard generation == self.generation else { return }
-                pendingExport?.cancel()
                 if let pullError { failed(pullError) } else { succeeded() }
             } catch {
                 guard generation == self.generation else { return }

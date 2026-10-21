@@ -131,6 +131,14 @@ private final class ManualClock: @unchecked Sendable {
         #expect(SuguDictionaryFile.decode(Data("chinese\tsugu\t速贵\tuser\n".utf8)).isEmpty)
     }
 
+    /// A word spanning lines (a Text Replacement) stays one word.
+    @Test func lineBreaksInAWordStayInTheLine() throws {
+        let source = try store()
+        source.addUserWord(reading: "dizhi", text: "一行\r\n二行\u{2028}三行", mode: .chinese)
+        let words = SuguDictionaryFile.decode(SuguDictionaryFile.encode(source.allWords()))
+        #expect(words.map(\.text) == ["一行 二行 三行"])
+    }
+
     @Test func roundTripKeepsDetail() throws {
         let source = try store()
         source.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)

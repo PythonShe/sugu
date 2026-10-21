@@ -190,6 +190,7 @@ public final class InputSession {
         undoable = nil
         retypable = nil
         typedBefore = ""
+        context = ""
         vocabulary = ""
         readsVocabulary = true
         let bundleID = client.bundleIdentifier
@@ -210,6 +211,7 @@ public final class InputSession {
         if !isEmpty { commitComposition() }
         endSuggestions()
         self.client = nil
+        context = ""
         vocabulary = ""
     }
 

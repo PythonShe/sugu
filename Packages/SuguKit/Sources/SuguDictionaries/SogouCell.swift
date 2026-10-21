@@ -26,14 +26,17 @@ enum SogouCell {
         while reader.position < bytes.count {
             guard let homophones = reader.uint16(), let codeLength = reader.uint16() else { break }
             var reading = ""
+            // A syllable missing from the table would make a wrong reading:
+            // the group is read past and left out.
+            var complete = true
             for _ in 0..<(codeLength / 2) {
                 guard let index = reader.uint16() else { return entries }
-                reading += syllables[index] ?? ""
+                if let syllable = syllables[index] { reading += syllable } else { complete = false }
             }
             for _ in 0..<homophones {
                 guard let wordLength = reader.uint16(), let word = reader.utf16(wordLength),
                       let extraLength = reader.uint16(), reader.skip(extraLength) else { return entries }
-                if !reading.isEmpty, !word.isEmpty {
+                if complete, !reading.isEmpty, !word.isEmpty {
                     entries.append(DictionaryEntry(mode: .chinese, reading: reading, text: word))
                 }
             }
