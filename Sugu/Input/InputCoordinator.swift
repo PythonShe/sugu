@@ -231,14 +231,14 @@ final class InputCoordinator {
     private func modeDidChange(to mode: InputMode, byUser: Bool) {
         guard preferences.preferences.showModeIndicator, let client else { return }
         if byUser {
-            indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, near: client.compositionRect())
+            indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, katakana: session.typesKatakana, near: client.compositionRect())
             return
         }
         Task { @MainActor [weak self] in
             guard let self, self.client === client, session.mode == mode else { return }
             let caret = client.compositionRect()
             guard caret != .zero else { return }
-            indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, near: caret)
+            indicator.show(mode, keyboard: preferences.preferences.chineseKeyboard, katakana: session.typesKatakana, near: caret)
         }
     }
 
@@ -246,6 +246,12 @@ final class InputCoordinator {
 
     func select(_ mode: InputMode) {
         session.setMode(mode)
+    }
+
+    var typesKatakana: Bool { session.typesKatakana }
+
+    func setKatakana(_ katakana: Bool) {
+        session.setKatakana(katakana)
     }
 
     func reconvertSelection() {

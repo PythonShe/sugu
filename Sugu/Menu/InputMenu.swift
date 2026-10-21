@@ -12,6 +12,7 @@ final class InputMenu {
         case addWord
         case settings
         case checkForUpdates
+        case hiragana, katakana
     }
 
     /// Tags of the Chinese Characters items, one per script.
@@ -35,6 +36,16 @@ final class InputMenu {
             let item = Self.item(mode.localizedName, command: Self.command(for: mode))
             item.state = coordinator.mode == mode ? .on : .off
             menu.addItem(item)
+            if mode == .japanese {
+                for katakana in [false, true] {
+                    let kana = Self.item(katakana ? String(localized: "Katakana") : String(localized: "Hiragana"), command: katakana ? .katakana : .hiragana)
+                    kana.keyEquivalent = katakana ? "k" : "j"
+                    kana.keyEquivalentModifierMask = [.control, .shift]
+                    kana.indentationLevel = 1
+                    kana.state = coordinator.mode == .japanese && coordinator.typesKatakana == katakana ? .on : .off
+                    menu.addItem(kana)
+                }
+            }
         }
         menu.addItem(.separator())
         if enabled.contains(.chinese) { menu.addItem(scriptMenu()) }
@@ -105,6 +116,8 @@ final class InputMenu {
         case .chinese: coordinator.select(.chinese)
         case .japanese: coordinator.select(.japanese)
         case .english: coordinator.select(.english)
+        case .hiragana: coordinator.setKatakana(false)
+        case .katakana: coordinator.setKatakana(true)
         case .reconvert: coordinator.reconvertSelection()
         case .learning: preferences.update { $0.learningEnabled.toggle() }
         case .learnedWords: AppEnvironment.shared.showSettings(.learning)

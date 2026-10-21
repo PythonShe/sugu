@@ -45,6 +45,13 @@ extension InputSession {
             switchCJKMode()
             return true
         }
+        // ⌃⇧K types katakana and ⌃⇧J hiragana, as in Apple's Japanese input.
+        if preferences.enabledModes.contains(.japanese), key.modifiers.isSuperset(of: [.control, .shift]),
+           key.modifiers.isDisjoint(with: [.command, .option]), case let letter = key.charactersIgnoringModifiers.lowercased(),
+           letter == "k" || letter == "j" {
+            setKatakana(letter == "k")
+            return true
+        }
         // ⌃⇧R reconverts the selection, as in Apple's Japanese input.
         if isEmpty, key.modifiers.isSuperset(of: [.control, .shift]), key.modifiers.isDisjoint(with: [.command, .option]),
            key.charactersIgnoringModifiers.lowercased() == "r", reconvertSelection() {
@@ -381,7 +388,7 @@ extension InputSession {
             if transformed != nil || (list.highlight != nil && (!converting || highlightsOwnCandidate)) {
                 commitHighlighted()
             } else {
-                commit(engine.commitConverted())
+                commitConverted(engine)
             }
             return true
         case VirtualKey.space:

@@ -219,5 +219,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 ## 24. Feature requests (2026-10-21)
 - [x] Import a dictionary the easy way: drop or choose a file, see what it holds, import (D-095)
 - [x] Display language chosen in Settings, apart from the system's (D-096)
-- [~] Katakana input without a JIS keyboard: ⌃⇧K and ⌃⇧J, the input menu and the mode indicator
+- [x] Katakana input without a JIS keyboard: ⌃⇧K and ⌃⇧J, the input menu and the mode indicator (D-097)
 - [~] Phonetic romaji (optional): wa → は, e → へ, o → を as particles, and a single n read from context (research with a Fable advisor)

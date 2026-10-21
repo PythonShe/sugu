@@ -1580,6 +1580,29 @@
         }
       }
     },
+    "Hiragana": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ひらがな"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "平假名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "平假名"
+          }
+        }
+      }
+    },
     "Horizontal": {
       "extractionState": "manual",
       "localizations": {
@@ -1851,6 +1874,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "假名"
+          }
+        }
+      }
+    },
+    "Katakana": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カタカナ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "片假名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "片假名"
           }
         }
       }

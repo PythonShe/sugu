@@ -34,6 +34,32 @@ extension InputSessionTests {
         #expect(client.document == "ｎｉｈｏｎｇｏ")
     }
 
+    /// ⌃⇧K types katakana and ⌃⇧J hiragana: the kana shows and commits
+    /// in katakana, and Space still converts.
+    @Test func katakanaWithoutAJISKeyboard() {
+        let session = makeSession()
+        japanese.acceptsSymbols = true
+        let control = { (letter: String) in
+            KeyInput(keyCode: 0, characters: "", charactersIgnoringModifiers: letter, modifiers: [.control, .shift])
+        }
+        #expect(session.handle(control("K")))
+        #expect(session.mode == .japanese)
+        #expect(session.typesKatakana)
+        type("げーむ", into: session)
+        #expect(client.markedText == "ゲーム")
+        _ = session.handle(Key.enter)
+        #expect(client.document == "ゲーム")
+        type("nihongo", into: session)
+        _ = session.handle(Key.space)
+        #expect(client.markedText == "日本語")
+        _ = session.handle(Key.enter)
+        #expect(client.document == "ゲーム日本語")
+        type("にほん", into: session)
+        #expect(session.handle(control("J")))
+        #expect(!session.typesKatakana)
+        #expect(client.markedText == "にほん")
+    }
+
     /// ⌃I and ⌃O shrink and grow the clause while converting; ⌃⇧R
     /// reconverts the selection.
     @Test func controlKeysOfApplesJapaneseInput() {

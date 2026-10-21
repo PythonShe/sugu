@@ -61,9 +61,26 @@ extension InputSession {
             // A highlighted prediction is what the field shows.
             commitHighlighted()
         } else {
-            commit(engine.commitConverted())
+            commitConverted(engine)
         }
         if let rest = active, !rest.state.isEmpty { cancelComposition() }
+    }
+
+    /// Commits the conversion, or the kana typed when there is none, in
+    /// katakana while Japanese types katakana.
+    func commitConverted(_ engine: any CompositionEngine) {
+        guard showsKatakana(engine.state), let raw = engine.commitRaw() else {
+            commit(engine.commitConverted())
+            return
+        }
+        commit(Commit(text: WidthConversion.katakana(raw.text), reading: raw.reading))
+    }
+
+    /// Whether the composition is kana still being typed, which shows in
+    /// katakana while Japanese types katakana.
+    func showsKatakana(_ state: CompositionState) -> Bool {
+        typesKatakana && mode == .japanese && state.phase == .composing && !state.isEmpty
+            && state.segments.allSatisfy { $0.role == .input }
     }
 
     public func cancelComposition() {

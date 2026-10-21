@@ -22,8 +22,12 @@ final class ModeIndicatorController {
     }()
     private var dismissal: Task<Void, Never>?
 
-    func show(_ mode: InputMode, keyboard: ChineseKeyboard, near rect: NSRect) {
-        show(Self.symbol(for: mode, keyboard: keyboard), named: mode.localizedName, near: rect)
+    func show(_ mode: InputMode, keyboard: ChineseKeyboard, katakana: Bool, near rect: NSRect) {
+        if mode == .japanese, katakana {
+            show("ア", named: String(localized: "Katakana"), near: rect)
+        } else {
+            show(Self.symbol(for: mode, keyboard: keyboard), named: mode.localizedName, near: rect)
+        }
     }
 
     func show(_ symbol: String, named name: String, near rect: NSRect) {

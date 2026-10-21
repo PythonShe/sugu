@@ -1798,3 +1798,13 @@ checked against the code before it was changed.
 - AppKit reads the language once at launch, so a change asks to restart
   now or later. Restarting relaunches the app and opens Settings on
   General, where the change was made.
+
+## D-097 · Katakana without a JIS keyboard (2026-10-21)
+
+- ⌃⇧K types katakana and ⌃⇧J hiragana, Apple's Japanese input's keys,
+  from any mode with Japanese on; the input menu lists Hiragana and
+  Katakana under Japanese, and the mode indicator shows ア.
+- While it types katakana, the kana being typed shows and commits in
+  katakana (a live conversion gives way to it); Space converts as usual.
+  F7 and ⌃K still turn one composition into katakana.
+- It lasts until switched back, for the session; it is not a setting.

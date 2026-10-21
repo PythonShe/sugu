@@ -46,6 +46,8 @@ public protocol ModeMemory: AnyObject {
 @MainActor
 public final class InputSession {
     public private(set) var mode: InputMode
+    /// Japanese types katakana rather than hiragana until switched back.
+    public private(set) var typesKatakana = false
     public internal(set) var display: SessionDisplay
     public var preferences: Preferences {
         didSet { applyPreferences() }
@@ -269,6 +271,20 @@ public final class InputSession {
             commitText(raw.text, reading: raw.reading, learn: false)
         }
         toggleEnglish()
+    }
+
+    /// Japanese in katakana or hiragana, as ⌃⇧K and ⌃⇧J choose in Apple's
+    /// Japanese input; switches to Japanese from another mode.
+    public func setKatakana(_ katakana: Bool) {
+        guard preferences.enabledModes.contains(.japanese) else { return }
+        let changed = katakana != typesKatakana
+        typesKatakana = katakana
+        if mode != .japanese {
+            setMode(.japanese)
+        } else if changed {
+            publish()
+            onModeChange?(.japanese, true)
+        }
     }
 
     /// English ↔ the last Chinese or Japanese mode.

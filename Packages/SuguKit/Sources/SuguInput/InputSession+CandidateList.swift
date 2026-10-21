@@ -85,6 +85,12 @@ extension InputSession {
             } else {
                 segments = state.segments
                 caret = state.caret
+                if showsKatakana(state) {
+                    // The kana, not a live conversion, which leaves the
+                    // caret at the end.
+                    segments = [CompositionSegment(WidthConversion.katakana(state.reading), role: .input)]
+                    caret = state.markedText == state.reading ? state.caret : state.reading.count
+                }
                 // Show a highlighted prediction inline while it is chosen, and
                 // Sugu's own candidates, which replace the whole reading.
                 if composition(of: engine) == .staged, let highlighted = list.highlighted,
