@@ -5,6 +5,9 @@ import Foundation
 public struct ComputedCandidates: Sendable {
     public var calendar: Calendar
     public var timeZone: TimeZone
+    /// Made once per pattern: building them cost a millisecond on each key
+    /// of きょう or jintian.
+    private let formatters = DateFormatters()
 
     public init(calendar: Calendar = Calendar(identifier: .gregorian), timeZone: TimeZone = .current) {
         var calendar = calendar
@@ -85,15 +88,10 @@ public struct ComputedCandidates: Sendable {
     }
 
     private func japaneseDates(_ date: Date) -> [String] {
-        let era = DateFormatter()
-        era.calendar = Calendar(identifier: .japanese)
-        era.locale = Locale(identifier: "ja_JP")
-        era.timeZone = timeZone
-        era.dateFormat = "GGGGy年M月d日"
-        return [
+        [
             format(date, "yyyy年M月d日", locale: "ja_JP"),
             format(date, "yyyy/MM/dd", locale: "ja_JP"),
-            era.string(from: date),
+            format(date, "GGGGy年M月d日", locale: "ja_JP", calendar: Calendar(identifier: .japanese)),
             format(date, "M月d日(E)", locale: "ja_JP"),
         ]
     }
@@ -126,12 +124,29 @@ public struct ComputedCandidates: Sendable {
         return results.filter { seen.insert($0).inserted }.map { Candidate(text: $0, source: .computed) }
     }
 
-    private func format(_ date: Date, _ pattern: String, locale: String = "en_US_POSIX") -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = calendar
-        formatter.timeZone = timeZone
-        formatter.locale = Locale(identifier: locale)
-        formatter.dateFormat = pattern
-        return formatter.string(from: date)
+    private func format(_ date: Date, _ pattern: String, locale: String = "en_US_POSIX", calendar: Calendar? = nil) -> String {
+        let calendar = calendar ?? self.calendar
+        return formatters.formatter(pattern: pattern, locale: locale, calendar: calendar, timeZone: timeZone).string(from: date)
+    }
+}
+
+/// Date formatters by pattern, locale, calendar and time zone. Formatting
+/// with one is thread-safe; the lock guards the table.
+private final class DateFormatters: @unchecked Sendable {
+    private let lock = NSLock()
+    private var formatters: [String: DateFormatter] = [:]
+
+    func formatter(pattern: String, locale: String, calendar: Calendar, timeZone: TimeZone) -> DateFormatter {
+        let key = "\(pattern)|\(locale)|\(calendar.identifier)|\(timeZone.identifier)"
+        return lock.withLock {
+            if let formatter = formatters[key] { return formatter }
+            let formatter = DateFormatter()
+            formatter.calendar = calendar
+            formatter.timeZone = timeZone
+            formatter.locale = Locale(identifier: locale)
+            formatter.dateFormat = pattern
+            formatters[key] = formatter
+            return formatter
+        }
     }
 }
