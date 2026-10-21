@@ -3,7 +3,7 @@ import Testing
 import SuguAzooKey
 import SuguCore
 import SuguLM
-import SuguRime
+@testable import SuguRime
 
 @MainActor
 @Suite struct SentenceRespellerTests {
@@ -30,6 +30,17 @@ import SuguRime
         let respeller = SentenceRespeller(model: model, words: words)
         #expect(respeller.respelled("大学", readings: [["da", "xue"]], after: "昨天晚上下了一场") == "大雪")
         #expect(respeller.respelled("大学", readings: [["da", "xue"]], after: "") == nil)
+    }
+
+    /// A character in another script that reaches a Simplified sentence is
+    /// read in Simplified and leaves in Simplified, rather than making its
+    /// word unknown to the model.
+    @Test(.enabled(if: hasEngineData)) func aSimplifiedSentenceIsReadInSimplified() throws {
+        let openCC = engineDataDirectory.appendingPathComponent("Rime/opencc")
+        let respelling = ChineseRespelling(respeller: try respeller()) { ScriptConverter.toScript($0, openCC: openCC) }
+        #expect(respelling.respelled("我们去吃晚飯", readings: reading, after: "", script: .simplified) == "我们去吃晚饭")
+        #expect(respelling.respelled("我们去吃完飯", readings: reading, after: "", script: .simplified) == "我们去吃晚饭")
+        #expect(respelling.respelled("我们去吃晚饭", readings: reading, after: "", script: .simplified) == nil)
     }
 
     @Test func keepsTheUsersWords() throws {

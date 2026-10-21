@@ -1742,3 +1742,38 @@ checked against the code before it was changed.
 - A rime-ice update replaces tables under the same schema, so the runtime
   is told to deploy again (`RimeRuntime.setNeedsDeployment`) and librime
   rebuilds the changed dictionary.
+
+## D-094 · Chinese learned words are kept in Simplified (2026-10-21)
+
+- A learned or added Chinese word is one entry in any script: `text` is
+  its Simplified form (OpenCC's jp2t then t2s, the script of librime's
+  dictionary), the key it is stored, matched, merged, synced and deleted
+  under. Beside it the store keeps the word as last typed (`shown`) and
+  that script (`script`, schema step 3), so 學習 and 学习 under `xuexi`
+  are one word with one count, and a deletion or undo in one script
+  reaches the other. Japanese is stored as typed. No migration: the step
+  only adds the two columns, and rows from before read as typed with no
+  script.
+- Every reader converts from the store, through one place
+  (`LearnedStore.text(of:in:)`, `ChineseForms`, which EngineHub
+  implements with the converters it already holds): a word is shown as
+  typed in the script it was typed in, otherwise converted to the script
+  in use. Converting the typed form rather than the Simplified one keeps
+  the user's choice where one Simplified character stands for two (发:
+  發 or 髮).
+- librime's user dictionary (D-025) is written in Simplified and
+  librime's own filters give the script in use, as for the rest of its
+  dictionary. Written as typed, a word typed in Traditional passed
+  through unconverted in Simplified, where no filter runs, and outranked
+  the dictionary (我去臺灣); the respeller then read it as unknown and
+  replaced it (我去太晚). The respeller also reads a Simplified sentence
+  through t2s first, so a character in another script that reaches it
+  leaves in Simplified.
+- A learned word leads the engine's first choice once it is established
+  (`LearnedWord.isEstablished`: pinned, added, or chosen twice); a word
+  chosen once follows it, so one stray choice does not take over the
+  reading. AzooKey gets the same distinction in its lattice weight (-5
+  established, -8 otherwise; its dictionary scores about -10 to -17).
+- Sugu's dictionary file is version 2: the typed form and script follow
+  the dates. A version 1 line still reads, and its word and deletion are
+  matched after conversion to Simplified.

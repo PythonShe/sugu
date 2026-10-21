@@ -66,11 +66,9 @@ public final class EngineHub: EngineSource {
         self.chineseWordsDelay = chineseWordsDelay
         self.chineseScript = preferences.chineseScript
         self.runtime = RimeRuntime(directories: .init(shared: locations.rimeShared, user: locations.rimeUser))
-        // Chinese n-grams are learned in Simplified, the script the
-        // respeller scores in.
-        store?.nGramText = { [weak self] text, mode in
-            mode == .chinese ? self?.converter(for: .simplified)?.convert(text) ?? text : text
-        }
+        // Chinese words and n-grams are stored in Simplified, the script
+        // of librime's dictionary and the respeller (D-094).
+        store?.chineseForms = self
         // Brings the file in line with the store from launch.
         updateChineseWords()
     }
@@ -96,7 +94,7 @@ public final class EngineHub: EngineSource {
             engine.languageModel = loadLanguageModel(.japanese).map { BlendedLanguageModel(base: $0, personal: personalNGrams(for: .japanese)) }
             Log.engines.notice("Japanese ready in \(ContinuousClock.now - started, privacy: .public)")
             japanese = engine
-            if let store { engine.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) }) }
+            if let store { engine.setUserWords(Self.userWords(in: store)) }
             loadJapaneseDictionary(for: engine)
             loadZenzai()
             return engine
@@ -114,8 +112,12 @@ public final class EngineHub: EngineSource {
             guard let self else { return }
             userWordsRefresh = nil
             guard let japanese, let store else { return }
-            japanese.setUserWords(store.allWords(mode: .japanese).map { ($0.reading, $0.text) })
+            japanese.setUserWords(Self.userWords(in: store))
         }
+    }
+
+    private static func userWords(in store: LearnedStore) -> [AzooKeyEngine.UserWord] {
+        store.allWords(mode: .japanese).map { .init(reading: $0.reading, text: $0.text, isEstablished: $0.isEstablished) }
     }
 
     public func setChineseScript(_ script: ChineseScript) {
@@ -234,7 +236,7 @@ public final class EngineHub: EngineSource {
             }.value
             guard let (model, words) = loaded else { return }
             respeller = SentenceRespeller(model: BlendedLanguageModel(base: model, personal: personalNGrams(for: .chinese)), words: words)
-            if let store { respeller.userWords = simplifiedTexts(of: store.allWords(mode: .chinese)) }
+            if let store { respeller.userWords = Set(store.allWords(mode: .chinese).map(\.text)) }
         }
         let cachedDecoder = decoders.flatMap { $0.schema == schema ? $0.scheme : nil }
         let decoder = if let cachedDecoder { cachedDecoder } else {
@@ -251,13 +253,6 @@ public final class EngineHub: EngineSource {
         guard let chineseRespelling else { return }
         let decoder = chineseRespelling.schema == runtime.schema ? chineseRespelling.decoder : nil
         engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: decoder) { [weak self] in self?.converter(for: $0) }
-    }
-
-    /// Learned words in Simplified, the respeller's script, whatever
-    /// script they were committed in.
-    private func simplifiedTexts(of words: [LearnedWord]) -> Set<String> {
-        let converter = converter(for: .simplified)
-        return Set(words.map { converter?.convert($0.text) ?? $0.text })
     }
 
     public func isFailing(_ mode: InputMode) -> Bool {
@@ -294,7 +289,9 @@ public final class EngineHub: EngineSource {
             let locations = locations
             let cached = decoders.flatMap { $0.schema == schema ? ($0.schema, $0.scheme, $0.fullPinyin) : nil }
             let learned = store.allWords(mode: .chinese)
-            chineseRespelling?.respeller.userWords = simplifiedTexts(of: learned)
+            // Stored in Simplified, as the respeller and librime's
+            // dictionary read; librime's filters give the script in use.
+            chineseRespelling?.respeller.userWords = Set(learned.map(\.text))
             // Writes land in order: an older table never replaces a newer one.
             let previous = chineseWordsWrite
             let write = Task.detached(priority: .utility) { () -> ChineseWordsWrite in
@@ -506,5 +503,15 @@ public final class EngineHub: EngineSource {
     /// Waits until Zenzai is loaded, when it is on (for tools and tests).
     public func waitForZenzai() async {
         while let task = zenzaiLoading { await task.value }
+    }
+}
+
+extension EngineHub: ChineseForms {
+    public func simplified(_ text: String) -> String? {
+        converter(for: .simplified)?.convert(text)
+    }
+
+    public func text(_ text: String, in script: ChineseScript) -> String? {
+        converter(for: script)?.convert(text)
     }
 }

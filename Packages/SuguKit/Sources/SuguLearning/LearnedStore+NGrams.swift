@@ -32,7 +32,8 @@ extension LearnedStore {
     /// context, which is how a commit opts out.
     private func grams(of commit: Commit, mode: InputMode) -> [String] {
         guard mode != .english, let context = commit.context else { return [] }
-        let form = { (text: String) in self.nGramText?(text, mode) ?? text }
+        // In Simplified for Chinese, the script the language models read.
+        let form = { (text: String) in self.storedText(text, mode: mode) }
         return PersonalNGrams.grams(of: form(commit.text), after: form(context))
     }
 

@@ -112,12 +112,12 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
     private func reloadWords() {
         let query = search.stringValue.trimmingCharacters(in: .whitespaces)
         var visible = query.isEmpty ? model.words : model.words.filter {
-            $0.text.localizedCaseInsensitiveContains(query) || $0.reading.localizedCaseInsensitiveContains(query) || $0.shownReading.contains(query)
+            $0.shown.localizedCaseInsensitiveContains(query) || $0.text.localizedCaseInsensitiveContains(query) || $0.reading.localizedCaseInsensitiveContains(query) || $0.shownReading.contains(query)
         }
         if let sort = wordsEditor.table.sortDescriptors.first, let key = sort.key {
             func less(_ lhs: LearnedWord, _ rhs: LearnedWord) -> Bool {
                 switch key {
-                case "text": lhs.text.localizedStandardCompare(rhs.text) == .orderedAscending
+                case "text": lhs.shown.localizedStandardCompare(rhs.shown) == .orderedAscending
                 case "reading": lhs.reading < rhs.reading
                 case "mode": lhs.mode.rawValue < rhs.mode.rawValue
                 case "count": lhs.count < rhs.count
@@ -182,7 +182,7 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         }
         let word = words[row]
         switch tableColumn?.identifier.rawValue {
-        case "text": return textCell(word.text, in: tableView)
+        case "text": return textCell(word.shown, in: tableView)
         case "reading": return textCell(word.shownReading, in: tableView, secondary: true)
         case "mode": return textCell(word.mode.localizedName, in: tableView, secondary: true)
         case "count": return textCell(word.count.formatted(), in: tableView, secondary: true)

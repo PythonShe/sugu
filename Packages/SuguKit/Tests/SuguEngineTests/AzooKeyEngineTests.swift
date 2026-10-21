@@ -270,7 +270,7 @@ import SuguRime
 
     @Test func respellingLeavesTheUsersWords() throws {
         let engine = try makeEngine()
-        engine.setUserWords([(reading: "ゆき", text: "行き")])
+        engine.setUserWords([.init(reading: "ゆき", text: "行き", isEstablished: true)])
         engine.languageModel = try testLanguageModel(["雪が沢山降っています。", "雪が降っています。", "昨日は雪が降った。"])
         engine.insert("yukigatakusanfutteimasu")
         #expect(engine.convert())
@@ -279,7 +279,7 @@ import SuguRime
 
     @Test func theDictionaryInMemoryKeepsTheUsersWords() async throws {
         let engine = try makeEngine()
-        engine.setUserWords([(reading: "すぐ", text: "数具")])
+        engine.setUserWords([.init(reading: "すぐ", text: "数具", isEstablished: true)])
         engine.insert("sugu")
         engine.clear()
         engine.adopt(await AzooKeyEngine.loadMemoryDictionary())

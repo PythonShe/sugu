@@ -120,9 +120,9 @@ extension InputSession {
                 refresh()
             }
         case .learned:
-            // Shown in the script in use; the store keeps the form it learned.
+            // Shown in the script in use; the store finds the word in any.
             let learns = engine.traits.learnsCommits
-            commitWhole(candidate.text, word: learnedText(shown: candidate.text, reading: engine.state.reading), learn: learns, undoable: learns)
+            commitWhole(candidate.text, word: candidate.text, learn: learns, undoable: learns)
         case .chineseForm:
             // A Chinese name in Japanese text does not belong in the Japanese store.
             commitWhole(candidate.text, undoable: true)
@@ -158,8 +158,8 @@ extension InputSession {
     func forgetHighlighted() -> Bool {
         guard let candidate = list.highlighted, let store else { return false }
         let shown = candidate.text
-        let ids = store.allWords(mode: mode)
-            .filter { $0.kind == .learned && !$0.pinned && ($0.text == shown || (mode == .chinese && engines.chineseText($0.text) == shown)) }
+        let ids = store.words(showing: shown, mode: mode)
+            .filter { $0.kind == .learned && !$0.pinned }
             .map(\.id)
         guard !ids.isEmpty else { return false }
         store.delete(ids: ids)
@@ -168,14 +168,6 @@ extension InputSession {
         undoable = nil
         refresh()
         return true
-    }
-
-    /// The learned word a candidate shows, before script conversion.
-    private func learnedText(shown: String, reading: String) -> String {
-        guard mode == .chinese, let words = store?.lookup(reading, mode: mode) else { return shown }
-        return words.first { $0.text == shown }?.text
-            ?? words.first { engines.chineseText($0.text) == shown }?.text
-            ?? shown
     }
 
     func commit(_ commit: Commit?) {
@@ -224,7 +216,7 @@ extension InputSession {
     /// returns whether it did.
     private func learn(_ record: Commit) -> Bool {
         guard mode != .english, !isSecureInput, let client, preferences.learns(in: client.bundleIdentifier), let store else { return false }
-        store.learn(record, mode: mode)
+        store.learn(record, mode: mode, script: mode == .chinese ? chineseScript : nil)
         engines.learnedWordsDidChange()
         return true
     }

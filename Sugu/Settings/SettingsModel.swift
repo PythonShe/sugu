@@ -159,7 +159,7 @@ final class SettingsModel {
 
     @discardableResult
     func addWord(reading: String, text: String, mode: InputMode) -> Bool {
-        environment.store?.addUserWord(reading: reading, text: text, mode: mode) ?? false
+        environment.store?.addUserWord(reading: reading, text: text, mode: mode, script: mode == .chinese ? preferences.chineseScript : nil) ?? false
     }
 
     // MARK: Dictionaries

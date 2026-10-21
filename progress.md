@@ -3,6 +3,15 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-21
+- Learned words reviewed (Fable agent and CodeRabbit) and rebuilt around
+  one Simplified entry per Chinese word, shown in the script in use
+  (D-094). Fixes a word typed in Traditional outranking the Simplified one
+  in Simplified sentences. Also from the review: a double close of SQLite
+  and OpenCC after a failed open, line breaks in synced words, Sogou
+  groups with unknown syllables, a field's text kept after focus moved,
+  suggestions stuck after a stale request, and words added with spaces.
+  A real-librime test and two Traditional-taught bench words pin the fix;
+  learned-word bench results are unchanged (zh 93%, ja 100%).
 - Settings fixes: the window opens in front of the app being typed in;
   every control saves again (its action had resolved to NSObject's
   `performSelector:` since 8f8f748, so no change was ever kept); the

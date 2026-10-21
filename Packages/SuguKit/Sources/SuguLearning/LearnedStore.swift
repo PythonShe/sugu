@@ -30,9 +30,10 @@ public final class LearnedStore {
     var nGramRows: [InputMode: Int] = [:]
     /// Distinct n-grams kept per mode; the least recently used go first.
     public var maximumNGrams = 100_000
-    /// Puts committed text in the form the language models read: Chinese
-    /// in Simplified. Text is learned as it is without one.
-    public var nGramText: ((String, InputMode) -> String)?
+    /// Converts Chinese between scripts: words and n-grams are stored in
+    /// Simplified and given back in the script in use. Without it, text is
+    /// stored as typed.
+    public weak var chineseForms: (any ChineseForms)?
     /// Learned words unused this many days are deleted, and not taken from
     /// other Macs either; 0 keeps them. Set by `expire(olderThan:)`.
     public private(set) var expiryDays = 0
@@ -139,6 +140,12 @@ public final class LearnedStore {
         );
         CREATE INDEX IF NOT EXISTS ngram_events_at ON ngram_events(at);
         """,
+        // The word as typed and its script, beside the Simplified `text`
+        // (D-094). Empty: the same as `text`, script unknown.
+        """
+        ALTER TABLE words ADD COLUMN shown TEXT NOT NULL DEFAULT '';
+        ALTER TABLE words ADD COLUMN script TEXT NOT NULL DEFAULT '';
+        """,
     ]
 
     private func migrate() throws {
@@ -161,13 +168,15 @@ public final class LearnedStore {
     private func loadAll() throws {
         var loadedWords: [Int64: LearnedWord] = [:]
         var loadedIndex: [IndexKey: [Int64]] = [:]
-        try database.query("SELECT id, mode, reading, text, kind, count, pinned, first_used, last_used FROM words") { row in
+        try database.query("SELECT id, mode, reading, text, kind, count, pinned, first_used, last_used, shown, script FROM words") { row in
             guard let mode = InputMode(rawValue: row.string(1)), let kind = LearnedWord.Kind(rawValue: Int(row.int(4))) else { return }
+            let shown = row.string(9)
             let word = LearnedWord(
                 id: row.int(0), mode: mode, reading: row.string(2), text: row.string(3), kind: kind,
                 count: Int(row.int(5)), pinned: row.int(6) != 0,
                 firstUsed: Date(timeIntervalSinceReferenceDate: row.double(7)),
-                lastUsed: Date(timeIntervalSinceReferenceDate: row.double(8))
+                lastUsed: Date(timeIntervalSinceReferenceDate: row.double(8)),
+                shown: shown.isEmpty ? nil : shown, script: ChineseScript(rawValue: row.string(10))
             )
             loadedWords[word.id] = word
             loadedIndex[IndexKey(mode: mode, reading: word.reading), default: []].append(word.id)
@@ -217,11 +226,12 @@ public final class LearnedStore {
         return splits.count == 1 && breaks.isSubset(of: splits[0])
     }
 
-    /// The best-known reading of a text, for reconversion.
+    /// The best-known reading of a text in any script, for reconversion.
     public func reading(for text: String, mode: InputMode) -> String? {
         let now = clock()
+        let stored = storedText(text, mode: mode)
         return words.values
-            .filter { $0.mode == mode && $0.text == text }
+            .filter { $0.mode == mode && $0.text == stored }
             .max { $0.score(at: now) < $1.score(at: now) }?
             .reading
     }
@@ -235,6 +245,27 @@ public final class LearnedStore {
 
     public var count: Int { words.count }
 
+    /// Text in the form words are stored and matched in: Chinese in
+    /// Simplified, so a word typed in either script is one word.
+    public func storedText(_ text: String, mode: InputMode) -> String {
+        mode == .chinese ? chineseForms?.simplified(text) ?? text : text
+    }
+
+    /// A word as it is written in `script`: as typed when it was typed in
+    /// that script, otherwise converted. Converting from the Simplified
+    /// form would guess where one Simplified character stands for two
+    /// (发: 發 or 髮); the typed form keeps the one the user chose.
+    public func text(of word: LearnedWord, in script: ChineseScript) -> String {
+        guard word.mode == .chinese, word.script != script else { return word.shown }
+        return chineseForms?.text(word.shown, in: script) ?? word.shown
+    }
+
+    /// The learned words a candidate shown in the script in use stands for.
+    public func words(showing text: String, mode: InputMode) -> [LearnedWord] {
+        let stored = storedText(text, mode: mode)
+        return words.values.filter { $0.mode == mode && $0.text == stored }
+    }
+
     /// Words the user deleted, for sync.
     public func allDeletions() -> [WordDeletion] {
         Array(deletions.values)
@@ -243,13 +274,14 @@ public final class LearnedStore {
     // MARK: Learning
 
     /// Learns from a commit: each converted clause and, when it is short
-    /// enough to be a word, the whole commit.
-    public func learn(_ commit: Commit, mode: InputMode) {
+    /// enough to be a word, the whole commit. `script` is the script
+    /// Chinese was typed in.
+    public func learn(_ commit: Commit, mode: InputMode, script: ChineseScript? = nil) {
         let now = clock()
         do {
             try write {
                 for (reading, text) in Self.pairs(learnedFrom: commit) {
-                    try recordUse(reading: reading, text: text, mode: mode, kind: .learned, at: now)
+                    try recordUse(reading: reading, text: text, script: script, mode: mode, kind: .learned, at: now)
                 }
                 try learnNGrams(of: commit, mode: mode, at: now)
                 try database.run("DELETE FROM events WHERE at < ?", [.real(now.addingTimeInterval(-7_200).timeIntervalSinceReferenceDate)])
@@ -269,7 +301,8 @@ public final class LearnedStore {
             try write {
                 for (rawReading, text) in Self.pairs(learnedFrom: commit) {
                     let reading = LearnedWord.normalize(rawReading, mode: mode)
-                    guard let id = index[IndexKey(mode: mode, reading: reading)]?.first(where: { words[$0]?.text == text }),
+                    let stored = storedText(text, mode: mode)
+                    guard let id = index[IndexKey(mode: mode, reading: reading)]?.first(where: { words[$0]?.text == stored }),
                           var word = words[id] else { continue }
                     word.count = max(0, word.count - 1)
                     if word.count == 0, word.kind == .learned, !word.pinned {
@@ -308,14 +341,15 @@ public final class LearnedStore {
         text.unicodeScalars.contains { $0.properties.isEmojiPresentation || $0 == "\u{FE0F}" }
     }
 
-    /// Adds a word the user typed in, or imported.
+    /// Adds a word the user typed in, or imported; `script` is the
+    /// script Chinese was entered in.
     @discardableResult
-    public func addUserWord(reading: String, text: String, mode: InputMode) -> Bool {
+    public func addUserWord(reading: String, text: String, mode: InputMode, script: ChineseScript? = nil) -> Bool {
         let reading = LearnedWord.normalize(enteredReading: reading, mode: mode)
         guard !reading.isEmpty, !text.isEmpty else { return false }
         do {
             try write {
-                try recordUse(reading: reading, text: text, mode: mode, kind: .user, at: clock(), logEvent: false)
+                try recordUse(reading: reading, text: text, script: script, mode: mode, kind: .user, at: clock(), logEvent: false)
             }
             notify()
             return true
@@ -337,10 +371,11 @@ public final class LearnedStore {
                 for entry in entries[start..<min(start + Self.importBatch, entries.count)] {
                     let reading = LearnedWord.normalize(enteredReading: entry.reading, mode: entry.mode)
                     guard !reading.isEmpty, !entry.text.isEmpty else { continue }
-                    if index[IndexKey(mode: entry.mode, reading: reading)]?.contains(where: { words[$0]?.text == entry.text }) != true {
+                    let stored = storedText(entry.text, mode: entry.mode)
+                    if index[IndexKey(mode: entry.mode, reading: reading)]?.contains(where: { words[$0]?.text == stored }) != true {
                         added += 1
                     }
-                    try recordUse(reading: reading, text: entry.text, mode: entry.mode, kind: .user, at: now, logEvent: false)
+                    try recordUse(reading: reading, text: entry.text, script: nil, mode: entry.mode, kind: .user, at: now, logEvent: false)
                 }
             }
             await Task.yield()
@@ -392,6 +427,9 @@ public final class LearnedStore {
         for var word in incoming {
             let reading = LearnedWord.normalize(word.reading, mode: word.mode)
             guard !reading.isEmpty, !word.text.isEmpty else { continue }
+            // A file from an older Sugu, or another script, has the word
+            // as typed.
+            word.text = storedText(word.text, mode: word.mode)
             let wordKey = WordKey(mode: word.mode, reading: reading, text: word.text)
             if restoring {
                 try forgetDeletion(wordKey)
@@ -405,6 +443,10 @@ public final class LearnedStore {
                 // Words both sides have always merge, so a pin or more
                 // uses on another Mac arrive even without a newer use.
                 let before = existing
+                if word.lastUsed > existing.lastUsed {
+                    existing.shown = word.shown
+                    existing.script = word.script
+                }
                 existing.count = max(existing.count, word.count)
                 existing.lastUsed = max(existing.lastUsed, word.lastUsed)
                 existing.firstUsed = min(existing.firstUsed, word.firstUsed)
@@ -412,9 +454,10 @@ public final class LearnedStore {
                 if word.kind == .user { existing.kind = .user }
                 guard existing != before else { continue }
                 try database.run(
-                    "UPDATE words SET count = ?, pinned = ?, kind = ?, first_used = ?, last_used = ? WHERE id = ?",
+                    "UPDATE words SET count = ?, pinned = ?, kind = ?, first_used = ?, last_used = ?, shown = ?, script = ? WHERE id = ?",
                     [.integer(Int64(existing.count)), .integer(existing.pinned ? 1 : 0), .integer(Int64(existing.kind.rawValue)),
-                     .real(existing.firstUsed.timeIntervalSinceReferenceDate), .real(existing.lastUsed.timeIntervalSinceReferenceDate), .integer(id)]
+                     .real(existing.firstUsed.timeIntervalSinceReferenceDate), .real(existing.lastUsed.timeIntervalSinceReferenceDate),
+                     .text(existing.shown), .text(existing.script?.rawValue ?? ""), .integer(id)]
                 )
                 words[id] = existing
                 changed = true
@@ -425,9 +468,10 @@ public final class LearnedStore {
                     continue
                 }
                 let id = try database.run(
-                    "INSERT INTO words (mode, reading, text, kind, count, pinned, first_used, last_used) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO words (mode, reading, text, kind, count, pinned, first_used, last_used, shown, script) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     [.text(word.mode.rawValue), .text(reading), .text(word.text), .integer(Int64(word.kind.rawValue)), .integer(Int64(word.count)),
-                     .integer(word.pinned ? 1 : 0), .real(word.firstUsed.timeIntervalSinceReferenceDate), .real(word.lastUsed.timeIntervalSinceReferenceDate)]
+                     .integer(word.pinned ? 1 : 0), .real(word.firstUsed.timeIntervalSinceReferenceDate), .real(word.lastUsed.timeIntervalSinceReferenceDate),
+                     .text(word.shown), .text(word.script?.rawValue ?? "")]
                 )
                 var stored = word
                 stored.id = id
@@ -447,8 +491,9 @@ public final class LearnedStore {
     public func applyDeletions(_ incoming: [WordDeletion]) throws -> Int {
         var removed = 0
         try write {
-            for deletion in incoming {
+            for var deletion in incoming {
                 let reading = LearnedWord.normalize(deletion.reading, mode: deletion.mode)
+                deletion.text = storedText(deletion.text, mode: deletion.mode)
                 let key = WordKey(mode: deletion.mode, reading: reading, text: deletion.text)
                 if let known = deletions[key], known.deletedAt >= deletion.deletedAt { continue }
                 if let id = index[IndexKey(mode: deletion.mode, reading: reading)]?.first(where: { words[$0]?.text == deletion.text }),
@@ -483,28 +528,38 @@ public final class LearnedStore {
                          [.text(key.mode.rawValue), .text(key.reading), .text(key.text)])
     }
 
-    private func recordUse(reading rawReading: String, text: String, mode: InputMode, kind: LearnedWord.Kind, at now: Date, logEvent: Bool = true) throws {
+    /// Records a use of `typed`, stored in Simplified when Chinese: a word
+    /// typed in another script is the same word, and its typed form and
+    /// script follow the latest use.
+    private func recordUse(reading rawReading: String, text typed: String, script: ChineseScript?, mode: InputMode, kind: LearnedWord.Kind,
+                           at now: Date, logEvent: Bool = true) throws {
         let reading = LearnedWord.normalize(rawReading, mode: mode)
-        guard !reading.isEmpty, !text.isEmpty else { return }
+        guard !reading.isEmpty, !typed.isEmpty else { return }
+        let text = storedText(typed, mode: mode)
+        let script = mode == .chinese ? script : nil
         // Typing a deleted word again brings it back.
         try forgetDeletion(WordKey(mode: mode, reading: reading, text: text))
         let key = IndexKey(mode: mode, reading: reading)
         if let id = index[key]?.first(where: { words[$0]?.text == text }), var word = words[id] {
             word.count += kind == .learned ? 1 : 0
             word.lastUsed = now
+            word.shown = typed
+            word.script = script
             if kind == .user { word.kind = .user }
-            try database.run("UPDATE words SET count = ?, last_used = ?, kind = ? WHERE id = ?",
-                             [.integer(Int64(word.count)), .real(now.timeIntervalSinceReferenceDate), .integer(Int64(word.kind.rawValue)), .integer(id)])
+            try database.run("UPDATE words SET count = ?, last_used = ?, kind = ?, shown = ?, script = ? WHERE id = ?",
+                             [.integer(Int64(word.count)), .real(now.timeIntervalSinceReferenceDate), .integer(Int64(word.kind.rawValue)),
+                              .text(typed), .text(script?.rawValue ?? ""), .integer(id)])
             words[id] = word
             if logEvent { try database.run("INSERT INTO events (word_id, at) VALUES (?, ?)", [.integer(id), .real(now.timeIntervalSinceReferenceDate)]) }
             return
         }
         let id = try database.run(
-            "INSERT INTO words (mode, reading, text, kind, count, pinned, first_used, last_used) VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
+            "INSERT INTO words (mode, reading, text, kind, count, pinned, first_used, last_used, shown, script) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)",
             [.text(mode.rawValue), .text(reading), .text(text), .integer(Int64(kind.rawValue)), .integer(kind == .learned ? 1 : 0),
-             .real(now.timeIntervalSinceReferenceDate), .real(now.timeIntervalSinceReferenceDate)]
+             .real(now.timeIntervalSinceReferenceDate), .real(now.timeIntervalSinceReferenceDate), .text(typed), .text(script?.rawValue ?? "")]
         )
-        insertInMemory(LearnedWord(id: id, mode: mode, reading: reading, text: text, kind: kind, count: kind == .learned ? 1 : 0, pinned: false, firstUsed: now, lastUsed: now))
+        insertInMemory(LearnedWord(id: id, mode: mode, reading: reading, text: text, kind: kind, count: kind == .learned ? 1 : 0, pinned: false,
+                                   firstUsed: now, lastUsed: now, shown: typed, script: script))
         if logEvent { try database.run("INSERT INTO events (word_id, at) VALUES (?, ?)", [.integer(id), .real(now.timeIntervalSinceReferenceDate)]) }
     }
 

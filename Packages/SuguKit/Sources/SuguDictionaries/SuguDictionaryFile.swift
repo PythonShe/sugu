@@ -6,10 +6,11 @@ import SuguLearning
 /// enough detail (kind, pin, use count, dates) to move a store between
 /// Macs without losing ranking. Sync files also list deleted words, with
 /// kind `deleted user` or `deleted learned` and the deletion date as
-/// last used.
+/// last used. Version 2 adds the word as typed and its script after the
+/// dates (D-094); a version 1 line, without them, still reads.
 public enum SuguDictionaryFile {
     static let header = "# Sugu dictionary"
-    static let version = 1
+    static let version = 2
     private static let deletedPrefix = "deleted "
 
     public struct Contents: Sendable {
@@ -19,12 +20,13 @@ public enum SuguDictionaryFile {
 
     public static func encode(_ words: [LearnedWord], deletions: [WordDeletion] = []) -> Data {
         let dates = ISO8601DateFormatter()
-        var lines = ["\(header) \(version)", "# mode\treading\ttext\tkind\tpinned\tcount\tfirst used\tlast used"]
+        var lines = ["\(header) \(version)", "# mode\treading\ttext\tkind\tpinned\tcount\tfirst used\tlast used\tshown\tscript"]
         for word in words.sorted(by: { ($0.mode.rawValue, $0.reading, $0.text) < ($1.mode.rawValue, $1.reading, $1.text) }) {
             lines.append([
                 word.mode.rawValue, sanitize(word.reading), sanitize(word.text),
                 name(of: word.kind), word.pinned ? "1" : "0", String(word.count),
                 dates.string(from: word.firstUsed), dates.string(from: word.lastUsed),
+                sanitize(word.shown), word.script?.rawValue ?? "",
             ].joined(separator: "\t"))
         }
         for deletion in deletions.sorted(by: { ($0.mode.rawValue, $0.reading, $0.text) < ($1.mode.rawValue, $1.reading, $1.text) }) {
@@ -59,9 +61,11 @@ public enum SuguDictionaryFile {
                 continue
             }
             guard let kind = kind(named: fields[3]) else { continue }
+            let shown = fields.count >= 10 && !fields[8].isEmpty ? fields[8] : nil
             contents.words.append(LearnedWord(
                 id: 0, mode: mode, reading: fields[1], text: fields[2], kind: kind,
-                count: count, pinned: fields[4] == "1", firstUsed: firstUsed, lastUsed: lastUsed
+                count: count, pinned: fields[4] == "1", firstUsed: firstUsed, lastUsed: lastUsed,
+                shown: shown, script: shown == nil ? nil : ChineseScript(rawValue: fields[9])
             ))
         }
         return contents

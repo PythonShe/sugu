@@ -100,16 +100,32 @@ public final class AzooKeyEngine: CompositionEngine {
         releaseZenzaiIfUnused()
     }
 
+    /// A word from Sugu's learned store or user dictionary.
+    public struct UserWord: Sendable, Hashable {
+        public var reading: String
+        public var text: String
+        /// Pinned, added, or chosen more than once (`LearnedWord.isEstablished`).
+        public var isEstablished: Bool
+
+        public init(reading: String, text: String, isEstablished: Bool) {
+            self.reading = reading
+            self.text = text
+            self.isEstablished = isEstablished
+        }
+    }
+
     /// Words from Sugu's learned store and user dictionary, given to the
-    /// converter so they take part in lattice search.
-    public func setUserWords(_ words: [(reading: String, text: String)]) {
+    /// converter so they take part in lattice search. An established word
+    /// outweighs the dictionary (whose words score about -10 to -17); a
+    /// word chosen once still leads but gives way to grammar more easily.
+    public func setUserWords(_ words: [UserWord]) {
         userWords = words.map { word in
             DicdataElement(
                 word: word.text,
                 ruby: WidthConversion.katakana(word.reading),
                 cid: CIDData.一般名詞.cid,
                 mid: MIDData.一般.mid,
-                value: -5
+                value: word.isEstablished ? -5 : -8
             )
         }
         converter.importDynamicUserDictionary(userWords)

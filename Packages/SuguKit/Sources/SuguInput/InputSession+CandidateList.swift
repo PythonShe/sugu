@@ -66,6 +66,7 @@ extension InputSession {
             context: preferences.leftContextRanking ? context : "",
             vocabulary: preferences.leftContextRanking && preferences.documentVocabulary ? vocabulary : "",
             pageSize: list.pageSize,
+            chineseScript: chineseScript,
             chineseText: { [engines] in engines.chineseText($0) },
             offersChineseForms: preferences.enabledModes.contains(.chinese)
         ))

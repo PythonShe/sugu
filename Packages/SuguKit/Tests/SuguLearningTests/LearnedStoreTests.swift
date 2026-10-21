@@ -50,11 +50,12 @@ struct LearnedStoreTests {
             store.learn(Commit(text: "今日", reading: "きょう"), mode: .japanese)
         }
         let database = try SQLiteDatabase(url: url)
-        try database.execute("PRAGMA user_version = 0")
+        // As before versions: without the columns a later step adds.
+        try database.execute("ALTER TABLE words DROP COLUMN shown; ALTER TABLE words DROP COLUMN script; PRAGMA user_version = 0")
         let store = try makeStore()
         var version = 0
         try SQLiteDatabase(url: url).query("PRAGMA user_version") { version = Int($0.int(0)) }
-        #expect(version == 2)
+        #expect(version == 3)
         #expect(store.lookup("きょう", mode: .japanese).map(\.text) == ["今日"])
     }
 
@@ -64,7 +65,10 @@ struct LearnedStoreTests {
             let store = try makeStore()
             store.learn(Commit(text: "今日", reading: "きょう"), mode: .japanese)
         }
-        try SQLiteDatabase(url: url).execute("DROP TABLE ngrams; DROP TABLE ngram_events; PRAGMA user_version = 1")
+        try SQLiteDatabase(url: url).execute("""
+            DROP TABLE ngrams; DROP TABLE ngram_events;
+            ALTER TABLE words DROP COLUMN shown; ALTER TABLE words DROP COLUMN script; PRAGMA user_version = 1
+            """)
         let store = try makeStore()
         var commit = Commit(text: "描く", reading: "かく")
         commit.context = "絵を"
@@ -282,6 +286,110 @@ struct LearnedStoreLockTests {
     }
 }
 
+/// Chinese words are one word in any script, stored in Simplified and
+/// shown in the script being typed (D-094).
+@MainActor
+struct LearnedStoreScriptTests {
+    let clock = TestClock()
+    let forms = TestChineseForms()
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sugu-tests-\(UUID().uuidString)")
+        .appendingPathComponent("learned.sqlite")
+
+    func makeStore() throws -> LearnedStore {
+        let clock = clock
+        let store = try LearnedStore(url: url, clock: { clock.now })
+        store.chineseForms = forms
+        return store
+    }
+
+    @Test func aWordTypedInEitherScriptIsOneWord() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "學習", reading: "xuexi"), mode: .chinese, script: .traditional)
+        clock.advance(hours: 1)
+        store.learn(Commit(text: "学习", reading: "xuexi"), mode: .chinese, script: .simplified)
+        let words = store.lookup("xuexi", mode: .chinese)
+        #expect(words.map(\.text) == ["学习"])
+        #expect(words.first?.count == 2)
+        #expect(words.first?.shown == "学习")
+        #expect(words.first?.script == .simplified)
+    }
+
+    /// The bug this design fixes: a word typed in Traditional is offered in
+    /// Simplified when Simplified is typed, and the other way round.
+    @Test func aWordIsShownInTheScriptInUse() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "臺灣", reading: "taiwan"), mode: .chinese, script: .traditional)
+        let word = try #require(store.lookup("taiwan", mode: .chinese).first)
+        #expect(word.text == "台湾")
+        #expect(store.text(of: word, in: .simplified) == "台湾")
+        #expect(store.text(of: word, in: .traditional) == "臺灣")
+        #expect(store.text(of: word, in: .traditionalTaiwan) == "臺灣")
+    }
+
+    /// One Simplified character can stand for two Traditional ones (发: 發
+    /// or 髮): the script typed in keeps the form chosen.
+    @Test func theScriptTypedInKeepsTheFormChosen() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "頭髮", reading: "toufa"), mode: .chinese, script: .traditional)
+        let word = try #require(store.lookup("toufa", mode: .chinese).first)
+        #expect(store.text(of: word, in: .traditional) == "頭髮")
+        #expect(store.text(of: word, in: .simplified) == "头发")
+        #expect(try LearnedStore(url: url).lookup("toufa", mode: .chinese).first?.shown == "頭髮")
+    }
+
+    @Test func undoingAndForgettingFindTheWordInAnyScript() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "學習", reading: "xuexi"), mode: .chinese, script: .traditional)
+        store.learn(Commit(text: "臺灣", reading: "taiwan"), mode: .chinese, script: .traditional)
+        store.unlearn(Commit(text: "学习", reading: "xuexi"), mode: .chinese)
+        #expect(store.lookup("xuexi", mode: .chinese).isEmpty)
+        #expect(store.words(showing: "台湾", mode: .chinese).map(\.shown) == ["臺灣"])
+        #expect(store.reading(for: "台湾", mode: .chinese) == "taiwan")
+    }
+
+    /// A file from an older Sugu or another Mac has words as typed; they
+    /// merge with the same word here, and so do its deletions.
+    @Test func mergedWordsAndDeletionsMeetInSimplified() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "学习", reading: "xuexi"), mode: .chinese, script: .simplified)
+        let old = clock.now.addingTimeInterval(-86_400)
+        let incoming = LearnedWord(id: 0, mode: .chinese, reading: "xuexi", text: "學習", kind: .learned, count: 5, pinned: true, firstUsed: old, lastUsed: old)
+        try store.merge([incoming])
+        let word = try #require(store.lookup("xuexi", mode: .chinese).first)
+        #expect(store.lookup("xuexi", mode: .chinese).count == 1)
+        #expect(word.count == 5 && word.pinned)
+        // The later use here keeps its form.
+        #expect(word.shown == "学习")
+        try store.applyDeletions([WordDeletion(mode: .chinese, reading: "xuexi", text: "學習", kind: .learned, deletedAt: clock.now)])
+        #expect(store.lookup("xuexi", mode: .chinese).isEmpty)
+    }
+
+    @Test func japaneseIsStoredAsTyped() throws {
+        let store = try makeStore()
+        store.learn(Commit(text: "学習", reading: "がくしゅう"), mode: .japanese, script: .traditional)
+        let word = try #require(store.lookup("がくしゅう", mode: .japanese).first)
+        #expect(word.text == "学習" && word.script == nil)
+        #expect(store.text(of: word, in: .simplified) == "学習")
+    }
+}
+
+/// A few characters of OpenCC's tables, enough for the tests.
+@MainActor
+final class TestChineseForms: ChineseForms {
+    static let traditional: [Character: Character] = ["學": "学", "習": "习", "臺": "台", "灣": "湾", "異": "异", "議": "议", "頭": "头", "髮": "发", "發": "发"]
+    static let simplified: [Character: Character] = ["学": "學", "习": "習", "台": "臺", "湾": "灣", "异": "異", "议": "議", "头": "頭", "发": "發"]
+
+    func simplified(_ text: String) -> String? {
+        String(text.map { Self.traditional[$0] ?? $0 })
+    }
+
+    func text(_ text: String, in script: ChineseScript) -> String? {
+        let simplified = String(text.map { Self.traditional[$0] ?? $0 })
+        return script == .simplified ? simplified : String(simplified.map { Self.simplified[$0] ?? $0 })
+    }
+}
+
 /// The user's n-grams (D-079).
 @MainActor
 struct LearnedStoreNGramTests {
@@ -376,7 +484,8 @@ struct LearnedStoreNGramTests {
 
     @Test func learnsInTheFormTheModelsRead() throws {
         let store = try makeStore()
-        store.nGramText = { text, mode in mode == .chinese ? text.replacingOccurrences(of: "異議", with: "异议") : text }
+        let forms = TestChineseForms()
+        store.chineseForms = forms
         store.learn(commit("異議", after: "任何"), mode: .chinese)
         #expect(store.personalNGrams(for: .chinese).count(of: "异议") == 1)
         #expect(store.personalNGrams(for: .chinese).count(of: "異議") == 0)

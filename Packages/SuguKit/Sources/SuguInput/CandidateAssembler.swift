@@ -21,6 +21,8 @@ struct CandidateAssembler {
         var vocabulary = ""
         /// Rows per page, so the Latin candidate stays on the first page.
         var pageSize: Int
+        /// The script Chinese is typed in, which learned words are shown in.
+        var chineseScript: ChineseScript = .simplified
         /// Chinese text in the script in use (see `EngineSource`).
         var chineseText: (String) -> String? = { _ in nil }
         /// Whether Japanese names also offer their Chinese form.
@@ -39,19 +41,17 @@ struct CandidateAssembler {
         let wholeReading = !state.segments.contains { $0.role == .converted } && !state.reading.isEmpty
         guard wholeReading else { return engine }
 
-        var learned = (store?.lookup(state.reading, mode: input.mode) ?? []).map {
-            Candidate(text: $0.text, source: .learned)
+        // In the script in use, as librime gives its own candidates.
+        let learned = (store?.lookup(state.reading, mode: input.mode) ?? []).map { word in
+            (candidate: Candidate(text: store?.text(of: word, in: input.chineseScript) ?? word.shown, source: .learned), isEstablished: word.isEstablished)
         }
         var computedCandidates = computed.candidates(for: state.reading, mode: input.mode)
         if input.mode == .chinese {
-            // librime converts its own candidates; Sugu's follow the same script.
-            func converted(_ candidate: Candidate) -> Candidate {
+            computedCandidates = computedCandidates.map { candidate in
                 var candidate = candidate
                 candidate.text = input.chineseText(candidate.text) ?? candidate.text
                 return candidate
             }
-            learned = learned.map(converted)
-            computedCandidates = computedCandidates.map(converted)
         }
         var latinFirst: Candidate?
         var latinLast: Candidate?
@@ -72,8 +72,11 @@ struct CandidateAssembler {
             if seen.insert(candidate.text).inserted { result.append(candidate) }
         }
         latinFirst.map(append)
-        learned.forEach(append)
+        // Established words lead; a word chosen once follows the engine's
+        // first choice (`LearnedWord.isEstablished`).
+        learned.filter(\.isEstablished).forEach { append($0.candidate) }
         if let first = engine.first { append(first) }
+        learned.filter { !$0.isEstablished }.forEach { append($0.candidate) }
         computedCandidates.forEach(append)
         // Symbols by name come after the words of the same reading the
         // engine likes best (やじるし: 矢印, then →).

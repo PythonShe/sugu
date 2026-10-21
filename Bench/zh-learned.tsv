@@ -1,6 +1,7 @@
 # Learned words in sentences. Rows starting with + are words the user has
 # taught Sugu (typed reading, text); the others are sentences that use them,
-# scored before and after learning.
+# scored before and after learning. The words in Traditional were typed in
+# Traditional and come back in Simplified, the script the set is typed in.
 +linzhixia	林知夏
 +chenyuchuan	陈屿川
 +zhouyining	周以宁
@@ -11,6 +12,8 @@
 +qixiawan	栖霞湾
 +tangjinyu	唐瑾瑜
 +sunianqing	苏念卿
++zhaoyunlan	趙雲瀾
++fengwanqing	馮婉晴
 mingtian wo he linzhixia yiqi chifan	明天我和林知夏一起吃饭
 linzhixia de shengri shi xia ge yue	林知夏的生日是下个月
 chenyuchuan zuotian gei wo da le dianhua	陈屿川昨天给我打了电话
@@ -23,3 +26,5 @@ women zhoumo qu qixiawan wan ba	我们周末去栖霞湾玩吧
 tangjinyu shi wo de tongxue	唐瑾瑜是我的同学
 sunianqing mingtian qu shanghai	苏念卿明天去上海
 wo gen chenyuchuan shuo le zhe jian shi	我跟陈屿川说了这件事
+zhaoyunlan mingtian lai wo jia	赵云澜明天来我家
+wo he fengwanqing qu kan dianying	我和冯婉晴去看电影

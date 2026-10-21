@@ -14,18 +14,28 @@ public struct LearnedWord: Sendable, Hashable, Identifiable {
     public var id: Int64
     public var mode: InputMode
     public var reading: String
+    /// The word as stored and matched: Chinese in Simplified, whatever
+    /// script it was typed in, so one word is one entry (D-094).
     public var text: String
+    /// The word as last typed, in `script`; `text` for Japanese.
+    public var shown: String
+    /// The script `shown` is in; nil for Japanese, and for Chinese words
+    /// from a file that does not say.
+    public var script: ChineseScript?
     public var kind: Kind
     public var count: Int
     public var pinned: Bool
     public var firstUsed: Date
     public var lastUsed: Date
 
-    public init(id: Int64, mode: InputMode, reading: String, text: String, kind: Kind, count: Int, pinned: Bool, firstUsed: Date, lastUsed: Date) {
+    public init(id: Int64, mode: InputMode, reading: String, text: String, kind: Kind, count: Int, pinned: Bool, firstUsed: Date, lastUsed: Date,
+                shown: String? = nil, script: ChineseScript? = nil) {
         self.id = id
         self.mode = mode
         self.reading = reading
         self.text = text
+        self.shown = shown ?? text
+        self.script = script
         self.kind = kind
         self.count = count
         self.pinned = pinned
@@ -39,6 +49,13 @@ public struct LearnedWord: Sendable, Hashable, Identifiable {
         let days = max(0, now.timeIntervalSince(lastUsed) / 86_400)
         let usage = log2(Double(count) + 1) * exp(-days / 30)
         return (pinned ? 1_000 : 0) + (kind == .user ? 100 : 0) + usage
+    }
+
+    /// Whether the word goes before the engine's own first choice: one the
+    /// user pinned, added, or chose more than once. A word chosen once
+    /// follows it, so one stray choice does not take over the reading.
+    public var isEstablished: Bool {
+        pinned || kind == .user || count >= 2
     }
 
     /// The key words are stored and looked up under: case-insensitive

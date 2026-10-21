@@ -26,7 +26,11 @@ public struct ChineseRespelling {
     func respelled(_ sentence: String, readings: [[String]], after context: String, script: ChineseScript) -> String? {
         let result: String?
         if script == .simplified {
-            result = respeller.respelled(sentence, readings: readings, after: context)
+            // Read in Simplified even where a character in another script
+            // reached the sentence, which then leaves in Simplified too.
+            let toSimplified = converter(.simplified)
+            let simplified = toSimplified?.convert(sentence) ?? sentence
+            result = respeller.respelled(simplified, readings: readings, after: toSimplified?.convert(context) ?? context) ?? simplified
         } else {
             guard let toSimplified = converter(.simplified), let toScript = converter(script) else { return nil }
             let simplified = toSimplified.convert(sentence)

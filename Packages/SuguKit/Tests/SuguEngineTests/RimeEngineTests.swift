@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import SuguAzooKey
 import SuguCore
+import SuguLearning
 import SuguLM
 import SuguRime
 
@@ -127,6 +128,34 @@ struct RimeEngineTests {
         try RimeUserDictionary.write("", in: Shared.user)
     }
 
+    /// A word typed in Traditional joins Simplified sentences in Simplified
+    /// and Traditional ones in Traditional: the store keeps it in
+    /// Simplified, librime's dictionary's script, and librime's filters
+    /// give the script in use (D-094). Kept as typed, it came out as
+    /// 我去臺灣 in Simplified.
+    @Test func learnedWordsJoinSentencesInTheScriptInUse() async throws {
+        let store = try LearnedStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("sugu-engine-store-\(UUID().uuidString)/learned.sqlite"))
+        let forms = OpenCCForms(directory: engineDataDirectory.appendingPathComponent("Rime/opencc"))
+        store.chineseForms = forms
+        store.learn(Commit(text: "臺灣", reading: "taiwan"), mode: .chinese, script: .traditional)
+        let words = store.allWords(mode: .chinese).map { RimeUserDictionary.Word(reading: $0.reading, text: $0.text, count: $0.count) }
+        #expect(words.map(\.text) == ["台湾"])
+
+        let schema = RimeSchema()
+        try await Shared.runtime.prepare(schema, version: "test")
+        let syllables = Lexicon.load(Lexicon.syllablesFile, in: engineDataDirectory.appendingPathComponent("Lexicon"))
+        let decoder = try #require(PinyinDecoder(schema: schema, syllables: syllables, sharedData: engineDataDirectory.appendingPathComponent("Rime")))
+        try RimeUserDictionary.write(RimeUserDictionary.table(for: words, decoder: decoder, fullPinyin: nil), in: Shared.user)
+        defer { try? RimeUserDictionary.write("", in: Shared.user) }
+        for (script, expected) in [(ChineseScript.simplified, "我去台湾"), (.traditional, "我去臺灣")] {
+            let engine = RimeEngine(runtime: Shared.runtime, script: script)
+            #expect(engine.reloadUserDictionary())
+            engine.insert("woqutaiwan")
+            #expect(engine.state.candidates.first?.text == expected)
+            engine.clear()
+        }
+    }
+
     /// The respelled sentence comes first; librime's own candidates follow
     /// one index further down and still highlight and commit.
     @Test func theLanguageModelRespellsLibrimesSentence() async throws {
@@ -201,5 +230,23 @@ struct RimeEngineTests {
         #expect(japanese.convert("横滨") == "横浜")
         let traditional = try #require(ScriptConverter.toScript(.traditional, openCC: openCC))
         #expect(traditional.convert("中国") == "中國")
+    }
+}
+
+/// The store's conversions through OpenCC's tables, as EngineHub makes them.
+@MainActor
+private final class OpenCCForms: ChineseForms {
+    let directory: URL
+
+    init(directory: URL) {
+        self.directory = directory
+    }
+
+    func simplified(_ text: String) -> String? {
+        ScriptConverter.toScript(.simplified, openCC: directory)?.convert(text)
+    }
+
+    func text(_ text: String, in script: ChineseScript) -> String? {
+        ScriptConverter.toScript(script, openCC: directory)?.convert(text)
     }
 }

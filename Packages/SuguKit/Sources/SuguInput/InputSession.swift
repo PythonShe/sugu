@@ -176,7 +176,7 @@ public final class InputSession {
     }
 
     /// The focused app's Chinese script, or the global one.
-    private var chineseScript: ChineseScript {
+    var chineseScript: ChineseScript {
         preferences.rule(for: client?.bundleIdentifier).chineseScript ?? preferences.chineseScript
     }
 

@@ -139,6 +139,18 @@ private final class ManualClock: @unchecked Sendable {
         #expect(words.map(\.text) == ["一行 二行 三行"])
     }
 
+    /// Version 2 carries the word as typed and its script; a version 1
+    /// line, without them, still reads.
+    @Test func carriesTheFormTypedAndReadsVersionOne() throws {
+        let date = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let word = LearnedWord(id: 0, mode: .chinese, reading: "xuexi", text: "学习", kind: .learned, count: 2, pinned: false,
+                               firstUsed: date, lastUsed: date, shown: "學習", script: .traditionalTaiwan)
+        let decoded = try #require(SuguDictionaryFile.decode(SuguDictionaryFile.encode([word])).first)
+        #expect(decoded.text == "学习" && decoded.shown == "學習" && decoded.script == .traditionalTaiwan)
+        let old = SuguDictionaryFile.decode(Data("# Sugu dictionary 1\nchinese\txuexi\t學習\tlearned\t0\t2\t2026-05-09T00:00:00Z\t2026-05-09T00:00:00Z\n".utf8))
+        #expect(old.first?.text == "學習" && old.first?.shown == "學習" && old.first?.script == nil)
+    }
+
     @Test func roundTripKeepsDetail() throws {
         let source = try store()
         source.addUserWord(reading: "sugu", text: "速贵", mode: .chinese)

@@ -16,6 +16,7 @@ struct InputSessionTests {
         store = try LearnedStore(url: FileManager.default.temporaryDirectory
             .appendingPathComponent("sugu-session-\(UUID().uuidString)/learned.sqlite"))
         source.engines = [.chinese: chinese, .japanese: japanese]
+        store.chineseForms = source
     }
 
     func makeSession(_ configure: (inout Preferences) -> Void = { _ in }) -> InputSession {
@@ -159,6 +160,8 @@ struct InputSessionTests {
     /// ⇧⌫ forgets a learned candidate; on any other it is ⌫.
     @Test func shiftDeleteForgetsALearnedCandidate() {
         let session = makeSession()
+        // Chosen twice, so it leads the engine's first choice.
+        store.learn(Commit(text: "拟好", reading: "nihao"), mode: .chinese)
         store.learn(Commit(text: "拟好", reading: "nihao"), mode: .chinese)
         _ = store.addUserWord(reading: "nihao", text: "你号", mode: .chinese)
         type("nihao", into: session)
@@ -280,15 +283,33 @@ struct InputSessionTests {
     }
 
     @Test func learnedWordsFollowTheScriptInUse() {
-        store.learn(Commit(text: "東京", reading: "shijie"), mode: .chinese)
         source.conversions["東京"] = "东京"
+        // Typed twice in Traditional, so it leads.
+        store.learn(Commit(text: "東京", reading: "shijie"), mode: .chinese, script: .traditional)
+        store.learn(Commit(text: "東京", reading: "shijie"), mode: .chinese, script: .traditional)
         let session = makeSession()
         type("shijie", into: session)
         #expect(session.display.candidates?.candidates.first?.text == "东京")
         _ = session.handle(Key.space)
         #expect(client.document == "东京")
-        // The use counts for the learned form; no converted twin is added.
-        #expect(store.lookup("shijie", mode: .chinese).map(\.text) == ["東京"])
+        // One word, stored in Simplified, now as typed in Simplified.
+        let words = store.lookup("shijie", mode: .chinese)
+        #expect(words.map(\.text) == ["东京"])
+        #expect(words.first?.count == 3)
+        #expect(words.first?.shown == "东京")
+    }
+
+    /// A word chosen once follows the engine's first choice; chosen again,
+    /// it leads.
+    @Test func aWordChosenOnceFollowsTheEnginesFirst() {
+        let session = makeSession()
+        store.learn(Commit(text: "拟好", reading: "nihao"), mode: .chinese)
+        type("nihao", into: session)
+        #expect(session.display.candidates?.candidates.prefix(2).map(\.text) == ["你好", "拟好"])
+        session.cancelComposition()
+        store.learn(Commit(text: "拟好", reading: "nihao"), mode: .chinese)
+        type("nihao", into: session)
+        #expect(session.display.candidates?.candidates.first?.text == "拟好")
     }
 
     @Test func optionKeysTypeTheirSymbolAfterFinishingTheComposition() {

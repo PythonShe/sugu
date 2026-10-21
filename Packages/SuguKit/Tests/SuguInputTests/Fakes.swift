@@ -1,6 +1,7 @@
 import Foundation
 import SuguCore
 @testable import SuguInput
+import SuguLearning
 
 /// A text field that records what the session does to it.
 @MainActor
@@ -173,6 +174,13 @@ final class FakeEngineSource: EngineSource {
     var readings: [String: String] = [:]
     func chineseReading(of text: String) -> String? { readings[text] }
     func pinyin(of text: String) -> String? { readings[text]?.filter { $0 != "'" } }
+}
+
+/// The store's conversions, from the same table: `conversions` gives the
+/// script in use, taken to be Simplified.
+extension FakeEngineSource: ChineseForms {
+    func simplified(_ text: String) -> String? { conversions[text] ?? text }
+    func text(_ text: String, in script: ChineseScript) -> String? { conversions[text] }
 }
 
 @MainActor
