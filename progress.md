@@ -3,6 +3,13 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-21
+- Feature requests (todo §24): importing a dictionary from a sheet
+  that takes dropped files and shows the words first, plain word lists
+  included (D-095); Sugu's own display language in General (D-096);
+  katakana with ⌃⇧K and ⌃⇧J for keyboards without a かな key (D-097).
+- Learning leftovers (D-098): Zhuyin's window offers the user's words
+  for their toned codes; pinyin learns words chosen one at a time each
+  under its keys, not the sentence they make.
 - Learned words reviewed (Fable agent and CodeRabbit) and rebuilt around
   one Simplified entry per Chinese word, shown in the script in use
   (D-094). Fixes a word typed in Traditional outranking the Simplified one

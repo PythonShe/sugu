@@ -45,6 +45,10 @@ public final class ZhuyinEngine: CompositionEngine {
     public var respelling: ChineseRespelling? {
         didSet { respelled = [:] }
     }
+    /// The user's words for a reading in codes (`ni3hao3`), best first and
+    /// in the script in use: learned or added in Zhuyin, they lead
+    /// librime's words of their length at the caret.
+    public var learnedWords: ((String) -> [String])?
     /// Respelled sentences by input and the text before them.
     private var respelled: [String: String] = [:]
     private var leftContext = ""
@@ -536,8 +540,10 @@ public final class ZhuyinEngine: CompositionEngine {
                 .filter { $0.text.count == length && $0.text.allSatisfy(\.isHan) }
             // librime makes a sentence only where no word covers all the
             // syllables, and then offers it alone.
-            if length > 1, found.count == 1, !isWord(found[0].text, at: range) { continue }
-            result += found.map { Fixed(range: range, text: $0.text) }
+            let learned = (learnedWords?(reading(of: range)) ?? []).filter { $0.count == length }
+            let words = learned + found.map(\.text).filter { !learned.contains($0) }
+            if length > 1, learned.isEmpty, found.count == 1, !isWord(found[0].text, at: range) { continue }
+            result += words.map { Fixed(range: range, text: $0) }
         }
         session.clearComposition()
         return result

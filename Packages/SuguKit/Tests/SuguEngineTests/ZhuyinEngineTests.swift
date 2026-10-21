@@ -77,6 +77,23 @@ extension RimeEngineTests {
         engine.clear()
     }
 
+    /// The user's words for the exact codes lead librime's at the caret,
+    /// a single character as well as a word longer than librime keeps.
+    @Test func zhuyinOffersTheUsersWordsForTheirCodes() async throws {
+        let engine = try await zhuyin()
+        engine.learnedWords = { ["ni3hao3": ["妳好"], "ni3": ["妳"]][$0] ?? [] }
+        engine.insert(Self.nihao)
+        #expect(engine.convert())
+        let candidates = engine.state.candidates.map(\.text)
+        #expect(candidates.first == "妳好")
+        #expect(candidates.contains("你好"))
+        #expect(candidates.filter { $0 == "妳好" }.count == 1)
+        engine.moveCaret(.left)
+        #expect(engine.convert())
+        #expect(engine.state.candidates.first?.text == "妳")
+        engine.clear()
+    }
+
     /// With no syllable pending, a tone changes the one before the caret.
     @Test func zhuyinToneRetonesTheLastSyllable() async throws {
         let engine = try await zhuyin()

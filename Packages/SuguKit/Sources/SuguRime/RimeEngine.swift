@@ -22,6 +22,11 @@ public final class RimeEngine: CompositionEngine {
     /// highlighted; typing highlights it again.
     private var respelledHighlighted = true
     private var leftContext = ""
+    /// The words chosen one at a time at the start of the composition,
+    /// which librime shows confirmed; a commit teaches each as a word.
+    private var chosen: [String] = []
+    /// The text librime shows confirmed.
+    private var confirmed = ""
 
     public let traits = EngineTraits(composition: .live, learnsCommits: true, takesSuguCandidates: true)
     public private(set) var state = CompositionState.empty
@@ -106,12 +111,15 @@ public final class RimeEngine: CompositionEngine {
         let index = librimeIndex(index)
         ensureLoaded(upTo: index)
         let reading = session.input
+        let before = confirmed
         session.select(index)
         if let text = session.takeCommit() {
+            let commit = commit(text, reading: reading)
             refresh()
-            return .committed(Commit(text: text, reading: reading))
+            return .committed(commit)
         }
         refresh()
+        if confirmed.hasPrefix(before), confirmed.count > before.count { chosen.append(String(confirmed.dropFirst(before.count))) }
         return .continued
     }
 
@@ -125,8 +133,9 @@ public final class RimeEngine: CompositionEngine {
             let index = librimeIndex(state.highlightedIndex ?? 0)
             session.select(index)
             if let text = session.takeCommit() {
+                let commit = commit(text, reading: reading)
                 refresh()
-                return Commit(text: text, reading: reading)
+                return commit
             }
             refresh()
             guardCount += 1
@@ -144,6 +153,8 @@ public final class RimeEngine: CompositionEngine {
 
     public func clear() {
         session.clearComposition()
+        chosen = []
+        confirmed = ""
         respelled = nil
         respelledHighlighted = true
         candidateLimit = initialCandidateLimit
@@ -169,6 +180,30 @@ public final class RimeEngine: CompositionEngine {
         let reading = session.input
         clear()
         return Commit(text: respelled, reading: reading)
+    }
+
+    /// A commit of `text` for the keys `reading`. Words chosen one at a
+    /// time are its clauses, read off the keys a syllable per character,
+    /// and the whole is no word; nil keys leave it whole.
+    private func commit(_ text: String, reading: String) -> Commit {
+        let words = chosen
+        chosen = []
+        let head = words.joined()
+        guard !words.isEmpty, text.hasPrefix(head), text.count > head.count, text.allSatisfy(\.isHan),
+              let ends = respelling?.decoder?.syllableEnds(typedAs: reading, count: text.count) else {
+            return Commit(text: text, reading: reading)
+        }
+        let keys = Array(reading)
+        var clauses: [Commit.Clause] = []
+        var syllable = 0, start = 0
+        for word in words + [String(text.dropFirst(head.count))] {
+            syllable += word.count
+            let end = ends[syllable - 1]
+            let typed = keys[start..<end].drop { $0 == "'" }
+            clauses.append(Commit.Clause(reading: String(typed), text: word))
+            start = end
+        }
+        return Commit(text: text, reading: reading, clauses: clauses, mayBeWord: false)
     }
 
     /// librime's index for a shown index.
@@ -217,8 +252,13 @@ public final class RimeEngine: CompositionEngine {
             return (segments, caret, highlighted, !confirmed.isEmpty)
         }), let mirrored else {
             state = .empty
+            chosen = []
+            confirmed = ""
             return
         }
+        confirmed = mirrored.segments.first { $0.role == .converted }?.text ?? ""
+        // Words taken back (⌫ into a confirmed word) are no longer chosen.
+        while !chosen.isEmpty, !confirmed.hasPrefix(chosen.joined()) { chosen.removeLast() }
         var highlighted = mirrored.highlighted
         var candidates = session.candidates(limit: candidateLimit)
         respelled = mirrored.confirmed ? nil : candidates.first.flatMap { respell($0.text) }

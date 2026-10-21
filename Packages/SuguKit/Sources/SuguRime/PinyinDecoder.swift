@@ -80,4 +80,29 @@ public struct PinyinDecoder: Sendable {
         let fewest = sequences.first?.cost
         return sequences.filter { !fewestDerivedOnly || $0.cost == fewest }.map(\.syllables)
     }
+
+    /// Where `keys` divide into exactly `count` syllables, as the end of
+    /// each one's keys, by the division needing the fewest derived
+    /// spellings; nil when there is none.
+    public func syllableEnds(typedAs keys: String, count: Int) -> [Int]? {
+        let keys = Array(keys)
+        guard count > 0, keys.count >= count else { return nil }
+        var memo: [Int: (cost: Int, ends: [Int])?] = [:]
+        func solve(_ position: Int, _ remaining: Int) -> (cost: Int, ends: [Int])? {
+            if position == keys.count { return remaining == 0 ? (0, []) : nil }
+            if keys[position] == "'" { return solve(position + 1, remaining) }
+            if remaining == 0 { return nil }
+            let key = position * (count + 1) + remaining
+            if let known = memo[key] { return known }
+            var best: (cost: Int, ends: [Int])?
+            for end in (position + 1)...min(keys.count, position + longestSpelling) {
+                guard let options = readings[String(keys[position..<end])], let rest = solve(end, remaining - 1) else { continue }
+                let cost = rest.cost + (options.contains { !$0.isDerived } ? 0 : 1)
+                if best.map({ cost < $0.cost }) ?? true { best = (cost, [end] + rest.ends) }
+            }
+            memo[key] = best
+            return best
+        }
+        return solve(0, count)?.ends
+    }
 }

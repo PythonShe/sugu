@@ -80,9 +80,17 @@ public final class EngineHub: EngineSource {
         case .chinese:
             guard runtime.isReady else { warmUp(.chinese); return nil }
             if let chinese { return chinese }
-            let engine: any ChineseEngine = runtime.schema?.keyboard == .zhuyin
-                ? ZhuyinEngine(runtime: runtime, script: chineseScript)
-                : RimeEngine(runtime: runtime, script: chineseScript)
+            let engine: any ChineseEngine
+            if runtime.schema?.keyboard == .zhuyin {
+                let zhuyin = ZhuyinEngine(runtime: runtime, script: chineseScript)
+                zhuyin.learnedWords = { [weak self] codes in
+                    guard let self, let store else { return [] }
+                    return store.lookup(codes, mode: .chinese).map { store.text(of: $0, in: self.chineseScript) }
+                }
+                engine = zhuyin
+            } else {
+                engine = RimeEngine(runtime: runtime, script: chineseScript)
+            }
             attachRespelling(to: engine)
             chinese = engine
             chineseWordsNeedReload = false

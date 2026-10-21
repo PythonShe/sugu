@@ -1808,3 +1808,20 @@ checked against the code before it was changed.
   katakana (a live conversion gives way to it); Space converts as usual.
   F7 and ⌃K still turn one composition into katakana.
 - It lasts until switched back, for the session; it is not a setting.
+
+## D-098 · Learned words in Zhuyin's window, and Chinese learned word by word (2026-10-21)
+
+- Zhuyin's candidate window offers the user's words for the exact toned
+  codes of the syllables before the caret (`ni3hao3`), ahead of
+  librime's words of the same length; a single character counts. The
+  hub hands the engine the store's words in the script in use
+  (`ZhuyinEngine.learnedWords`). Until now they reached Zhuyin only
+  through librime's sentences, which keep no word of one character.
+- Pinyin: words chosen one at a time at the start of a composition are
+  the commit's clauses, each learned under its own keys, and the
+  sentence they make is not learned as a word. The keys are divided a
+  syllable per character by the schema's decoder
+  (`PinyinDecoder.syllableEnds`); where they do not divide (an
+  abbreviation), the commit is learned whole as before. A commit of
+  librime's sentence in one step is still learned whole: librime does
+  not say which words it joined.

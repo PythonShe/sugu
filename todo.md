@@ -213,8 +213,8 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 ## 23. Learned words in any script (Fable + CodeRabbit review, D-094)
 - [x] One Simplified entry per Chinese word, shown in the script in use; librime's table in Simplified
 - [x] Review fixes: SQLite and OpenCC closed once, line breaks in synced words, Sogou syllables, field context on focus, stale suggestions, trimmed added words
-- [~] Zhuyin: learned and added words as candidates for their exact codes
-- [~] Chinese commits learned word by word where librime knows the segments
+- [x] Zhuyin: learned and added words as candidates for their exact codes (D-098)
+- [x] Chinese commits learned word by word where librime knows the segments (D-098)
 
 ## 24. Feature requests (2026-10-21)
 - [x] Import a dictionary the easy way: drop or choose a file, see what it holds, import (D-095)

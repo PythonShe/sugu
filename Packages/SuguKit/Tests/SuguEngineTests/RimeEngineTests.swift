@@ -189,6 +189,27 @@ struct RimeEngineTests {
         #expect(engine.state.isEmpty)
     }
 
+    /// Words chosen one at a time are learned each under its keys, and
+    /// the sentence they make is not learned as a word.
+    @Test func wordsChosenOneAtATimeAreTheCommitsClauses() async throws {
+        try await Shared.runtime.prepare(RimeSchema(), version: "test")
+        let lexicon = engineDataDirectory.appendingPathComponent("Lexicon")
+        let decoder = try #require(PinyinDecoder(schema: RimeSchema(), syllables: Lexicon.load(Lexicon.syllablesFile, in: lexicon), sharedData: engineDataDirectory.appendingPathComponent("Rime")))
+        let words = try PinyinWords(contentsOf: lexicon.appendingPathComponent(Lexicon.pinyinWordsFile))
+        let engine = RimeEngine(runtime: Shared.runtime)
+        defer { engine.clear() }
+        engine.respelling = .init(respeller: SentenceRespeller(model: try testLanguageModel(["后来去了。"]), words: words), decoder: decoder) { _ in nil }
+        engine.insert("houlai'qule")
+        let index = try #require(engine.state.candidates.firstIndex { $0.text == "后来" })
+        #expect(engine.select(index) == .continued)
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.text.hasPrefix("后来") && commit.text.count == 4)
+        #expect(commit.clauses == [.init(reading: "houlai", text: "后来"), .init(reading: "qule", text: String(commit.text.dropFirst(2)))])
+        #expect(!commit.mayBeWord)
+        engine.insert("houlai")
+        #expect(engine.commitConverted()?.clauses == [])
+    }
+
     /// With fuzzy pinyin, librime may read what was typed as a derived
     /// spelling (zi for zhi); the respelling follows it.
     @Test func respellingFollowsFuzzyPinyin() async throws {
