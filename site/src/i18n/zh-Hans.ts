@@ -47,7 +47,7 @@ export default {
         title: 'Sugu 发送的内容',
         body: ['Sugu 没有遥测、崩溃报告、数据分析，也没有账户。它只在以下情况联网：'],
         list: [
-          '检查更新（可以关闭）：连接 sugu.zheng-she.com。不发送有关你 Mac 的信息，请求中只包含 Sugu 的版本号。',
+          '检查更新（可以关闭）：连接 sugu.zheng-she.com 检查 Sugu；打开设置时，每天最多一次连接 GitHub，检查你已下载的雾凇拼音词库和语法模型是否有新版本。不发送有关你 Mac 的信息，发往 sugu.zheng-she.com 的请求中只包含 Sugu 的版本号。',
           '你主动发起的下载：可选的雾凇拼音词库和语法模型来自 GitHub，Zenzai 模型来自 Hugging Face。',
           'Apple 私有云计算（仅在你选择时）：正在转换的文字、光标前的文字或你选中的文字会发送到 Apple 私有云计算，用于转换、翻译或重写。选择“在此 Mac 上”时，Apple 的模型在你的 Mac 上运行，不发送任何内容。',
         ],

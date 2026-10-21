@@ -47,7 +47,7 @@ export default {
           'Sugu has no telemetry, crash reporting or analytics, and no account. It connects only for:',
         ],
         list: [
-          'Update checks, to sugu.zheng-she.com, which you can turn off. They send nothing about your Mac; the request names Sugu’s version.',
+          'Update checks, which you can turn off: to sugu.zheng-she.com for Sugu, and, when you open Settings, at most once a day to GitHub for newer releases of the rime-ice dictionary and grammar model you downloaded. They send nothing about your Mac; the request to sugu.zheng-she.com names Sugu’s version.',
           'Downloads you start: the optional rime-ice dictionary and grammar model from GitHub, and the Zenzai model from Hugging Face.',
           'Apple Private Cloud Compute, only if you choose it: the text you are converting, the text before the cursor, or the text you selected goes to Apple Private Cloud Compute to be converted, translated or rewritten. On This Mac, Apple’s model runs on your Mac and sends nothing.',
         ],

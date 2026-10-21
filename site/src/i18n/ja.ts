@@ -47,7 +47,7 @@ export default {
         title: 'Sugu が送信するもの',
         body: ['Sugu にはテレメトリ、クラッシュレポート、分析、アカウントはありません。通信するのは次の場合だけです。'],
         list: [
-          'アップデートの確認。sugu.zheng-she.com に接続します。オフにできます。Mac の情報は送信せず、リクエストに含まれるのは Sugu のバージョンだけです。',
+          'アップデートの確認。オフにできます。Sugu については sugu.zheng-she.com に接続し、設定を開いたときには 1 日に 1 回まで GitHub に接続して、ダウンロード済みの rime-ice 辞書と文法モデルの新しいリリースを確認します。Mac の情報は送信せず、sugu.zheng-she.com へのリクエストに含まれるのは Sugu のバージョンだけです。',
           'ユーザが始めたダウンロード。オプションの rime-ice 辞書と文法モデルは GitHub から、Zenzai モデルは Hugging Face からダウンロードします。',
           'Apple Private Cloud Compute。選んだ場合に限り、変換中のテキスト、カーソルより前のテキスト、または選択したテキストを、変換・翻訳・書き直しのために Apple Private Cloud Compute に送ります。「このMac上」を選んだ場合は Apple のモデルが Mac 上で動作し、何も送信しません。',
         ],
