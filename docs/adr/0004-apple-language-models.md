@@ -84,6 +84,23 @@ missing when asked together with a conversion. The user decided:
 - When Private Cloud Compute is unavailable or its quota is used up, the
   on-device fallback offers translations only.
 
+## Amendment (2026-10-21): Private Cloud Compute only in development builds
+
+Apple offers Private Cloud Compute to apps distributed on the App Store
+(and their TestFlight and ad hoc tests). Input methods cannot be
+distributed there: Apple's developer support confirmed this in 2020 and
+again in April 2026. The account's approval enables the capability on the
+App ID, and development profiles carry it, but a Developer ID profile
+generated after the approval does not. So:
+
+- Releases are Developer ID builds without the entitlement; the Private
+  Cloud Compute level falls back to the on-device model (D-045).
+- The owner's Macs run development-signed builds with the entitlement
+  (`Config/Local.xcconfig`, `scripts/package-dev.sh`). They have no update
+  key, so Sparkle never replaces them with a release.
+- If Apple opens Private Cloud Compute to Developer ID, a profile with it
+  in `APPLE_PROVISIONING_PROFILE` is all a release needs.
+
 ## Considered options
 
 - **Automatic replacement (live rewrite, auto-correct by model):**
@@ -101,6 +118,6 @@ missing when asked together with a conversion. The user decided:
   Private Cloud Compute requests, when the user turns them on, are network
   traffic alongside update checks and downloads.
 - Development builds carry the entitlement only when signed through an
-  untracked `Config/Local.xcconfig`; release signing needs a Developer ID
-  profile with the capability.
+  untracked `Config/Local.xcconfig`; Developer ID profiles do not offer
+  the capability (amendment 2026-10-21).
 - `FoundationModels` is weak-linked; Sugu still runs on macOS 14.

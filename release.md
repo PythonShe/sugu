@@ -42,7 +42,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 - [x] **Developer ID Installer certificate:** in the login keychain (G2, 2026-10-20 to 2027-11-19; renew before then and update the secret). Export as `.p12` with a password.
 - [x] **Developer ID Application certificate:** in the login keychain (G2, to 2031-02-10).
 - [ ] **App Store Connect API key** (Developer role): the `.p8`, key ID, issuer ID.
-- [ ] **Optional: Developer ID provisioning profile** for `com.zheng-she.inputmethod.Sugu` with Private Cloud Compute (D-045). Without it, release builds use the on-device model only.
+- [x] **Developer ID provisioning profile with Private Cloud Compute:** not available. Apple offers the capability only to App Store apps, which input methods cannot be (ADR 0004 amendment 2026-10-21); releases use the on-device model, and the owner's Macs run development builds with it from `scripts/package-dev.sh`. Do not install a release package on those Macs: it replaces the development build.
 - [ ] **Sparkle keys:** `generate_keys`, then `generate_keys -x sparkle.key` (private) and `generate_keys -p` (public). Back up the private key offline: losing it strands every install on its version, and it also signs the feed.
 - [ ] **Cloudflare R2 API token:** Object Read & Write on `sugu-updates` only.
 - [ ] **Cloudflare API token:** "Cloudflare Pages: Edit", for the site.
@@ -55,7 +55,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 | Signing the app | `APPLE_CERTIFICATE` (base64 `.p12`), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY` |
 | Signing the `.pkg` | `APPLE_INSTALLER_CERTIFICATE`, `APPLE_INSTALLER_CERTIFICATE_PASSWORD`, `APPLE_INSTALLER_SIGNING_IDENTITY` |
 | Notarization | `APPLE_API_KEY` (base64 `.p8`), `APPLE_API_KEY_ID`, `APPLE_API_ISSUER` |
-| Private Cloud Compute (optional) | `APPLE_PROVISIONING_PROFILE` (base64) |
+| Private Cloud Compute (unavailable to Developer ID; leave unset) | `APPLE_PROVISIONING_PROFILE` (base64) |
 | Sparkle | `SPARKLE_PRIVATE_KEY` (the contents of the file from `generate_keys -x`) |
 | R2 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
 | Pages | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
