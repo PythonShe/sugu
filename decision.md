@@ -1777,3 +1777,15 @@ checked against the code before it was changed.
 - Sugu's dictionary file is version 2: the typed form and script follow
   the dates. A version 1 line still reads, and its word and deletion are
   matched after conversion to Simplified.
+
+## D-095 · Importing a dictionary shows it first (2026-10-21)
+
+- Import… opens a sheet instead of an open panel: files are dropped on it
+  (or on the Dictionaries pane, which opens it) or chosen, and it shows
+  each file's name and format, its words, and how many are new, before
+  anything is added. A file Sugu cannot read says so in place.
+- Besides other input methods' exports, a list of the user's own reads:
+  a reading and a word per line, in either order, split by a tab, a
+  comma or spaces (pinyin may be in syllables), with quotes dropped. A
+  line whose two fields are both Latin letters is prose and left out.
+- The sheet renders in the settings snapshots, empty and with a file.

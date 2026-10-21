@@ -260,6 +260,13 @@ public final class LearnedStore {
         return chineseForms?.text(word.shown, in: script) ?? word.shown
     }
 
+    /// Whether the store has a word, as an imported or added one is keyed.
+    public func contains(reading: String, text: String, mode: InputMode) -> Bool {
+        let stored = storedText(text, mode: mode)
+        let key = IndexKey(mode: mode, reading: LearnedWord.normalize(enteredReading: reading, mode: mode))
+        return index[key]?.contains { words[$0]?.text == stored } == true
+    }
+
     /// The learned words a candidate shown in the script in use stands for.
     public func words(showing text: String, mode: InputMode) -> [LearnedWord] {
         let stored = storedText(text, mode: mode)

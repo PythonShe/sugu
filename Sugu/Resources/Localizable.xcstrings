@@ -592,6 +592,29 @@
         }
       }
     },
+    "Choose Files…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイルを選択…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选取文件…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇檔案⋯"
+          }
+        }
+      }
+    },
     "Choose…": {
       "extractionState": "manual",
       "localizations": {
@@ -1030,6 +1053,29 @@
         }
       }
     },
+    "Drop Dictionary Files Here": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "辞書ファイルをここにドロップ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将词库文件拖到这里"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將詞庫檔案拖到這裡"
+          }
+        }
+      }
+    },
     "Edit": {
       "extractionState": "manual",
       "localizations": {
@@ -1214,6 +1260,29 @@
         }
       }
     },
+    "File:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイル："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檔案："
+          }
+        }
+      }
+    },
     "Fix Grammar": {
       "extractionState": "manual",
       "localizations": {
@@ -1327,6 +1396,29 @@
         }
       }
     },
+    "Format:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "形式："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "格式："
+          }
+        }
+      }
+    },
     "Full Pinyin": {
       "extractionState": "manual",
       "localizations": {
@@ -1419,6 +1511,29 @@
         }
       }
     },
+    "Google Japanese Input or Microsoft IME": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google 日本語入力または Microsoft IME"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google 日语输入法或 Microsoft IME"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google 日文輸入法或 Microsoft IME"
+          }
+        }
+      }
+    },
     "Grammar model:": {
       "extractionState": "manual",
       "localizations": {
@@ -1507,6 +1622,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "IBM"
+          }
+        }
+      }
+    },
+    "Import": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読み込む"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入"
           }
         }
       }
@@ -2181,6 +2319,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "從未"
+          }
+        }
+      }
+    },
+    "New:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい単語："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新词语："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新字詞："
           }
         }
       }
@@ -2943,6 +3104,29 @@
         }
       }
     },
+    "Several Formats": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複数の形式"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多种格式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多種格式"
+          }
+        }
+      }
+    },
     "Shift": {
       "extractionState": "manual",
       "localizations": {
@@ -3150,6 +3334,29 @@
         }
       }
     },
+    "Sogou Cell Dictionary": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜狗細胞辞書"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜狗细胞词库"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜狗細胞詞庫"
+          }
+        }
+      }
+    },
     "Sogou Shuangpin": {
       "extractionState": "manual",
       "localizations": {
@@ -3169,6 +3376,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜狗雙拼"
+          }
+        }
+      }
+    },
+    "Sogou Text": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜狗テキスト"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜狗文本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜狗文字檔"
           }
         }
       }
@@ -3422,6 +3652,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "同步檔案夾："
+          }
+        }
+      }
+    },
+    "Text Replacements": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ユーザ辞書"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文本替换"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "替代文字"
           }
         }
       }
@@ -4117,6 +4370,29 @@
         }
       }
     },
+    "Word List": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "単語リスト"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "词语列表"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字詞列表"
+          }
+        }
+      }
+    },
     "Word:": {
       "extractionState": "manual",
       "localizations": {
@@ -4136,6 +4412,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "字詞："
+          }
+        }
+      }
+    },
+    "Words": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "単語"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "词语"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字詞"
           }
         }
       }

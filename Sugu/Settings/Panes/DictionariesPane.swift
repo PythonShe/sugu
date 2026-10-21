@@ -48,27 +48,20 @@ final class DictionariesPane: SettingsPane {
         }
     }
 
-    private func importDictionaries() {
-        guard let window = view.window else { return }
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.beginSheetModal(for: window) { [weak self] response in
-            guard response == .OK else { return }
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                Task {
-                    do {
-                        let added = try await self.model.importDictionaries(panel.urls)
-                        self.importResult.stringValue = String(localized: "Added \(added) words.")
-                    } catch DictionaryImporter.Error.tooLarge {
-                        self.presentError(message: String(localized: "The dictionary has too many words to import."))
-                    } catch {
-                        self.presentError(message: String(localized: "The dictionary could not be read."))
-                    }
-                }
-            }
+    /// Opens the import sheet, reading `urls` when files were dropped.
+    private func importDictionaries(_ urls: [URL] = []) {
+        guard let window = view.window, window.attachedSheet == nil else { return }
+        let sheet = ImportSheet(model: model) { [weak self] added in
+            self?.importResult.stringValue = String(localized: "Added \(added) words.")
         }
+        window.beginSheet(sheet.window)
+        if !urls.isEmpty { sheet.read(urls) }
+    }
+
+    override func makeContainer() -> NSView {
+        let container = FileDropView()
+        container.onDrop = { [weak self] in self?.importDictionaries($0) }
+        return container
     }
 
     private func exportDictionary() {

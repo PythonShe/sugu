@@ -32,6 +32,9 @@ public enum DictionaryImporter {
             entries = try sogouText(data)
         case .rime:
             entries = try rime(data)
+        case .wordList:
+            guard let lines = TextDecoding.lines(of: data) else { throw Error.unreadable }
+            entries = lines.compactMap { $0.hasPrefix("#") ? nil : wordListEntry($0) }
         }
         var seen = Set<DictionaryEntry>()
         let unique = entries.filter { seen.insert($0).inserted }
@@ -77,6 +80,32 @@ public enum DictionaryImporter {
             guard line.hasPrefix("'"), let space = line.firstIndex(where: { $0 == " " || $0 == "\t" }) else { return nil }
             let reading = line[..<space].split(separator: "'").joined()
             return entry(reading: reading, text: line[space...])
+        }
+    }
+
+    /// One line of a word list: a reading and a word, in either order, split
+    /// by a tab or a comma (more columns are ignored), or by spaces, where
+    /// the reading may be pinyin in syllables (`ni hao 你好`). Quotes around
+    /// a field are dropped. Nil when no field reads as a reading.
+    static func wordListEntry(_ line: some StringProtocol) -> DictionaryEntry? {
+        let separators: [Character] = line.contains("\t") ? ["\t"] : line.contains(",") || line.contains("，") ? [",", "，"] : [" ", "　"]
+        let fields = line.split(whereSeparator: { separators.contains($0) })
+            .map { $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "\"'")) }
+            .filter { !$0.isEmpty }
+        guard fields.count >= 2 else { return nil }
+        let isReading = fields.map { DictionaryEntry.mode(forReading: $0) != nil }
+        if separators.contains(" "), let word = fields.indices.first(where: { !isReading[$0] }),
+           fields.indices.allSatisfy({ $0 == word || isReading[$0] }) {
+            // Spaces: the one field that is no reading is the word.
+            let reading = fields.indices.filter { $0 != word }.map { fields[$0] }.joined()
+            return entry(reading: reading, text: fields[word])
+        }
+        switch (isReading[0], isReading[1]) {
+        case (true, false): return entry(reading: fields[0], text: fields[1])
+        // Kana for kana (すぐ, スグ); letters for letters is prose.
+        case (true, true): return fields[1].allSatisfy(\.isASCII) ? nil : entry(reading: fields[0], text: fields[1])
+        case (false, true): return entry(reading: fields[1], text: fields[0])
+        case (false, false): return nil
         }
     }
 

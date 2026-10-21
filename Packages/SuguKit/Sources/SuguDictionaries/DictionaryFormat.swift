@@ -17,6 +17,9 @@ public enum DictionaryFormat: String, Sendable, CaseIterable {
     case sogouText
     /// RIME dictionary (.dict.yaml) or exported user dictionary: text, code.
     case rime
+    /// A list of the user's own: a reading and a word per line, in either
+    /// order, separated by a tab, a comma or spaces (.txt, .csv).
+    case wordList
 
     /// Guesses the format from the file name and its first bytes.
     public static func detect(_ url: URL) -> DictionaryFormat? {
@@ -40,6 +43,7 @@ public enum DictionaryFormat: String, Sendable, CaseIterable {
             if DictionaryEntry.mode(forReading: String(fields[0])) == .japanese { return .googleJapaneseInput }
             if DictionaryEntry.mode(forReading: String(fields[1])) != nil { return .rime }
         }
+        if DictionaryImporter.wordListEntry(sample) != nil { return .wordList }
         return nil
     }
 }

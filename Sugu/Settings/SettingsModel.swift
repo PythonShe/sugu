@@ -164,33 +164,28 @@ final class SettingsModel {
 
     // MARK: Dictionaries
 
-    /// Imports dictionary files; returns how many words were new. Files are
-    /// read off the main actor, which keeps serving keys in every app. A
-    /// Sugu file brings back its words even when they were deleted here.
-    func importDictionaries(_ urls: [URL]) async throws -> Int {
-        guard let store = environment.store else { return 0 }
-        var added = 0
-        for url in urls {
-            let accessing = url.startAccessingSecurityScopedResource()
-            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-            let file = try await Task.detached(priority: .userInitiated) { () throws -> ImportedFile in
-                if DictionaryFormat.detect(url) == .sugu { return .sugu(SuguDictionaryFile.decode(try Data(contentsOf: url))) }
-                return .entries(try DictionaryImporter.read(url))
-            }.value
-            switch file {
-            case .sugu(let words):
-                guard words.count <= DictionaryImporter.maximumEntries else { throw DictionaryImporter.Error.tooLarge }
-                added += try await store.restore(words)
-            case .entries(let entries):
-                added += try await store.importUserWords(entries.map { ($0.reading, $0.text, $0.mode) })
-            }
-        }
-        return added
+    /// Reads dictionary files to show before importing, off the main
+    /// actor, which keeps serving keys in every app.
+    func previewDictionaries(_ urls: [URL]) async throws -> [DictionaryPreview] {
+        var previews: [DictionaryPreview] = []
+        for url in urls { previews.append(try await DictionaryPreview.read(url)) }
+        guard previews.reduce(0, { $0 + $1.entries.count }) <= DictionaryImporter.maximumEntries else { throw DictionaryImporter.Error.tooLarge }
+        return previews
     }
 
-    private enum ImportedFile: Sendable {
-        case sugu([LearnedWord])
-        case entries([DictionaryEntry])
+    /// How many words of the files the store does not have yet.
+    func newWordCount(in previews: [DictionaryPreview]) -> Int {
+        guard let store = environment.store else { return 0 }
+        return previews.reduce(0) { $0 + $1.newCount(in: store) }
+    }
+
+    /// Imports read files; returns how many words were new. A Sugu file
+    /// brings back its words even when they were deleted here.
+    func importDictionaries(_ previews: [DictionaryPreview]) async throws -> Int {
+        guard let store = environment.store else { return 0 }
+        var added = 0
+        for preview in previews { added += try await preview.importWords(into: store) }
+        return added
     }
 
     /// How many learned words a shorter expiry would delete now.

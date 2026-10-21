@@ -74,6 +74,43 @@ private func utf16(_ text: String) -> Data {
         ])
     }
 
+    /// The user's own list: either order, tab, comma or spaces, quotes,
+    /// pinyin in syllables; lines without a reading are left out.
+    @Test func wordList() throws {
+        let csv = try temporaryFile("words.csv", Data("# my words\n苏古,sugu\nkuai，快\n\"とうきょう\",\"東京\"\nすぐ,スグ\n只有词\n".utf8))
+        #expect(DictionaryFormat.detect(csv) == .wordList)
+        #expect(try DictionaryImporter.read(csv) == [
+            DictionaryEntry(mode: .chinese, reading: "sugu", text: "苏古"),
+            DictionaryEntry(mode: .chinese, reading: "kuai", text: "快"),
+            DictionaryEntry(mode: .japanese, reading: "とうきょう", text: "東京"),
+            DictionaryEntry(mode: .japanese, reading: "すぐ", text: "スグ"),
+        ])
+        let spaced = try temporaryFile("words.txt", Data("ni hao 你好\n苏古 sugu\n".utf8))
+        #expect(try DictionaryImporter.read(spaced) == [
+            DictionaryEntry(mode: .chinese, reading: "nihao", text: "你好"),
+            DictionaryEntry(mode: .chinese, reading: "sugu", text: "苏古"),
+        ])
+        #expect(DictionaryFormat.detect(try temporaryFile("prose.txt", Data("hello world\n".utf8))) == nil)
+        #expect(DictionaryFormat.detect(try temporaryFile("notes.txt", Data("只有词\n另一行\n".utf8))) == nil)
+    }
+
+    /// The preview tells the format and what is new before importing.
+    @MainActor
+    @Test func previewCountsNewWordsBeforeImporting() async throws {
+        let url = try temporaryFile("words.csv", Data("sugu,苏古\nkuai,快\n".utf8))
+        let store = try LearnedStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("sugu-preview-\(UUID().uuidString)/learned.sqlite"))
+        store.addUserWord(reading: "kuai", text: "快", mode: .chinese)
+        let preview = try await DictionaryPreview.read(url)
+        #expect(preview.format == .wordList)
+        #expect(preview.entries.count == 2)
+        #expect(preview.newCount(in: store) == 1)
+        #expect(try await preview.importWords(into: store) == 1)
+        #expect(preview.newCount(in: store) == 0)
+        await #expect(throws: DictionaryImporter.Error.unrecognizedFormat) {
+            try await DictionaryPreview.read(try temporaryFile("photo.txt", Data("hello world\n".utf8)))
+        }
+    }
+
     @Test func textReplacements() throws {
         let items: [[String: String]] = [["shortcut": "omw", "phrase": "On my way!"], ["shortcut": "めあど", "phrase": "sugu@example.com"], ["shortcut": "@@", "phrase": "x"]]
         let data = try PropertyListSerialization.data(fromPropertyList: items, format: .xml, options: 0)

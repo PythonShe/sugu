@@ -158,9 +158,13 @@ class SettingsPane: NSViewController {
     /// Subclasses react to changes beyond the form's own controls.
     func modelDidChange(_ change: SettingsModel.Change) {}
 
+    /// The view the form sits in; a pane that takes dropped files gives one
+    /// that does.
+    func makeContainer() -> NSView { NSView() }
+
     override func loadView() {
         build()
-        let container = NSView()
+        let container = makeContainer()
         container.addSubview(form.grid)
         NSLayoutConstraint.activate([
             form.grid.topAnchor.constraint(equalTo: container.topAnchor, constant: 20),
