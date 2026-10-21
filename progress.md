@@ -2,6 +2,17 @@
 
 Running log of what was built, verified, and what is next. Newest first.
 
+## 2026-10-21
+- Settings fixes: the window opens in front of the app being typed in;
+  every control saves again (its action had resolved to NSObject's
+  `performSelector:` since 8f8f748, so no change was ever kept); the
+  window is wide enough for all eight panes in the toolbar.
+- Downloads follow upstream after two weeks (D-093): Update beside Remove,
+  a grammar file per download so octagram reloads it, and a rime-ice
+  update redeploys under the same schema. Checked against GitHub's live
+  API: rime-ice resolves to 2026.06.30 (the current pin), passing over
+  `nightly`.
+
 ## 2026-10-20
 - Pre-release review (D-091), CodeRabbit plus manual reading: fixed the
   learned store after failed writes, sync watermarks and pull timing,

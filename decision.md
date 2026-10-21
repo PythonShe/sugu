@@ -1716,3 +1716,29 @@ checked against the code before it was changed.
   (dependencies, notices check, project) and the share-alike check, not
   `scripts/ci.sh`, which is run before tagging. On hosted runners, slower
   than a Mac, `SUGU_BUDGETS=report` measures the budgets without failing.
+
+## D-093 · Downloads follow upstream after two weeks (2026-10-21)
+
+- rime-ice and the grammar model follow their GitHub releases, which
+  amends D-015: a file is offered once it has been public for 14 days
+  (`ModelLibrary.minimumReleaseAge`), time for a bad or tampered release
+  to be noticed and withdrawn, and is verified against GitHub's own
+  SHA-256 of it. rime-ice takes dated tags only (its `nightly` release is
+  rebuilt in place and not marked a pre-release); the grammar model's
+  `LTS` tag is republished, so it is dated by its file. The pinned file
+  stays the fallback when GitHub is out of reach. Zenzai's model must suit
+  the AzooKey built in, so it moves with Sugu's pin.
+- Upstream is asked at most once a day, when Settings opens, for installed
+  items only, and only while update checks are on (development builds,
+  which have none, always check). An installed item with a newer release
+  shows Update beside Remove; nothing downloads unasked. What each item
+  was installed from is kept in `Models/installed.json`; installs from
+  before it count as the pinned file.
+- octagram keeps a grammar model it loaded until Sugu quits, so each
+  download gets its own name (`wanxiang-lts-zh-hans-<sha256 prefix>.gram`)
+  and the schema names it: a new file is a new schema and redeploys. The
+  old file goes once the new one is verified and in place, which also
+  covers a failed update: the old file is untouched until then.
+- A rime-ice update replaces tables under the same schema, so the runtime
+  is told to deploy again (`RimeRuntime.setNeedsDeployment`) and librime
+  rebuilds the changed dictionary.
