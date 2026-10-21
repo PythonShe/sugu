@@ -22,6 +22,9 @@ final class JapanesePane: SettingsPane {
                       get: { model.preferences.japanesePredictions }, set: { model.preferences.japanesePredictions = $0 })
         form.checkbox(String(localized: "Correct typos"),
                       get: { model.preferences.typoCorrection }, set: { model.preferences.typoCorrection = $0 })
+        let phonetic = form.checkbox(String(localized: "Type particles as pronounced (wa, e, o)"),
+                                     get: { model.preferences.phoneticRomaji }, set: { model.preferences.phoneticRomaji = $0 })
+        form.onRefresh { phonetic.isEnabled = !model.preferences.kanaInput }
 
         form.gap()
         let zenzaiLabel = String(localized: "Neural conversion:")

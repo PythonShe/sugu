@@ -1,0 +1,14 @@
+# Particles typed as pronounced (wa, e, o), run with --phonetic. Columns:
+# romaji as typed, expected text. Original sentences written for Sugu.
+watashiwagakuseidesu	私は学生です
+kyouwaiitenkidesune	今日はいい天気ですね
+toukyoueikimasu	東京へ行きます
+korewapendesu	これはペンです
+sorewanandesuka	それはなんですか
+nihongowahanasemasu	日本語は話せます
+konnnichiwa	こんにちは
+konbanwa	こんばんは
+kawagaaru	川がある
+hawainiikimasu	ハワイに行きます
+ochawonomu	お茶を飲む
+watashihagakuseidesu	私は学生です

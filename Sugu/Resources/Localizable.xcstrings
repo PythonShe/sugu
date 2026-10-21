@@ -4140,6 +4140,29 @@
         }
       }
     },
+    "Type particles as pronounced (wa, e, o)": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "助詞を発音どおりに入力（wa・e・o）"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按发音输入助词（wa、e、o）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按發音輸入助詞（wa、e、o）"
+          }
+        }
+      }
+    },
     "Type spaces in full width": {
       "extractionState": "manual",
       "localizations": {

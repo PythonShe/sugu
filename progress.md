@@ -6,7 +6,10 @@ Running log of what was built, verified, and what is next. Newest first.
 - Feature requests (todo §24): importing a dictionary from a sheet
   that takes dropped files and shows the words first, plain word lists
   included (D-095); Sugu's own display language in General (D-096);
-  katakana with ⌃⇧K and ⌃⇧J for keyboards without a かな key (D-097).
+  katakana with ⌃⇧K and ⌃⇧J for keyboards without a かな key (D-097);
+  particles typed as pronounced, an option (D-099), with the main
+  Japanese set unchanged and 11 of 12 phonetic sentences right. A single
+  n read from context waits on AzooKey's private typo table.
 - Learning leftovers (D-098): Zhuyin's window offers the user's words
   for their toned codes; pinyin learns words chosen one at a time each
   under its keys, not the sentence they make.

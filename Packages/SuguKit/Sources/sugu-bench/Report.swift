@@ -72,6 +72,8 @@ struct Report: Codable {
 
     var chinese = LanguageResult()
     var japanese = LanguageResult()
+    /// Particles typed as pronounced, with `--phonetic`.
+    var phonetic: LanguageResult?
     var memory = Memory(footprintMB: 0, residentMB: 0)
     /// Sentences using words the user taught, by language (zh, ja).
     var learned: [String: LearnedResult] = [:]
@@ -101,6 +103,7 @@ struct Report: Codable {
             return text
         }
         var sections = [line("Chinese", chinese), line("Japanese", japanese)]
+        if let phonetic { sections.append(line("Japanese typed as pronounced", phonetic)) }
         for (name, result) in learned.sorted(by: { $0.key > $1.key }) {
             sections.append(String(format: "Learned words (%@): top-1 %.0f%% before learning, %.0f%% after; main set after learning %.0f%%",
                                    name, result.before.topOneRate * 100, result.after.topOneRate * 100, result.mainSet.topOneRate * 100))

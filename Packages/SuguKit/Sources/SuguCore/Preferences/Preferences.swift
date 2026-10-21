@@ -33,6 +33,8 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var japanesePredictions = true
     public var liveConversion = false
     public var typoCorrection = true
+    /// Particles typed as pronounced (wa, e, o) convert as は, へ and を.
+    public var phoneticRomaji = false
     public var fullWidthSpace = false
     public var zenzaiEnabled = false
 
@@ -110,6 +112,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.japanesePredictions, into: &japanesePredictions)
         load(.liveConversion, into: &liveConversion)
         load(.typoCorrection, into: &typoCorrection)
+        load(.phoneticRomaji, into: &phoneticRomaji)
         load(.fullWidthSpace, into: &fullWidthSpace)
         load(.zenzaiEnabled, into: &zenzaiEnabled)
         load(.languageModel, into: &languageModel)

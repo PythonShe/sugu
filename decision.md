@@ -1825,3 +1825,30 @@ checked against the code before it was changed.
   abbreviation), the commit is learned whole as before. A commit of
   librime's sentence in one step is still learned whole: librime does
   not say which words it joined.
+
+## D-099 · Particles typed as pronounced (2026-10-21)
+
+- Research with a Fable advisor: every mainstream IME types particles as
+  spelled (ha, he, wo) and none offers otherwise; ん is a fixed romaji
+  rule everywhere (n before a consonant or at the end, nn, n'), with no
+  reading from context. Of four designs (converting alternative kana
+  readings, alternatives inside AzooKey's lattice, a custom romaji
+  table, rewriting candidates), only the lattice keeps conversion within
+  budget and its clauses, live conversion and predictions consistent.
+- Japanese → Type particles as pronounced (wa, e, o), off by default,
+  romaji only. AzooKey's dynamic dictionary gets は read ワ, へ read エ
+  and を read オ, copied from the dictionary's own particles (their
+  classes and costs) at 2 less likely, so the lattice weighs わ as は
+  with real connection costs: わたしわがくせいです → 私は学生です, while
+  川, ハワイ, 絵 and お茶 stay. Greetings ending in は (こんにちわ,
+  こんばんわ) are entries of their own. Probed latency is unchanged.
+- The kana shows as typed; a commit is learned under the spelled
+  reading (わたしは), so the word is found whichever way it is typed.
+- Bench: `sugu-bench --phonetic` also runs `Bench/ja-phonetic.tsv`; with
+  it on, the main Japanese set is unchanged (92%).
+- Not done: a single n before a vowel or y read from context (konya →
+  今夜, genin → 原因). AzooKey's typo generator can do it with a one-entry
+  table (n → ん at its typo weight) and two fixes (a trailing separator,
+  and the typo penalty, which it computes but does not apply), but the
+  table is private: it needs a fork of AzooKey pinned by revision, or the
+  change upstream.

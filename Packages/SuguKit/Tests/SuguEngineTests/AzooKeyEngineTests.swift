@@ -7,10 +7,52 @@ import SuguRime
 
 @MainActor
 @Suite struct AzooKeyEngineTests {
-    func makeEngine() throws -> AzooKeyEngine {
+    func makeEngine(phonetic: Bool = false, kanaInput: Bool = false) throws -> AzooKeyEngine {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
-        return AzooKeyEngine(configuration: .init(workingDirectory: work))
+        var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
+        configuration.phoneticRomaji = phonetic
+        configuration.kanaInput = kanaInput
+        return AzooKeyEngine(configuration: configuration)
+    }
+
+    func converted(_ typed: String, phonetic: Bool = true) throws -> String {
+        let engine = try makeEngine(phonetic: phonetic)
+        engine.insert(typed)
+        _ = engine.convert()
+        defer { engine.clear() }
+        return engine.state.markedText
+    }
+
+    /// Particles typed as pronounced convert as spelled and are learned
+    /// under the spelled reading; the kana shows as typed.
+    @Test func phoneticParticlesConvert() throws {
+        let engine = try makeEngine(phonetic: true)
+        engine.insert("watashiwagakuseidesu")
+        #expect(engine.state.markedText == "わたしわがくせいです")
+        _ = engine.convert()
+        #expect(engine.state.markedText == "私は学生です")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.reading == "わたしはがくせいです")
+        #expect(try converted("toukyoueikimasu") == "東京へ行きます")
+        #expect(try converted("ochawonomu") == "お茶を飲む")
+        #expect(try converted("konnnichiwa") == "こんにちは")
+        #expect(try converted("konbanwa") == "こんばんは")
+    }
+
+    @Test func phoneticParticlesAreOptional() throws {
+        #expect(try converted("watashiwa", phonetic: false) != "私は")
+        let engine = try makeEngine(phonetic: true, kanaInput: true)
+        engine.insert("わたしわ")
+        _ = engine.convert()
+        #expect(engine.state.markedText != "私は")
+    }
+
+    /// Words read with わ, え and お stay.
+    @Test func phoneticParticlesLeaveWordsAlone() throws {
+        #expect(try converted("kawagaaru") == "川がある")
+        #expect(try converted("hawai") == "ハワイ")
+        #expect(try converted("watashihagakuseidesu") == "私は学生です")
     }
 
     func focused(_ engine: AzooKeyEngine) -> String? {
