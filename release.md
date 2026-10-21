@@ -44,8 +44,8 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 - [ ] **App Store Connect API key** (Developer role): the `.p8`, key ID, issuer ID.
 - [x] **Developer ID provisioning profile with Private Cloud Compute:** not available. Apple offers the capability only to App Store apps, which input methods cannot be (ADR 0004 amendment 2026-10-21); releases use the on-device model, and the owner's Macs run development builds with it from `scripts/package-dev.sh`. Do not install a release package on those Macs: it replaces the development build.
 - [ ] **Sparkle keys:** `generate_keys`, then `generate_keys -x sparkle.key` (private) and `generate_keys -p` (public). Back up the private key offline: losing it strands every install on its version, and it also signs the feed.
-- [ ] **Cloudflare R2 API token:** Object Read & Write on `sugu-updates` only.
-- [ ] **Cloudflare API token:** "Cloudflare Pages: Edit", for the site.
+- [x] **Cloudflare R2 API token:** Object Read & Write on `sugu-updates` only.
+- [x] **Cloudflare API token:** "Cloudflare Pages: Edit", for the site.
 - [ ] **Anthropic API key**, for the notes.
 
 ## 2. GitHub secrets and variables (owner)
