@@ -69,7 +69,7 @@ Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (defau
 - [x] Bind the R2 bucket in the Pages project settings if the `wrangler.toml` binding is not picked up (bound as `UPDATES` when the project was created).
 - [x] **Move `sugu.zheng-she.com` from the bucket's custom domain to the Pages project.** Before the first release this carries no risk (nothing is installed yet); afterwards, check `/appcast.xml` and the downloads answer throughout.
 - [ ] Optionally a cache rule for `/releases/*`, so downloads come from the edge rather than the function.
-- [ ] **Put the reviewed grammar model in the bucket** at `models/wanxiang-lts-zh-hans-9eedac1d.gram`. Upstream republishes its `LTS` file under one name, so the app downloads Sugu's copy and falls back to upstream only while this one is missing. Run the Mirror Model workflow (`gh workflow run mirror-model.yml`); its defaults are this file's upstream URL and pin, and it uploads through R2's S3 endpoint, which takes a file the Cloudflare API refuses (413).
+- [x] **Put the reviewed grammar model in the bucket** at `models/wanxiang-lts-zh-hans-9eedac1d.gram`. Upstream republishes its `LTS` file under one name, so the app downloads Sugu's copy and falls back to upstream only while this one is missing. Run the Mirror Model workflow (`gh workflow run mirror-model.yml`); its defaults are this file's upstream URL and pin, and it uploads through R2's S3 endpoint, which takes a file the Cloudflare API refuses (413).
 
 ## 4. Proving it
 
