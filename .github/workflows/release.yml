@@ -2,10 +2,11 @@ name: Release
 
 # Builds, signs, notarizes and publishes a Sugu release.
 #
-#   prepare ── notes (release-notes.yml) ── build (macos-26) ── publish (R2) ── site (deploy-site.yml)
+#   prepare ── notes (release-notes.yml) ── build (xcode-27) ── publish (R2) ── site (deploy-site.yml)
 #
 # A pushed vX.Y.Z tag releases it; project.yml's MARKETING_VERSION must
-# match. Releases go to sugu.zheng-she.com, not GitHub (ADR 0006).
+# match. Releases go to sugu.zheng-she.com, not GitHub (ADR 0006), unless
+# vars.R2_PUBLISH and vars.RELEASE_TO_GITHUB send them to a GitHub release.
 # Dispatched by hand without a tag and with publishing off, it is a dry run
 # of the current branch: everything up to notarization, nothing published.
 # The notes come before the build because the build signs them into the
@@ -37,7 +38,7 @@ concurrency:
 
 jobs:
   prepare:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       sha: ${{ steps.meta.outputs.sha }}
       tag: ${{ steps.meta.outputs.tag }}
@@ -51,11 +52,13 @@ jobs:
           EVENT: ${{ github.event_name }}
           INPUT_TAG: ${{ inputs.tag }}
           INPUT_PUBLISH: ${{ inputs.publish }}
+          R2_PUBLISH: ${{ vars.R2_PUBLISH }}
         run: |
           set -euo pipefail
           if [ "$EVENT" = "push" ]; then
             TAG="$GITHUB_REF_NAME"
-            PUBLISH=true
+            # vars.R2_PUBLISH=false holds tagged releases back from R2.
+            if [ "${R2_PUBLISH:-}" = "false" ]; then PUBLISH=false; else PUBLISH=true; fi
           else
             TAG="$INPUT_TAG"
             PUBLISH="$INPUT_PUBLISH"
@@ -106,7 +109,7 @@ jobs:
 
   build:
     needs: [prepare, notes]
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 150
     steps:
       - name: Checkout
@@ -117,7 +120,7 @@ jobs:
           fetch-depth: 0
 
       - name: Select Xcode
-        run: sudo xcode-select -s "$(printf "%s\n" /Applications/Xcode*.app | grep -vi beta | sort -V | tail -1)"
+        run: sudo xcode-select -s /Applications/Xcode_27.1.app
 
       - name: Install build tools
         run: brew install xcodegen cmake ninja
@@ -236,10 +239,36 @@ jobs:
           if [ -f "$KEYCHAIN" ]; then security delete-keychain "$KEYCHAIN" || true; fi
           rm -f "$RUNNER_TEMP/api-key.p8" "$RUNNER_TEMP/sparkle.key" "$RUNNER_TEMP/release.provisionprofile"
 
+  # vars.RELEASE_TO_GITHUB=true also attaches each tagged release to a GitHub
+  # release on this private repository.
+  github-release:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.tag != '' && vars.RELEASE_TO_GITHUB == 'true'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download the release
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: dist
+
+      - name: Create the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$TAG" --notes-file dist/notes/body.md \
+            dist/*.pkg dist/*.zip dist/appcast.xml dist/release.json
+
   publish:
     needs: [prepare, build]
     if: needs.prepare.outputs.publish == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     # One publish at a time across tags: each reads and rewrites the lists.
     concurrency:
       group: release-publish

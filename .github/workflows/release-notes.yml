@@ -35,7 +35,7 @@ permissions:
 
 jobs:
   generate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     # Above the worst case of the retries (3 × 240 s), so the fallback ships.
     timeout-minutes: 20
     steps:

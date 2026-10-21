@@ -61,7 +61,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 | Pages | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
 | Release notes | `ANTHROPIC_API_KEY` |
 
-Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (default `claude-opus-5-5`) and `LLM_EFFORT` (default `medium`). No workflow needs `contents: write`.
+Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (default `claude-opus-5-5`) and `LLM_EFFORT` (default `medium`), `R2_PUBLISH` (`false` keeps tagged releases off R2 and the site) and `RELEASE_TO_GITHUB` (`true` attaches them to a GitHub release on this repository, the one job with `contents: write`).
 
 ## 3. Hosting (before the first real release)
 
