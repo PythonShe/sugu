@@ -53,10 +53,10 @@ if [[ -n "${KEYCHAIN:-}" ]]; then
 fi
 
 # A release is built from committed sources, and its build number (what
-# Sparkle compares) grows with every commit.
+# Sparkle compares) is yymmddvv from scripts/build-number.sh.
 # Untracked files count too: the project takes in whole folders.
 [[ -z "$(git status --porcelain)" ]] || { echo "commit or stash changes first, untracked files too" >&2; exit 2; }
-BUILD_NUMBER="$(git rev-list --count HEAD)"
+BUILD_NUMBER="$(scripts/build-number.sh ${RELEASE_VERSION:+"v$RELEASE_VERSION"})"
 
 DIST="$ROOT/dist"
 WORK="$DIST/work"

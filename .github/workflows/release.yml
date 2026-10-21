@@ -116,7 +116,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.prepare.outputs.sha }}
-          # The build number is the commit count.
+          # The build number (yymmddvv) reads the tags; the notes, the history.
           fetch-depth: 0
 
       - name: Select Xcode

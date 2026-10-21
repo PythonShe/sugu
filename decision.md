@@ -1699,3 +1699,16 @@ checked against the code before it was changed.
   ignores Range. Publishing counts a file as absent only on a real "not
   found" from the bucket, checks the downloads' keys too, and with `cf`
   (which cannot ask) needs `FIRST_RELEASE=1` for the first release.
+
+## D-092 · Build numbers by date; 0.9.0 on GitHub releases (2026-10-21)
+
+- Build numbers are `yymmddvv` in UTC (`scripts/build-number.sh`): a
+  release takes its tag's day and its place among that day's release tags,
+  so `v0.9.0` is 26102101; untagged builds take today and one past its
+  tags. This replaces the commit count (D-072) and stays above every build
+  it numbered.
+- Until R2 tokens can be made, `R2_PUBLISH=false` keeps tagged releases off
+  the bucket and the site, and `RELEASE_TO_GITHUB=true` attaches them to a
+  release on the private repository instead.
+- Releases build on GitHub's `xcode-27` runner with Xcode 27.1 pinned (the
+  image's `Xcode_27.2.app` is a beta); the Ubuntu jobs run on 26.04.

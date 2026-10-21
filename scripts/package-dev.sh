@@ -17,10 +17,10 @@ cd "$ROOT"
 DERIVED="$ROOT/.build-dev"
 
 xcodegen generate --quiet
-# The build number grows with every commit, as in releases (D-072).
+# The build number is yymmddvv, as in releases.
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -destination 'platform=macOS' -derivedDataPath "$DERIVED" build -quiet \
-  CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)"
+  CURRENT_PROJECT_VERSION="$(scripts/build-number.sh)"
 
 APP="$DERIVED/Build/Products/Release/Sugu.app"
 codesign --verify --deep --strict "$APP"
