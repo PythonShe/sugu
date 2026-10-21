@@ -94,6 +94,7 @@ targets:
       - path: Sugu/App/Bundle+Version.swift
       - path: Sugu/Candidates/CandidateView.swift
       - path: Sugu/Candidates/FloatingPanel.swift
+      - path: Sugu/Settings/Form/ControlHandler.swift
     dependencies:
       - package: SuguKit
         product: SuguInput
