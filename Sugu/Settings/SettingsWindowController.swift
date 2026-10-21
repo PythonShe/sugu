@@ -68,8 +68,11 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             tabs.selectedTabViewItemIndex = index
         }
         model.isVisible = true
+        // The app being typed in never yields activation to an input method,
+        // so the window comes forward on its own rather than behind it.
         NSApp.activate()
-        window?.makeKeyAndOrderFront(nil)
+        window?.orderFrontRegardless()
+        window?.makeKey()
     }
 
     /// Shows the Learning pane with the Add Word sheet, filled from `draft`.
