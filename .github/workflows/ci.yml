@@ -17,7 +17,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_27.1.app
 
       - name: Install build tools
-        run: brew install xcodegen cmake ninja
+        run: brew install xcodegen
 
       - name: Restore native dependencies and data
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -31,6 +31,7 @@ jobs:
       - name: Check
         env:
           SUGU_BENCH_JSON: bench.json
+          SUGU_BUDGETS: report
         run: scripts/ci.sh
 
       - name: Keep benchmark results

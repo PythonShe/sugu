@@ -326,7 +326,7 @@ extension RimeEngineTests {
         #expect(engine.state.markedText != "苏古悦")
         engine.clear()
         try RimeUserDictionary.write(table, in: Shared.user)
-        defer { try? RimeUserDictionary.write("", in: Shared.user) }
+        defer { _ = try? RimeUserDictionary.write("", in: Shared.user) }
         #expect(engine.reloadUserDictionary())
         // ㄙㄨ ㄍㄨˇ ㄩㄝˋ
         engine.insert("nj ej3m,4")

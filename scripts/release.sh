@@ -71,8 +71,9 @@ curl -fsSL -o "$WORK/sparkle.tar.xz" \
 echo "$SPARKLE_TOOLS_SHA256  $WORK/sparkle.tar.xz" | shasum -a 256 -c -
 tar -xJf "$WORK/sparkle.tar.xz" -C "$TOOLS" ./bin
 
-# Dependencies, tests and budgets first.
-scripts/ci.sh
+# Tests and budgets are scripts/ci.sh's, run before tagging; a release only
+# builds.
+scripts/prepare.sh
 
 # The entitlement is restricted: it ships only with a profile that grants
 # it. These settings override any Config/Local.xcconfig.
@@ -86,6 +87,10 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
 APP="$WORK/Sugu.xcarchive/Products/Library/Input Methods/Sugu.app"
+# No share-alike file ships in the app (D-072).
+if grep -rlis "CC BY-SA\|CC-BY-SA\|ShareAlike" "$APP/Contents/Resources" --exclude=ThirdPartyNotices.txt; then
+  echo "share-alike data in the app" >&2; exit 1
+fi
 
 # Xcode signs the frameworks it embeds, but not the helpers inside
 # Sparkle's, which notarization refuses. Sugu is not sandboxed, so

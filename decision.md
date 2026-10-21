@@ -1712,3 +1712,7 @@ checked against the code before it was changed.
   release on the private repository instead.
 - Releases build on GitHub's `xcode-27` runner with Xcode 27.1 pinned (the
   image's `Xcode_27.2.app` is a beta); the Ubuntu jobs run on 26.04.
+- A release only builds: `release.sh` runs `scripts/prepare.sh`
+  (dependencies, notices check, project) and the share-alike check, not
+  `scripts/ci.sh`, which is run before tagging. On hosted runners, slower
+  than a Mac, `SUGU_BUDGETS=report` measures the budgets without failing.

@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Testing
 import SuguCore
 import SuguLearning
@@ -224,14 +225,14 @@ private final class ManualClock: @unchecked Sendable {
         let desktop = try store()
         let sync = SyncFolder(folder: folder, deviceID: "desktop", store: desktop)
         #expect(try await sync.pull(includeLearned: false) == 1)
-        var changes = 0
-        let observer = NotificationCenter.default.addObserver(forName: LearnedStore.didChangeNotification, object: desktop, queue: nil) { _ in changes += 1 }
+        let changes = OSAllocatedUnfairLock(initialState: 0)
+        let observer = NotificationCenter.default.addObserver(forName: LearnedStore.didChangeNotification, object: desktop, queue: nil) { _ in changes.withLock { $0 += 1 } }
         defer { NotificationCenter.default.removeObserver(observer) }
         desktop.deleteAll()
-        changes = 0
+        changes.withLock { $0 = 0 }
         // The laptop's copy is older than the deletion and unchanged.
         #expect(try await sync.pull(includeLearned: false) == 0)
-        #expect(changes == 0)
+        #expect(changes.withLock { $0 } == 0)
         #expect(sync.merged.keys.sorted() == ["laptop.sugudict"])
 
         laptop.addUserWord(reading: "kuai", text: "快", mode: .chinese)

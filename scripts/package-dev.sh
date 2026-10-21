@@ -19,7 +19,7 @@ DERIVED="$ROOT/.build-dev"
 xcodegen generate --quiet
 # The build number is yymmddvv, as in releases.
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
-  -destination 'platform=macOS' -derivedDataPath "$DERIVED" build -quiet \
+  -destination 'platform=macOS,arch=arm64' -derivedDataPath "$DERIVED" build -quiet \
   CURRENT_PROJECT_VERSION="$(scripts/build-number.sh)"
 
 APP="$DERIVED/Build/Products/Release/Sugu.app"

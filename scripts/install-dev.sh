@@ -13,7 +13,7 @@ DERIVED="$ROOT/.build-dev"
 
 xcodegen generate --quiet
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration "$CONFIGURATION" \
-  -destination 'platform=macOS' -derivedDataPath "$DERIVED" build -quiet
+  -destination 'platform=macOS,arch=arm64' -derivedDataPath "$DERIVED" build -quiet
 
 DEST="$HOME/Library/Input Methods"
 mkdir -p "$DEST"
