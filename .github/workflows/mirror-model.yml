@@ -1,0 +1,73 @@
+name: Mirror Model
+
+# Copies a reviewed download into the sugu-updates bucket under models/,
+# where the app fetches it from sugu.zheng-she.com (ModelLibrary's pins).
+# The file must match the pinned SHA-256; a key already in the bucket is
+# never replaced, since the app pins its bytes. Runs here because R2's S3
+# endpoint takes files the Cloudflare API refuses (413).
+
+on:
+  workflow_dispatch:
+    inputs:
+      key:
+        description: Key in the bucket, under models/
+        required: true
+        default: models/wanxiang-lts-zh-hans-9eedac1d.gram
+      source:
+        description: URL to download the file from
+        required: true
+        default: https://github.com/amzxyz/rime-wanxiang-data/releases/download/LTS/wanxiang-lts-zh-hans.gram
+      sha256:
+        description: The file's pinned SHA-256
+        required: true
+        default: 9eedac1d836f3fdafb61b162035c8937253aedc106be40b2b957d9ab64e9ed89
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-model
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - name: Mirror
+        env:
+          KEY: ${{ inputs.key }}
+          SOURCE: ${{ inputs.source }}
+          SHA256: ${{ inputs.sha256 }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "$KEY" =~ ^models/[A-Za-z0-9._-]+$ ]] || { echo "::error::The key must be a file name under models/."; exit 1; }
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::The SHA-256 must be 64 lowercase hex digits."; exit 1; }
+          [[ "$SOURCE" == https://* ]] || { echo "::error::The source must be an https URL."; exit 1; }
+          for name in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            [ -n "${!name:-}" ] || { echo "::error::secrets.$name is unset."; exit 1; }
+          done
+          r2() {
+            # R2 does not take the checksums newer AWS CLIs send by default.
+            AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
+              AWS_REQUEST_CHECKSUM_CALCULATION=when_required AWS_RESPONSE_CHECKSUM_VALIDATION=when_required \
+              aws --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --region auto "$@"
+          }
+
+          if output="$(r2 s3api head-object --bucket sugu-updates --key "$KEY" 2>&1)"; then
+            echo "::notice::$KEY is already in the bucket; left as it is."
+            exit 0
+          fi
+          grep -Eq "\(404\)|Not Found" <<<"$output" || { echo "::error::Could not ask the bucket for $KEY: $output"; exit 1; }
+
+          curl -fsSL --retry 3 -o model "$SOURCE"
+          echo "$SHA256  model" | sha256sum -c --quiet
+          r2 s3 cp model "s3://sugu-updates/$KEY" --content-type application/octet-stream \
+            --cache-control "public, max-age=31536000, immutable" --only-show-errors
+
+          status="$(curl -sS -o /dev/null -w '%{http_code}' -I "https://sugu.zheng-she.com/$KEY")"
+          echo "https://sugu.zheng-she.com/$KEY answers $status."
+          [ "$status" = 200 ]
