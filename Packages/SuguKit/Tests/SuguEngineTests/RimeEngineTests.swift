@@ -56,6 +56,34 @@ struct RimeEngineTests {
         #expect(FileManager.default.fileExists(atPath: Shared.user.appendingPathComponent("sugu.schema.yaml").path))
     }
 
+    /// Tables replaced under the same schema (a rime-ice update) are
+    /// rebuilt once the runtime is told to deploy again.
+    @Test func replacedTablesAreRebuilt() async throws {
+        let folder = Shared.user.appendingPathComponent(RimeSchema.rimeIceFolder, isDirectory: true)
+        let manifest = Shared.user.appendingPathComponent("\(RimeSchema.rimeIceDictionaryName).dict.yaml")
+        defer {
+            try? FileManager.default.removeItem(at: folder)
+            try? FileManager.default.removeItem(at: manifest)
+        }
+        func install(_ word: String, version: String) throws {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            for table in RimeSchema.rimeIceTables {
+                let entries = table == "base" ? "\(word)\tsu gu\t100\n" : ""
+                try "---\nname: \(table)\nversion: \"\(version)\"\nsort: by_weight\n...\n\(entries)"
+                    .write(to: folder.appendingPathComponent("\(table).dict.yaml"), atomically: true, encoding: .utf8)
+            }
+            try RimeSchema.rimeIceManifest(version: version).write(to: manifest, atomically: true, encoding: .utf8)
+        }
+        let schema = RimeSchema(dictionary: .rimeIce)
+        try install("酥咕", version: "1")
+        #expect(try await first("sugu", schema: schema) == "酥咕")
+
+        try install("苏谷", version: "2")
+        Shared.runtime.setNeedsDeployment()
+        #expect(try await first("sugu", schema: schema) == "苏谷")
+        _ = try await first("nihao")
+    }
+
     @Test func fuzzyPinyin() async throws {
         #expect(try await first("zongguo", schema: RimeSchema(fuzzy: [.zZh])) == "中国")
     }

@@ -210,7 +210,7 @@ public final class EngineHub: EngineSource {
             }
             preparing = nil
             // Settings may have changed while deploying.
-            if runtime.schema != self.schema { warmUp(.chinese) }
+            if runtime.schema != self.schema || !runtime.isReady { warmUp(.chinese) }
         }
     }
 
@@ -387,7 +387,7 @@ public final class EngineHub: EngineSource {
             keyboard: preferences.chineseKeyboard,
             scheme: preferences.pinyinScheme,
             fuzzy: preferences.fuzzyPinyin,
-            useGrammar: preferences.useGrammarModel && isGrammarModelInstalled,
+            grammar: preferences.useGrammarModel ? locations.grammarModel?.deletingPathExtension().lastPathComponent : nil,
             dictionary: preferences.chineseDictionary == .rimeIce && isRimeIceInstalled ? .rimeIce : .wanxiang
         )
     }
@@ -416,7 +416,12 @@ public final class EngineHub: EngineSource {
     /// Reloads what uses a model after it was installed or removed.
     public func modelDidChange(_ item: ModelLibrary.Item) {
         switch item {
-        case .grammarModel, .rimeIce:
+        case .grammarModel:
+            // A new file has a new name, so a new schema.
+            redeployChinese()
+        case .rimeIce:
+            // An update replaces the tables under the same schema.
+            if runtime.schema?.dictionary == .rimeIce { runtime.setNeedsDeployment() }
             redeployChinese()
         case .zenzaiModel:
             // A new or removed model file is loaded afresh.
@@ -432,7 +437,7 @@ public final class EngineHub: EngineSource {
     /// librime's sessions, so one asked for during a composition (a
     /// download finishing) waits for it to end.
     private func redeployChinese() {
-        guard schema != runtime.schema, runtime.isReady || preparing != nil else { return }
+        guard schema != runtime.schema || !runtime.isReady, runtime.schema != nil || preparing != nil else { return }
         if let chinese, !chinese.state.isEmpty {
             guard pendingRedeploy == nil else { return }
             pendingRedeploy = Task { [weak self] in

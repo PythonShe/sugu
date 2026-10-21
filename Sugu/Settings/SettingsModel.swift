@@ -30,7 +30,14 @@ final class SettingsModel {
     /// Set while the settings window is open. Closed, store changes only
     /// mark the word list stale, so commits do not rebuild it.
     var isVisible = false {
-        didSet { if isVisible, wordsStale { reloadWords() } }
+        didSet {
+            guard isVisible else { return }
+            if wordsStale { reloadWords() }
+            // Downloads follow upstream as Sugu follows its own releases:
+            // only while update checks are on (development builds have none).
+            let updater = environment.updater
+            if !updater.isAvailable || updater.checksAutomatically { environment.library.checkForUpdates() }
+        }
     }
     private var wordsStale = false
     private var wordsReload: Task<Void, Never>?
@@ -128,7 +135,10 @@ final class SettingsModel {
     // MARK: Downloads
 
     func state(of item: ModelLibrary.Item) -> ModelLibrary.State { downloads[item] ?? .notInstalled }
-    func isInstalled(_ item: ModelLibrary.Item) -> Bool { state(of: item) == .installed }
+    /// On disk, and in use while an update downloads.
+    func isInstalled(_ item: ModelLibrary.Item) -> Bool { environment.library.isInstalled(item) }
+    /// The size of a newer release of an installed item, if one was found.
+    func updateSize(of item: ModelLibrary.Item) -> Int64? { environment.library.updates[item]?.download.size }
     func install(_ item: ModelLibrary.Item) { environment.library.install(item) }
     func cancel(_ item: ModelLibrary.Item) { environment.library.cancel(item) }
     /// Removing rime-ice switches Chinese back to Wanxiang, which it was

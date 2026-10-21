@@ -4,6 +4,7 @@ import SuguCore
 import SuguEngines
 import SuguInput
 import SuguLearning
+import SuguRime
 
 /// Drives `InputSession` with real engines the way the shell does: one key
 /// event at a time into a field, timing each keystroke from event to
@@ -39,7 +40,7 @@ enum Bench {
         }
         if let grammarModel {
             try FileManager.default.createDirectory(at: locations.rimeUser, withIntermediateDirectories: true)
-            try FileManager.default.createSymbolicLink(at: locations.grammarModel, withDestinationURL: grammarModel)
+            try FileManager.default.createSymbolicLink(at: locations.grammarModel(named: RimeSchema.grammarLanguage), withDestinationURL: grammarModel)
             preferences.useGrammarModel = true
         }
         // Learning off for the accuracy sets; the learned-words set teaches

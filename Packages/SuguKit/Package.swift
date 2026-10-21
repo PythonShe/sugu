@@ -95,7 +95,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "sugu-bench",
-            dependencies: ["SuguEngines", "SuguInput", "SuguCore", "SuguLearning"],
+            dependencies: ["SuguEngines", "SuguInput", "SuguCore", "SuguLearning", "SuguRime"],
             swiftSettings: cxxSwiftSettings
         ),
         .testTarget(name: "SuguCoreTests", dependencies: ["SuguCore"], swiftSettings: swiftSettings),

@@ -16,6 +16,7 @@ public struct RimeSchema: Sendable, Equatable {
     /// Name of the wanxiang grammar model loaded by librime-octagram. The
     /// dictionary is Simplified, and the model scores sentences before the
     /// script filter runs, so the Simplified model serves every script.
+    /// A downloaded file's name starts with it.
     public static let grammarLanguage = "wanxiang-lts-zh-hans"
 
     /// Zhuyin reads syllables as pinyin with their tone (`ni3`), which
@@ -24,14 +25,15 @@ public struct RimeSchema: Sendable, Equatable {
     public var keyboard: ChineseKeyboard
     public var scheme: PinyinScheme
     public var fuzzy: Set<FuzzyPinyin>
-    public var useGrammar: Bool
+    /// The grammar model octagram loads, by file name without `.gram`.
+    public var grammar: String?
     public var dictionary: ChineseDictionary
 
-    public init(keyboard: ChineseKeyboard = .pinyin, scheme: PinyinScheme = .fullPinyin, fuzzy: Set<FuzzyPinyin> = [], useGrammar: Bool = false, dictionary: ChineseDictionary = .wanxiang) {
+    public init(keyboard: ChineseKeyboard = .pinyin, scheme: PinyinScheme = .fullPinyin, fuzzy: Set<FuzzyPinyin> = [], grammar: String? = nil, dictionary: ChineseDictionary = .wanxiang) {
         self.keyboard = keyboard
         self.scheme = scheme
         self.fuzzy = fuzzy
-        self.useGrammar = useGrammar
+        self.grammar = grammar
         self.dictionary = dictionary
     }
 
@@ -142,11 +144,11 @@ public struct RimeSchema: Sendable, Equatable {
             "  initial_quality: 3",
             "  max_homophones: 8",
         ]
-        if useGrammar {
+        if let grammar {
             lines += [
                 "  contextual_suggestions: false",
                 "grammar:",
-                "  language: \(Self.grammarLanguage)",
+                "  language: \(grammar)",
                 "  collocation_max_length: 6",
                 "  collocation_min_length: 2",
                 "  collocation_penalty: -14",

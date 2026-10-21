@@ -3795,6 +3795,29 @@
         }
       }
     },
+    "Update": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデート"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
+          }
+        }
+      }
+    },
     "Update Available…": {
       "comment": "Input menu item in place of Check for Updates… when a scheduled check found an update the user has not seen.",
       "extractionState": "manual",

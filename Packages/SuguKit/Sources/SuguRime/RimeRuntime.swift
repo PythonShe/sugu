@@ -35,6 +35,8 @@ public final class RimeRuntime {
     private let strings = CStringPool()
     private var isInitialized = false
     private var deployment: Task<Void, any Swift.Error>?
+    /// Set when data the schema imports changed under the same schema.
+    private var isStale = false
 
     public init(directories: Directories) {
         self.directories = directories
@@ -46,7 +48,7 @@ public final class RimeRuntime {
     /// to call repeatedly; concurrent calls share one deployment.
     public func prepare(_ schema: RimeSchema, version: String) async throws {
         if let deployment { try await deployment.value }
-        if isInitialized, self.schema == schema { return }
+        if isInitialized, self.schema == schema, !isStale { return }
         let task = Task { try await deploy(schema, version: version) }
         deployment = task
         defer { deployment = nil }
@@ -60,10 +62,17 @@ public final class RimeRuntime {
         try? FileManager.default.removeItem(at: directories.user.appendingPathComponent("build"))
     }
 
+    /// Has the next `prepare` deploy again, for dictionary tables replaced
+    /// under the same schema; librime rebuilds what changed.
+    public func setNeedsDeployment() {
+        isStale = true
+    }
+
     /// True once a deployment succeeded and none is running.
-    public var isReady: Bool { isInitialized && deployment == nil && schema != nil }
+    public var isReady: Bool { isInitialized && deployment == nil && schema != nil && !isStale }
 
     private func deploy(_ schema: RimeSchema, version: String) async throws {
+        isStale = false
         try FileManager.default.createDirectory(at: directories.user, withIntermediateDirectories: true)
         let schemaURL = directories.user.appendingPathComponent("\(RimeSchema.schemaID).schema.yaml")
         let yaml = schema.yaml(version: version)

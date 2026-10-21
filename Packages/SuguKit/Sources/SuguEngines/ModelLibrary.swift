@@ -14,8 +14,11 @@ public protocol ModelHost: AnyObject {
 extension EngineHub: ModelHost {}
 
 /// Optional data the user can download from settings. Each item is pinned
-/// to a file and checksum reviewed for this release; nothing is fetched
-/// without the user asking.
+/// to a file and checksum reviewed for this release. rime-ice and the
+/// grammar model also follow their upstream releases once a file has been
+/// public for `minimumReleaseAge`, checked against GitHub's checksum
+/// (D-093); Zenzai's model must suit the AzooKey built in, so it moves
+/// with Sugu. Nothing is downloaded without the user asking.
 @MainActor
 public final class ModelLibrary {
     public enum Item: String, CaseIterable, Sendable {
@@ -68,7 +71,35 @@ public final class ModelLibrary {
             case .zenzaiModel: "zenz-v3.1-small"
             }
         }
+
+        /// The file reviewed for this release of Sugu.
+        public var pinned: Release { Release(version: version, download: download) }
+
+        /// Whether the item follows its upstream releases.
+        public var followsUpstream: Bool { self != .zenzaiModel }
+
+        /// The newest upstream release old enough to offer, if the item
+        /// follows upstream.
+        public func latestRelease() async throws -> Release? {
+            switch self {
+            case .grammarModel:
+                // Republished under the same tag; dated by its file.
+                try await GitHubReleases.newest("wanxiang-lts-zh-hans.gram", in: "amzxyz/rime-wanxiang-data", tag: "LTS", minimumAge: ModelLibrary.minimumReleaseAge)
+            case .rimeIce:
+                // Dated releases only, not the nightly build.
+                try await GitHubReleases.newest("cn_dicts.zip", in: "iDvel/rime-ice", versions: /\d{4}\.\d{2}\.\d{2}/, minimumAge: ModelLibrary.minimumReleaseAge)
+            case .zenzaiModel:
+                nil
+            }
+        }
     }
+
+    /// How long an upstream file must have been public before it is
+    /// offered: time for a bad or tampered release to be noticed and
+    /// withdrawn first.
+    public static let minimumReleaseAge: TimeInterval = 14 * 86_400
+    /// Upstream is asked at most this often.
+    static let checkInterval: TimeInterval = 86_400
 
     public enum State: Equatable, Sendable {
         case notInstalled
@@ -88,25 +119,77 @@ public final class ModelLibrary {
     }
 
     public private(set) var states: [Item: State] = [:]
+    /// Newer releases of installed items, found by `checkForUpdates`.
+    public private(set) var updates: [Item: Release] = [:]
     /// Called on every state change, including progress.
     public var onChange: ((Item) -> Void)?
 
     private let engines: any ModelHost
-    /// The pinned download for each item; tests substitute local files.
-    private let downloads: (Item) -> Download
+    /// The pinned release and the upstream lookup; tests substitute both.
+    private let pinned: (Item) -> Release
+    private let latest: @MainActor (Item) async throws -> Release?
     private var tasks: [Item: Task<Void, Never>] = [:]
     /// Items whose removal waits for a cancelled download to unwind.
     private var removing: Set<Item> = []
+    private var lastCheck: Date?
+    private var checking: Task<Void, Never>?
 
-    public init(engines: any ModelHost, downloads: @escaping (Item) -> Download = \.download) {
+    /// What each item was installed from, by file checksum.
+    private struct Installed: Codable {
+        var version: String
+        var sha256: String
+    }
+
+    private var installed: [String: Installed]
+
+    public init(
+        engines: any ModelHost,
+        pinned: @escaping (Item) -> Release = \.pinned,
+        latest: @escaping @MainActor (Item) async throws -> Release? = { try await $0.latestRelease() }
+    ) {
         self.engines = engines
-        self.downloads = downloads
+        self.pinned = pinned
+        self.latest = latest
+        let record = engines.locations.models.appendingPathComponent("installed.json")
+        installed = (try? JSONDecoder().decode([String: Installed].self, from: Data(contentsOf: record))) ?? [:]
         for item in Item.allCases {
             states[item] = isInstalled(item) ? .installed : .notInstalled
         }
     }
 
     public func state(of item: Item) -> State { states[item] ?? .notInstalled }
+
+    /// The release an installed item came from. Installs from before the
+    /// record could only be the pinned file.
+    private func installedRelease(of item: Item) -> Installed? {
+        guard isInstalled(item) else { return nil }
+        return installed[item.rawValue] ?? Installed(version: pinned(item).version, sha256: pinned(item).download.sha256)
+    }
+
+    private func record(_ item: Item, _ release: Release?) {
+        installed[item.rawValue] = release.map { Installed(version: $0.version, sha256: $0.download.sha256) }
+        let url = engines.locations.models.appendingPathComponent("installed.json")
+        try? FileManager.default.createDirectory(at: engines.locations.models, withIntermediateDirectories: true)
+        try? JSONEncoder().encode(installed).write(to: url, options: .atomic)
+    }
+
+    /// Looks for newer releases of the installed items, at most once a day.
+    public func checkForUpdates(now: Date = .now) {
+        guard checking == nil, lastCheck.map({ now.timeIntervalSince($0) >= Self.checkInterval }) ?? true else { return }
+        lastCheck = now
+        checking = Task {
+            for item in Item.allCases where isInstalled(item) {
+                let offer = item.followsUpstream ? try? await latest(item) : pinned(item)
+                // Installed again or removed while upstream answered.
+                guard tasks[item] == nil, let current = installedRelease(of: item) else { continue }
+                let update = offer.flatMap { $0.download.sha256 == current.sha256 ? nil : $0 }
+                guard updates[item] != update else { continue }
+                updates[item] = update
+                onChange?(item)
+            }
+            checking = nil
+        }
+    }
 
     public func isInstalled(_ item: Item) -> Bool {
         switch item {
@@ -116,12 +199,18 @@ public final class ModelLibrary {
         }
     }
 
+    /// Installs an item, or its update when one was found: the newest
+    /// upstream release old enough, or the pinned file when upstream is
+    /// out of reach.
     public func install(_ item: Item) {
         guard tasks[item] == nil, !removing.contains(item) else { return }
         set(item, .downloading(0))
         tasks[item] = Task {
             do {
-                try await perform(item)
+                let release = if let update = updates[item] { update } else { (try? await latest(item)) ?? pinned(item) }
+                try Task.checkCancellation()
+                try await perform(item, release)
+                updates[item] = nil
                 set(item, .installed)
                 engines.modelDidChange(item)
             } catch where Self.isCancellation(error) {
@@ -151,6 +240,8 @@ public final class ModelLibrary {
         Task {
             await running?.value
             deleteFiles(of: item)
+            record(item, nil)
+            updates[item] = nil
             removing.remove(item)
             set(item, .notInstalled)
             engines.modelDidChange(item)
@@ -162,7 +253,7 @@ public final class ModelLibrary {
         let locations = engines.locations
         switch item {
         case .grammarModel:
-            try? fm.removeItem(at: locations.grammarModel)
+            for file in locations.grammarModels { try? fm.removeItem(at: file) }
         case .rimeIce:
             try? fm.removeItem(at: locations.rimeIceManifest)
             try? fm.removeItem(at: locations.rimeIceTables)
@@ -171,23 +262,28 @@ public final class ModelLibrary {
         }
     }
 
-    private func perform(_ item: Item) async throws {
+    private func perform(_ item: Item, _ release: Release) async throws {
         let locations = engines.locations
         let progress: @MainActor @Sendable (Double) -> Void = { [weak self] fraction in
             self?.set(item, .downloading(fraction))
         }
         switch item {
         case .grammarModel:
-            try await Downloader.fetch(downloads(item), to: locations.grammarModel, progress: progress)
+            // A name of its own (octagram keeps the model it loaded); the
+            // previous file goes once this one is in place.
+            let previous = locations.grammarModels
+            let file = locations.grammarModel(named: "\(RimeSchema.grammarLanguage)-\(release.download.sha256.prefix(8))")
+            try await Downloader.fetch(release.download, to: file, progress: progress)
+            for old in previous where old != file { try? FileManager.default.removeItem(at: old) }
         case .zenzaiModel:
-            try await Downloader.fetch(downloads(item), to: locations.zenzaiModel, progress: progress)
+            try await Downloader.fetch(release.download, to: locations.zenzaiModel, progress: progress)
         case .rimeIce:
             let fm = FileManager.default
             let work = locations.models.appendingPathComponent("rime-ice-install", isDirectory: true)
             try? fm.removeItem(at: work)
             defer { try? fm.removeItem(at: work) }
             let archive = work.appendingPathComponent("cn_dicts.zip")
-            try await Downloader.fetch(downloads(item), to: archive, progress: progress)
+            try await Downloader.fetch(release.download, to: archive, progress: progress)
             set(item, .installing)
             let extracted = work.appendingPathComponent("extracted", isDirectory: true)
             try await ZipArchive.extract(archive, to: extracted)
@@ -208,9 +304,10 @@ public final class ModelLibrary {
                 try fm.createDirectory(at: locations.rimeIceTables.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try fm.moveItem(at: tables, to: locations.rimeIceTables)
             }
-            try RimeSchema.rimeIceManifest(version: item.version)
+            try RimeSchema.rimeIceManifest(version: release.version)
                 .write(to: locations.rimeIceManifest, atomically: true, encoding: .utf8)
         }
+        record(item, release)
         try Task.checkCancellation()
     }
 

@@ -33,9 +33,22 @@ extension EngineHub {
         }
 
         /// The grammar model, when downloaded. octagram reads it from the
-        /// librime user directory.
-        public var grammarModel: URL {
-            rimeUser.appendingPathComponent("\(RimeSchema.grammarLanguage).gram")
+        /// librime user directory and keeps a model it loaded until Sugu
+        /// quits, so each download has a name of its own.
+        public var grammarModel: URL? {
+            grammarModels.first
+        }
+
+        /// Every grammar model file, one unless an update was interrupted.
+        var grammarModels: [URL] {
+            let files = (try? FileManager.default.contentsOfDirectory(at: rimeUser, includingPropertiesForKeys: nil)) ?? []
+            return files.filter { $0.pathExtension == "gram" && $0.lastPathComponent.hasPrefix(RimeSchema.grammarLanguage) }
+                .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        }
+
+        /// Where a grammar model named `name` goes.
+        public func grammarModel(named name: String) -> URL {
+            rimeUser.appendingPathComponent("\(name).gram")
         }
 
         public var zenzaiModel: URL {
@@ -52,7 +65,7 @@ extension EngineHub {
             rimeUser.appendingPathComponent(RimeSchema.rimeIceFolder, isDirectory: true)
         }
 
-        public var hasGrammarModel: Bool { FileManager.default.fileExists(atPath: grammarModel.path) }
+        public var hasGrammarModel: Bool { grammarModel != nil }
         public var hasZenzaiModel: Bool { FileManager.default.fileExists(atPath: zenzaiModel.path) }
         public var hasRimeIce: Bool { FileManager.default.fileExists(atPath: rimeIceManifest.path) }
     }

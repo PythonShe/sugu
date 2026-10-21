@@ -43,7 +43,7 @@ do {
         let readings = arguments.dropFirst().filter { !$0.hasPrefix("--") && $0 != data && $0 != user && $0 != option("--scheme") }
         let schema = RimeSchema(
             scheme: option("--scheme").flatMap(PinyinScheme.init(rawValue:)) ?? .fullPinyin,
-            useGrammar: arguments.contains("--grammar"),
+            grammar: arguments.contains("--grammar") ? RimeSchema.grammarLanguage : nil,
             dictionary: arguments.contains("--rime-ice") ? .rimeIce : .wanxiang
         )
         try await Convert.run(
