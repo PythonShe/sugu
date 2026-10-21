@@ -74,7 +74,7 @@ if [[ -n "${R2_ACCESS_KEY_ID:-}" ]]; then
 else
   # The Cloudflare CLI sets no Cache-Control; the site's functions do.
   put() {
-    cf r2 objects put "$2" --bucket-name "$BUCKET" --file "$1" --content-type "$3" >/dev/null
+    cf r2 buckets objects upload "$2" --bucket-name "$BUCKET" --file "$1" --content-type "$3" >/dev/null
   }
   # The bucket is not asked here: a file the site does not serve counts as
   # there, unless FIRST_RELEASE=1 says nothing was published yet.
