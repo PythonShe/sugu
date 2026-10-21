@@ -1789,3 +1789,12 @@ checked against the code before it was changed.
   comma or spaces (pinyin may be in syllables), with quotes dropped. A
   line whose two fields are both Latin letters is prose and left out.
 - The sheet renders in the settings snapshots, empty and with a file.
+
+## D-096 · Sugu's language is chosen in Settings (2026-10-21)
+
+- General opens with a Language pop-up: System Language, English, 日本語,
+  简体中文, 繁體中文, each named in its own language. A choice is the
+  app's own `AppleLanguages` default; System Language removes it.
+- AppKit reads the language once at launch, so a change asks to restart
+  now or later. Restarting relaunches the app and opens Settings on
+  General, where the change was made.

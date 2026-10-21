@@ -4,6 +4,10 @@ import SuguCore
 final class GeneralPane: SettingsPane {
     override func build() {
         let model = model
+        form.popUp(String(localized: "Language:"), options: AppLanguage.allCases.map { ($0.title, $0) },
+                   get: { AppLanguage.chosen }, set: { [weak self] in self?.chooseLanguage($0) })
+
+        form.gap()
         for (index, mode) in model.orderedModes.filter({ $0 != .english }).enumerated() {
             form.checkbox(mode.localizedName, label: index == 0 ? String(localized: "Input modes:") : nil,
                           get: { model.isEnabled(mode) }, set: { model.setEnabled(mode, $0) })
@@ -44,6 +48,21 @@ final class GeneralPane: SettingsPane {
         form.textField(String(localized: "Always type as English:"),
                        get: { model.preferences.latinAllowList.joined(separator: " ") },
                        set: { model.preferences.latinAllowList = $0.split(whereSeparator: { $0 == " " || $0 == "," }).map(String.init) })
+    }
+
+    /// Saves the language and offers to restart now, when it shows;
+    /// otherwise it shows from the next launch.
+    private func chooseLanguage(_ language: AppLanguage) {
+        guard language != AppLanguage.chosen else { return }
+        AppLanguage.chosen = language
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Sugu restarts to change its language.")
+        alert.addButton(withTitle: String(localized: "Restart Now"))
+        alert.addButton(withTitle: String(localized: "Later"))
+        guard let window = view.window else { return }
+        alert.beginSheetModal(for: window) { response in
+            if response == .alertFirstButtonReturn { MainActor.assumeIsolated { AppLanguage.restart() } }
+        }
     }
 
     private func fontSizeSlider(named name: String) -> NSView {

@@ -1993,6 +1993,29 @@
         }
       }
     },
+    "Later": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "後で"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "稍后"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "稍後"
+          }
+        }
+      }
+    },
     "Learn from Typing": {
       "extractionState": "manual",
       "localizations": {
@@ -2966,6 +2989,29 @@
         }
       }
     },
+    "Restart Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今すぐ再起動"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即重新启动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即重新啟動"
+          }
+        }
+      }
+    },
     "Rewrite Selection": {
       "extractionState": "manual",
       "localizations": {
@@ -3587,6 +3633,29 @@
         }
       }
     },
+    "Sugu restarts to change its language.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語を変更するには Sugu を再起動します。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugu 需要重新启动才能更改语言。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugu 需要重新啟動才能更改語言。"
+          }
+        }
+      }
+    },
     "Switch to English with:": {
       "extractionState": "manual",
       "localizations": {
@@ -3652,6 +3721,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "同步檔案夾："
+          }
+        }
+      }
+    },
+    "System Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "システムの言語"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统语言"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系統語言"
           }
         }
       }
