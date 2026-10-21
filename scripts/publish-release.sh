@@ -62,7 +62,9 @@ if [[ -n "${R2_ACCESS_KEY_ID:-}" ]]; then
       AWS_REQUEST_CHECKSUM_CALCULATION=when_required AWS_RESPONSE_CHECKSUM_VALIDATION=when_required \
       aws --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --region auto "$@"
   }
-  put() { r2 s3 cp "$1" "s3://$BUCKET/$2" --content-type "$3" --cache-control "$4" --only-show-errors; }
+  # One PUT per file: R2 refused the CLI's multipart upload of a large
+  # file (InvalidPart), and takes up to 5 GB this way.
+  put() { r2 s3api put-object --bucket "$BUCKET" --key "$2" --body "$1" --content-type "$3" --cache-control "$4" >/dev/null; }
   # Whether the bucket holds a file, whatever the site serves. Only a
   # "not found" counts as absent; any other failure stops the publish.
   stored() {

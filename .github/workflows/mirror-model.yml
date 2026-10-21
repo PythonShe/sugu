@@ -65,8 +65,9 @@ jobs:
 
           curl -fsSL --retry 3 -o model "$SOURCE"
           echo "$SHA256  model" | sha256sum -c --quiet
-          r2 s3 cp model "s3://sugu-updates/$KEY" --content-type application/octet-stream \
-            --cache-control "public, max-age=31536000, immutable" --only-show-errors
+          # One PUT: R2 refused the CLI's multipart upload (InvalidPart).
+          r2 s3api put-object --bucket sugu-updates --key "$KEY" --body model --content-type application/octet-stream \
+            --cache-control "public, max-age=31536000, immutable" >/dev/null
 
           status="$(curl -sS -o /dev/null -w '%{http_code}' -I "https://sugu.zheng-she.com/$KEY")"
           echo "https://sugu.zheng-she.com/$KEY answers $status."
