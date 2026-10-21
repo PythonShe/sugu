@@ -168,7 +168,9 @@ class SettingsPane: NSViewController {
             form.grid.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 20),
             form.grid.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -20),
             form.grid.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            container.widthAnchor.constraint(greaterThanOrEqualToConstant: 520),
+            // Every pane's toolbar item fits without an overflow menu: eight
+            // English labels need 550.
+            container.widthAnchor.constraint(greaterThanOrEqualToConstant: 560),
         ])
         view = container
         model.observe { [weak self] change in
