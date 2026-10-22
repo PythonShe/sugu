@@ -221,4 +221,4 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Display language chosen in Settings, apart from the system's (D-096)
 - [x] Katakana input without a JIS keyboard: ⌃⇧K and ⌃⇧J, the input menu and the mode indicator (D-097)
 - [x] Phonetic romaji (optional): wa → は, e → へ, o → を as particles (research with a Fable advisor, D-099)
-- [ ] A single n before a vowel or y read from context: needs AzooKey's typo table, private in 0.11.2 (D-099)
+- [x] A single n before a vowel or y read from context, an option, through a fork of AzooKey (D-101)

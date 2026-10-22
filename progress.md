@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-22
+- A single n read as ん from context, an option (konya → 今夜, genin →
+  原因), through Sugu's fork of AzooKey 0.11.2 (D-101): 29 of 30
+  sentences right with it on and every bench set unchanged with it off.
+  The fork also applies the typo penalty upstream stopped applying, and
+  marks predictions so a reading lengthened by ん is not taken for one.
 - Chinese keystrokes about twice as fast at p99 (4.25 → 1.9 ms) from a
   patch to librime's dictionary lookup that changes no candidate
   (D-100), checked against a recorded reference of 9,250 keys; date

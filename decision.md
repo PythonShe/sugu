@@ -1882,3 +1882,49 @@ checked against the code before it was changed.
   or drop it (it is speed only). One that applies but no longer fits
   shows in the reference test. CI's dependency cache is keyed on the
   patches too.
+
+## D-101 · A single n read from context, through a fork of AzooKey (2026-10-22)
+
+- An option in the Japanese pane, off by default ("Type ん with a single
+  n"): a single n before a vowel or y may also be ん where the sentence
+  wants it (genin → 原因, konya → 今夜, hokenni → 保険に, onna → 女).
+  Off, n is romaji as before. Not with kana input.
+- Advised by a Fable agent and Codex: no table rule can decide alone
+  (kinyuu is 記入 and きんゆう 金融), so the converter weighs both
+  readings in its lattice, the one as typed at no cost and the one with
+  ん at a typo's penalty.
+- AzooKey's typo table is private in 0.11.2, so Sugu builds a fork:
+  `PythonShe/AzooKeyKanaKanjiConverter`, branch `sugu` on 0.11.2
+  (`AZOOKEY_BASE`), pinned by commit in `Packages/SuguKit/Package.swift`;
+  the notices name the fork. Its changes:
+  - `Roman2KanaTypoRule` and `setAdditionalRoman2KanaTypoRules`: the
+    caller's corrections, which apply with typo correction off too.
+    Sugu adds one, n read as nn, at weight 3.5.
+  - The typo generator takes its table as data. A correction is accepted
+    at the start of a lookup when the left context, corrected the same
+    way, reads it. A pending n finishes as ん at a word's end. A reading
+    keeps every input end its paths reach (ほけん ends after hoken and
+    after hokenn), so a word may end at the ん.
+  - The typo penalty, computed but not applied since upstream 6b5f61c,
+    applies again, by the reading's length so 本 and ホン from the same
+    keys pay the same. Dynamic and learned words are taken once per
+    reading and penalized per path like the dictionary's.
+  - `Candidate.isPrediction`. Sugu dropped predictions as candidates
+    reading past the input, which a reading lengthened by ん also does.
+    A word read just as typed is not marked: azooKey's deduplication can
+    keep the prediction's copy of a user's word, and marking it lost
+    user words and the greetings of D-099.
+  - Its tests pass, but for `testMozcEvaluationData`, which crashes on
+    stock 0.11.2 too.
+- In Sugu the kana shows as typed, and a commit is learned under the
+  reading with ん (げんいんは). Clause lengths count typed kana, which a
+  reading with ん outruns. The language model's respellings pay the
+  penalty of the correction the word was read through.
+- Bench: `--contextual-n` runs `Bench/ja-n.tsv` (30 sentences: 15 that
+  need ん, 12 with な-row kana that must stay, 3 typed with nn): 97%;
+  the miss is 本によると → ホンによると, where the incremental lattice
+  keeps another 本 than a full build (upstream). With the option off,
+  every set, the variant without the language model included, matches
+  0.11.2; on, the main set is unchanged. Keystroke p99 about 2 ms.
+- Not done: n' (not in AzooKey's romaji table); offering the rules and
+  the penalty fix upstream.
