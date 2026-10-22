@@ -31,7 +31,12 @@ const stroke =
     <div class="hero-foot">
       <p class="lead">{t.home.lead}</p>
       <div class="cta">
-        {latest && <a class="button" href="/download/">{t.home.download}</a>}
+        {latest && (
+          <a class="button icon" href="/download/">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path class="arrow" d="M12 3.5v11M7.5 10 12 14.5 16.5 10" /><path d="M5 19.5h14" /></svg>
+            {t.home.download}
+          </a>
+        )}
         <p class="meta">{t.home.requirement}{latest && <><br />{t.home.version(latest.version)}</>}</p>
       </div>
     </div>
@@ -39,25 +44,21 @@ const stroke =
 
   <ul class="bento">
     <li class="card wide" data-card="keys">
-      <span class="index">01</span>
       <div class="keys" aria-hidden="true"><kbd>⇧</kbd><kbd>⇪</kbd><kbd lang="ja">英数</kbd><kbd lang="ja">かな</kbd></div>
       <h2>{source.title}</h2>
       <p>{source.body}</p>
     </li>
     <li class="card" data-card>
-      <span class="index">02</span>
       <span class="glyph" lang="zh-Hans" aria-hidden="true">拼</span>
       <h2>{chinese.title}</h2>
       <p>{chinese.body}</p>
     </li>
     <li class="card" data-card>
-      <span class="index">03</span>
       <span class="glyph" lang="ja" aria-hidden="true">あ</span>
       <h2>{japanese.title}</h2>
       <p>{japanese.body}</p>
     </li>
     <li class="card wide" data-card="learns">
-      <span class="index">04</span>
       <div class="strip" lang="ja" aria-hidden="true">
         <i class="highlight" data-highlight></i>
         <ol data-strip>
@@ -71,12 +72,10 @@ const stroke =
       <p>{learns.body}</p>
     </li>
     <li class="card wide inverted" data-card>
-      <span class="index">05</span>
       <h2>{local.title}<span class="inline-caret" aria-hidden="true"></span></h2>
       <p>{local.body}</p>
     </li>
     <li class="card" data-card>
-      <span class="index">06</span>
       <span class="glyph" lang="ja" aria-hidden="true">辞</span>
       <h2>{dictionaries.title}</h2>
       <p>{dictionaries.body}</p>
@@ -101,7 +100,10 @@ const stroke =
         <source srcset={iconDark} media="(prefers-color-scheme: dark)" />
         <img src={iconLight} alt="" width="96" height="96" />
       </picture>
-      <a class="button" href="/download/">{t.home.download}</a>
+      <a class="button icon" href="/download/">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="arrow" d="M12 3.5v11M7.5 10 12 14.5 16.5 10" /><path d="M5 19.5h14" /></svg>
+        {t.home.download}
+      </a>
     </section>
   )}
 </Base>
