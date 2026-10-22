@@ -84,6 +84,9 @@ enum Bench {
         if preferences.phoneticRomaji {
             report.phonetic = measure(session, mode: .japanese, cases: try load(bench.appendingPathComponent("ja-phonetic.tsv")))
         }
+        if preferences.contextualN {
+            report.contextualN = measure(session, mode: .japanese, cases: try load(bench.appendingPathComponent("ja-n.tsv")))
+        }
         report.memory = Memory.current()
 
         // The same readings after different text: with the field read and

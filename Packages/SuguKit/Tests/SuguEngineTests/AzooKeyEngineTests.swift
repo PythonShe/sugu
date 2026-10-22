@@ -7,17 +7,18 @@ import SuguRime
 
 @MainActor
 @Suite struct AzooKeyEngineTests {
-    func makeEngine(phonetic: Bool = false, kanaInput: Bool = false) throws -> AzooKeyEngine {
+    func makeEngine(phonetic: Bool = false, kanaInput: Bool = false, contextualN: Bool = false) throws -> AzooKeyEngine {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
         var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
         configuration.phoneticRomaji = phonetic
         configuration.kanaInput = kanaInput
+        configuration.contextualN = contextualN
         return AzooKeyEngine(configuration: configuration)
     }
 
-    func converted(_ typed: String, phonetic: Bool = true) throws -> String {
-        let engine = try makeEngine(phonetic: phonetic)
+    func converted(_ typed: String, phonetic: Bool = true, contextualN: Bool = false) throws -> String {
+        let engine = try makeEngine(phonetic: phonetic, contextualN: contextualN)
         engine.insert(typed)
         _ = engine.convert()
         defer { engine.clear() }
@@ -53,6 +54,49 @@ import SuguRime
         #expect(try converted("kawagaaru") == "川がある")
         #expect(try converted("hawai") == "ハワイ")
         #expect(try converted("watashihagakuseidesu") == "私は学生です")
+    }
+
+    /// A single n before a vowel or y reads as ん where the sentence wants
+    /// it; the kana shows as typed, and the words are learned under the
+    /// reading with ん.
+    @Test func aSingleNReadsAsNWhereItFits() throws {
+        let engine = try makeEngine(contextualN: true)
+        engine.insert("geninhafumeidesu")
+        #expect(engine.state.markedText == "げにんはふめいです")
+        _ = engine.convert()
+        #expect(engine.state.markedText == "原因は不明です")
+        let commit = try #require(engine.commitConverted())
+        #expect(commit.reading == "げんいんはふめいです")
+        #expect(commit.clauses.map(\.reading).joined() == commit.reading)
+        #expect(commit.clauses.map(\.text).joined() == commit.text)
+        #expect(try converted("hokennikanyuusuru", contextualN: true) == "保険に加入する")
+        #expect(try converted("onnanohitogakita", contextualN: true) == "女の人が来た")
+        #expect(try converted("konnichiwa", contextualN: true) == "こんにちは")
+        #expect(try converted("konnnichiwa", contextualN: true) == "こんにちは")
+    }
+
+    @Test func aSingleNLeavesTheNRowAlone() throws {
+        #expect(try converted("konawomazeru", contextualN: true) == "粉を混ぜる")
+        #expect(try converted("naniwosuru", contextualN: true) == "何をする")
+        #expect(try converted("kanojonohon", contextualN: true) == "彼女の本")
+    }
+
+    @Test func aSingleNIsOptional() throws {
+        #expect(try converted("geninhafumeidesu") != "原因は不明です")
+        let engine = try makeEngine(kanaInput: true, contextualN: true)
+        engine.insert("げにんは")
+        _ = engine.convert()
+        #expect(engine.state.markedText != "原因は")
+    }
+
+    /// The first clause never ends inside a word of the user's.
+    @Test func theFirstClauseKeepsTheUsersWordsWhole() throws {
+        let engine = try makeEngine()
+        engine.setUserWords([.init(reading: "くろさきりお", text: "黒崎莉央", isEstablished: true)])
+        engine.insert("kurosakiriosannkarame-rugakimashita")
+        #expect(engine.convert())
+        #expect(engine.state.segments.map(\.text).joined().hasPrefix("黒崎莉央"))
+        #expect(focused(engine)?.hasPrefix("黒崎莉央") == true)
     }
 
     func focused(_ engine: AzooKeyEngine) -> String? {

@@ -20,6 +20,9 @@ public final class AzooKeyEngine: CompositionEngine {
         /// Particles typed as pronounced (wa, e, o) also read as は, へ and
         /// を, in romaji.
         public var phoneticRomaji = false
+        /// A single n before a vowel or y also reads as ん, in romaji, so
+        /// "genin" converts as 原因 and "onna" as 女.
+        public var contextualN = false
         /// Zenzai model file; nil keeps neural conversion off.
         public var zenzaiModel: URL?
         /// Where AzooKey may write its own files. Its learning is off (Sugu
@@ -100,7 +103,7 @@ public final class AzooKeyEngine: CompositionEngine {
     public init(configuration: Configuration) {
         self.configuration = configuration
         self.converter = KanaKanjiConverter(dicdataStore: dictionary)
-        if usesPhoneticRomaji { importDynamicWords() }
+        prepareConverter()
     }
 
     public func update(_ configuration: Configuration) {
@@ -108,8 +111,9 @@ public final class AzooKeyEngine: CompositionEngine {
         self.configuration = configuration
         lastRequest = nil
         releaseZenzaiIfUnused()
-        if previous.phoneticRomaji != configuration.phoneticRomaji || previous.kanaInput != configuration.kanaInput {
-            importDynamicWords()
+        if previous.phoneticRomaji != configuration.phoneticRomaji || previous.contextualN != configuration.contextualN
+            || previous.kanaInput != configuration.kanaInput {
+            prepareConverter()
         }
     }
 
@@ -141,7 +145,7 @@ public final class AzooKeyEngine: CompositionEngine {
                 value: word.isEstablished ? -5 : -8
             )
         }
-        importDynamicWords()
+        prepareConverter()
         lastRequest = nil
         loadedRefiner?.userWords = Set(words.map(\.text))
     }
@@ -177,7 +181,7 @@ public final class AzooKeyEngine: CompositionEngine {
         precondition(state.isEmpty, "a converter is swapped only between compositions")
         converter = loaded.converter
         loadedZenzai = loaded.model
-        importDynamicWords()
+        prepareConverter()
     }
 
     /// Swaps a converter holding a Zenzai model that is no longer used for a
@@ -186,7 +190,7 @@ public final class AzooKeyEngine: CompositionEngine {
         guard loadedZenzai != nil, loadedZenzai != configuration.zenzaiModel, state.isEmpty else { return }
         converter = KanaKanjiConverter(dicdataStore: dictionary)
         loadedZenzai = nil
-        importDynamicWords()
+        prepareConverter()
     }
 
     /// AzooKey's dictionary read into memory, so a lookup no longer opens
@@ -211,19 +215,28 @@ public final class AzooKeyEngine: CompositionEngine {
         loadedRefiner = nil
         guard loadedZenzai == nil else { return }
         converter = KanaKanjiConverter(dicdataStore: dictionary)
-        importDynamicWords()
+        prepareConverter()
     }
 
-    /// Gives the converter the user's words, and the particles as
-    /// pronounced while they are on.
-    private func importDynamicWords() {
+    /// Gives the converter the user's words, the particles as pronounced
+    /// and the readings of a single n while they are on.
+    private func prepareConverter() {
         var words = userWords
         if usesPhoneticRomaji { words += phoneticEntries() }
         converter.importDynamicUserDictionary(words)
+        converter.setAdditionalRoman2KanaTypoRules(usesContextualN ? Self.contextualNRules : [])
         lastRequest = nil
     }
 
     private var usesPhoneticRomaji: Bool { configuration.phoneticRomaji && !configuration.kanaInput }
+    private var usesContextualN: Bool { configuration.contextualN && !configuration.kanaInput }
+
+    /// A single n read as nn as well, so it may end a syllable as ん before
+    /// a vowel or y: genin as げんいん (原因), konya as こんや (今夜), onna
+    /// as おんな (女), hokenni as ほけんに (保険に). The converter weighs
+    /// each reading in context; the one as typed costs nothing, this one a
+    /// typo's penalty, carried by the word that ends in the ん.
+    private static let contextualNRules = [Roman2KanaTypoRule(typed: "n", intended: "nn", weight: 3.5)]
 
     /// Particles spelled は, へ and を, read as pronounced, priced a little
     /// above the dictionary's own so a word read わ, え or お still wins
@@ -259,15 +272,32 @@ public final class AzooKeyEngine: CompositionEngine {
     ]
 
     /// The reading a candidate is spelled with: a particle typed as
-    /// pronounced is learned as written (わたしわ → わたしは), so the
-    /// word is found again whichever way it is typed.
+    /// pronounced is learned as written (わたしわ → わたしは), and a single
+    /// n as the ん it was read as (げにん → げんいん), so the word is found
+    /// again whichever way it is typed.
     private func spelledReading(of candidate: KanaKanjiConverterModule.Candidate, typed: String) -> String {
-        guard usesPhoneticRomaji else { return typed }
+        guard usesPhoneticRomaji || usesContextualN else { return typed }
         let spelled = candidate.data.map { element in
-            Self.phoneticSpellings.contains { $0.0 == element.word && $0.1 == element.ruby } ? WidthConversion.katakana(element.word) : element.ruby
+            usesPhoneticRomaji && Self.phoneticSpellings.contains { $0.0 == element.word && $0.1 == element.ruby }
+                ? WidthConversion.katakana(element.word) : element.ruby
         }.joined()
         let reading = WidthConversion.hiragana(spelled)
-        return reading.count == typed.count ? reading : typed
+        if reading.count == typed.count { return reading }
+        // Longer only by an n read as ん, and kana throughout: not, say, a
+        // candidate in full-width letters.
+        guard usesContextualN, reading.count > typed.count, reading.unicodeScalars.allSatisfy({ (0x3041...0x309F).contains($0.value) || $0 == "ー" })
+        else { return typed }
+        return reading
+    }
+
+    /// How much of `input`'s kana a candidate converts, which is more than
+    /// its reading when a single n read as ん lengthened it (げにん read
+    /// げんいん converts three).
+    private func typedLength(of candidate: KanaKanjiConverterModule.Candidate, in input: ComposingText) -> Int {
+        if candidate.composingCount == .inputCount(input.input.count) { return input.convertTarget.count }
+        var remainder = input
+        remainder.prefixComplete(composingCount: candidate.composingCount)
+        return input.convertTarget.count - remainder.convertTarget.count
     }
 
     /// Whether the converter holds a Zenzai model (for tests).
@@ -288,9 +318,8 @@ public final class AzooKeyEngine: CompositionEngine {
     /// read further than the input.
     private func conversions(of input: ComposingText) -> ConversionResult {
         var result = request(input)
-        let length = input.convertTarget.count
-        result.mainResults.removeAll { $0.rubyCount > length }
-        result.firstClauseResults.removeAll { $0.rubyCount > length }
+        result.mainResults.removeAll(where: \.isPrediction)
+        result.firstClauseResults.removeAll(where: \.isPrediction)
         return result
     }
 
@@ -469,7 +498,7 @@ public final class AzooKeyEngine: CompositionEngine {
 
     public func resizeFocus(by delta: Int) {
         guard converting else { return }
-        let current = focusLength ?? focusCandidates[safe: highlighted]?.rubyCount ?? composing.convertTarget.count
+        let current = focusLength ?? focusCandidates[safe: highlighted].map { typedLength(of: $0, in: composing) } ?? composing.convertTarget.count
         let length = min(max(1, current + delta), composing.convertTarget.count)
         guard length != focusLength else { return }
         focusLength = length
@@ -568,7 +597,7 @@ public final class AzooKeyEngine: CompositionEngine {
             let reading = String(composing.convertTarget.dropLast(remainder.convertTarget.count))
             clauses.append(.init(reading: spelledReading(of: candidate, typed: reading), text: candidate.text))
             if !remainder.isEmpty {
-                let reading = followingReading.count == remainder.convertTarget.count ? followingReading : remainder.convertTarget
+                let reading = followingReading.isEmpty ? remainder.convertTarget : followingReading
                 clauses.append(.init(reading: reading, text: followingText.isEmpty ? remainder.convertTarget : followingText))
             }
         } else if !composing.isEmpty {
@@ -592,7 +621,7 @@ public final class AzooKeyEngine: CompositionEngine {
         let total = composing.convertTarget.count
         if focusLength == nil {
             let result = conversions(of: composing)
-            let sentences = ranked(result.mainResults, length: total, after: history)
+            let sentences = ranked(result.mainResults, of: composing, after: history)
             guard let best = sentences.first else {
                 focusCandidates = []
                 followingText = ""
@@ -600,17 +629,17 @@ public final class AzooKeyEngine: CompositionEngine {
                 return
             }
             // One clause: the ranked sentences are its candidates.
-            guard let clause = best.firstClause(among: result.firstClauseResults, total: total) else {
+            guard let clause = best.firstClause(among: result.firstClauseResults) else {
                 focusCandidates = sentences
                 updateFollowingText()
                 publishConverting()
                 return
             }
-            focusLength = clause.rubyCount
+            focusLength = typedLength(of: clause, in: composing)
             // The clause list has its own order; it yields only to a
             // sentence the language model preferred.
             if best.text != result.mainResults.first?.text { preferredFocus = clause }
-            bestFollowing = (clause.rubyCount, String(best.text.dropFirst(clause.text.count)),
+            bestFollowing = (typedLength(of: clause, in: composing), String(best.text.dropFirst(clause.text.count)),
                              String(spelledReading(of: best, typed: composing.convertTarget).dropFirst(clause.rubyCount)))
         }
         let length = min(focusLength ?? total, total)
@@ -649,9 +678,10 @@ public final class AzooKeyEngine: CompositionEngine {
     /// probability after `history`, with the best one respelled ahead of
     /// them when the model prefers it; the rest keep their place. Zenzai,
     /// when on, has already chosen.
-    private func ranked(_ results: [KanaKanjiConverterModule.Candidate], length: Int, after history: String) -> [KanaKanjiConverterModule.Candidate] {
+    private func ranked(_ results: [KanaKanjiConverterModule.Candidate], of input: ComposingText, after history: String) -> [KanaKanjiConverterModule.Candidate] {
         guard let languageModel, configuration.zenzaiModel == nil else { return results }
-        let sentences = results.prefix(5).prefix { $0.rubyCount == length }
+        let length = input.convertTarget.count
+        let sentences = results.prefix(5).prefix { typedLength(of: $0, in: input) == length }
         guard !sentences.isEmpty else { return results }
         var reordered = sentences
             .map { (candidate: $0, score: $0.value + languageModel.logProbability(of: $0.text, after: history)) }
@@ -676,7 +706,7 @@ public final class AzooKeyEngine: CompositionEngine {
         followingText = ""
         followingReading = ""
         guard let candidate = focusCandidates[safe: highlighted] else { return }
-        if let bestFollowing, bestFollowing.length == candidate.rubyCount {
+        if let bestFollowing, bestFollowing.length == typedLength(of: candidate, in: composing) {
             followingText = bestFollowing.text
             followingReading = bestFollowing.reading
             return
@@ -685,7 +715,7 @@ public final class AzooKeyEngine: CompositionEngine {
         remainder.prefixComplete(composingCount: candidate.composingCount)
         guard !remainder.isEmpty else { return }
         let results = conversions(of: remainder).mainResults
-        let best = ranked(results, length: remainder.convertTarget.count, after: history + candidate.text).first
+        let best = ranked(results, of: remainder, after: history + candidate.text).first
         followingText = best?.text ?? remainder.convertTarget
         followingReading = best.map { spelledReading(of: $0, typed: remainder.convertTarget) } ?? remainder.convertTarget
     }
@@ -745,7 +775,7 @@ public final class AzooKeyEngine: CompositionEngine {
         _ = kana.moveCursorFromCursorPosition(count: -pending)
         let input = kana.prefixToCursorPosition()
         let result = conversions(of: input)
-        return ranked(result.mainResults, length: input.convertTarget.count, after: history).first.map { $0.text + target.suffix(pending) }
+        return ranked(result.mainResults, of: input, after: history).first.map { $0.text + target.suffix(pending) }
     }
 
     private func refreshComposing() {

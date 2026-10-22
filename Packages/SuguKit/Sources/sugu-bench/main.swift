@@ -4,7 +4,7 @@ import SuguCore
 // sugu-bench: accuracy and latency of the whole input pipeline on the test
 // sets in Bench/. Run in release:
 //   swift run -c release sugu-bench --data ../../Data --bench ../../Bench [--json out.json] [--check] [--zenzai model.gguf] [--grammar model.gram] [--no-language-model]
-// Variants: --no-predictions, --no-typo-correction, --live-conversion, --phonetic, --fuzzy-pinyin,
+// Variants: --no-predictions, --no-typo-correction, --live-conversion, --phonetic, --contextual-n, --fuzzy-pinyin,
 // --kana-input, --zhuyin, --zhuyin-layout <ZhuyinLayout>, --scheme <PinyinScheme>,
 // --script <ChineseScript>.
 // --check exits non-zero when a budget in AGENTS.md is exceeded.
@@ -16,7 +16,7 @@ func option(_ name: String) -> String? {
 }
 
 guard let data = option("--data"), let bench = option("--bench") else {
-    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>] [--no-language-model] [variant...]\n       sugu-bench --data <dir> --bench <dir> --fuzz <sessions> [--seed <n>] [--fuzz-session <n>] [--fuzz-trace] [variant...]\nvariants: --no-predictions --no-typo-correction --live-conversion --phonetic --fuzzy-pinyin --kana-input --zhuyin --zhuyin-layout <layout> --scheme <scheme> --script <script>\n".utf8))
+    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>] [--no-language-model] [variant...]\n       sugu-bench --data <dir> --bench <dir> --fuzz <sessions> [--seed <n>] [--fuzz-session <n>] [--fuzz-trace] [variant...]\nvariants: --no-predictions --no-typo-correction --live-conversion --phonetic --contextual-n --fuzzy-pinyin --kana-input --zhuyin --zhuyin-layout <layout> --scheme <scheme> --script <script>\n".utf8))
     exit(2)
 }
 
@@ -28,6 +28,7 @@ let configure: (inout Preferences) -> Void = { preferences in
     // Variants for comparing configurations.
     if arguments.contains("--no-predictions") { preferences.japanesePredictions = false }
     if arguments.contains("--phonetic") { preferences.phoneticRomaji = true }
+    if arguments.contains("--contextual-n") { preferences.contextualN = true }
     if arguments.contains("--no-typo-correction") { preferences.typoCorrection = false }
     if arguments.contains("--live-conversion") { preferences.liveConversion = true }
     if arguments.contains("--fuzzy-pinyin") { preferences.fuzzyPinyin = Set(FuzzyPinyin.allCases) }

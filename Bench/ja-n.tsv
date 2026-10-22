@@ -1,0 +1,35 @@
+# A single n read from context, run with --contextual-n. Columns: romaji as
+# typed, expected text. Original sentences written for Sugu.
+# ん typed with a single n before a vowel or y.
+konyahaamedesu	今夜は雨です
+geninhafumeidesu	原因は不明です
+honyaniikimasu	本屋に行きます
+zeningakita	全員が来た
+shinyuutoasobu	親友と遊ぶ
+kinyoubiniaimashou	金曜日に会いましょう
+honniyoruto	本によると
+teninnikikimashita	店員に聞きました
+ikenwohaneisuru	意見を反映する
+hokennikanyuusuru	保険に加入する
+onnanohitogakita	女の人が来た
+minnadeikou	みんなで行こう
+konnakotohanai	こんなことはない
+konnichiwa	こんにちは
+hanningatsukamatta	犯人が捕まった
+# な, に, ぬ, ね, の and にゃ typed as such stay.
+konawomazeru	粉を混ぜる
+kanashiieiga	悲しい映画
+anigakuru	兄が来る
+taninnohanashi	他人の話
+kinounoyoru	昨日の夜
+onakagasuita	お腹が空いた
+kanojonohon	彼女の本
+naniwosuru	何をする
+inugahoeru	犬が吠える
+namaewokinyuushite	名前を記入して
+tannigatarinai	単位が足りない
+nekoganeteiru	猫が寝ている
+# ん typed as nn still works.
+genninhafumeidesu	原因は不明です
+konnnichiwa	こんにちは
+honnniyoruto	本によると

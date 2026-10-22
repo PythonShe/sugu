@@ -6,9 +6,9 @@ import SuguCore
 extension KanaKanjiConverterModule.Candidate {
     /// The first clause of this sentence: one the converter proposed, or,
     /// when refinement rewrote that clause, the converter's clause of the
-    /// same length as this sentence writes it.
-    func firstClause(among clauses: [KanaKanjiConverterModule.Candidate], total: Int) -> KanaKanjiConverterModule.Candidate? {
-        let spans = clauses.filter { $0.rubyCount > 0 && $0.rubyCount < total }
+    /// same length as this sentence writes it. Lengths are of readings.
+    func firstClause(among clauses: [KanaKanjiConverterModule.Candidate]) -> KanaKanjiConverterModule.Candidate? {
+        let spans = clauses.filter { $0.rubyCount > 0 && $0.rubyCount < rubyCount }
         if let proposed = spans.filter({ text.hasPrefix($0.text) }).max(by: { $0.value < $1.value }) {
             return proposed
         }

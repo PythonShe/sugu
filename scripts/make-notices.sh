@@ -89,7 +89,7 @@ entry "OpenCC (with librime, including its conversion tables)" "https://github.c
 entry "yaml-cpp (with librime)" "https://github.com/jbeder/yaml-cpp" "MIT" "$RIME/librime/deps/yaml-cpp/LICENSE"
 entry "Boost $BOOST_VERSION (headers, with librime)" "https://www.boost.org" "BSL-1.0" "$RIME/boost/LICENSE_1_0.txt"
 entry "rime-wanxiang $WANXIANG_REF (dictionary data, compiled)" "https://github.com/amzxyz/rime_wanxiang" "CC-BY-4.0" "$ROOT/.vendor/wanxiang/LICENSE"
-entry "AzooKeyKanaKanjiConverter $(version azookeykanakanjiconverter)" "https://github.com/azooKey/AzooKeyKanaKanjiConverter" "MIT" "$AZOOKEY/LICENSE"
+entry "AzooKeyKanaKanjiConverter $AZOOKEY_BASE, with Sugu's changes ($(version azookeykanakanjiconverter))" "https://github.com/PythonShe/AzooKeyKanaKanjiConverter" "MIT" "$AZOOKEY/LICENSE"
 entry "azooKey dictionary data" "https://github.com/ensan-hcl/azooKey_dictionary_storage" "Apache-2.0" "$AZOOKEY_DATA/azooKey_dictionary_storage/LICENSE"
 entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/mozc" "BSD-3-Clause" "$CACHE/mozc-LICENSE"
 entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" "$CACHE/cldr-LICENSE"

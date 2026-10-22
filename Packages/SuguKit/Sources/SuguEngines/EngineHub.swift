@@ -362,6 +362,7 @@ public final class EngineHub: EngineSource {
         if let japanese, previous.kanaInput != preferences.kanaInput || previous.japanesePredictions != preferences.japanesePredictions
             || previous.liveConversion != preferences.liveConversion
             || previous.typoCorrection != preferences.typoCorrection || previous.phoneticRomaji != preferences.phoneticRomaji
+            || previous.contextualN != preferences.contextualN
             || previous.zenzaiEnabled != preferences.zenzaiEnabled {
             if !preferences.zenzaiEnabled {
                 // The engine frees the model; turning it back on loads afresh.
@@ -405,6 +406,7 @@ public final class EngineHub: EngineSource {
         configuration.liveConversion = preferences.liveConversion
         configuration.typoCorrection = preferences.typoCorrection
         configuration.phoneticRomaji = preferences.phoneticRomaji
+        configuration.contextualN = preferences.contextualN
         configuration.zenzaiModel = preferences.zenzaiEnabled && isZenzaiModelInstalled && zenzaiLoaded == locations.zenzaiModel ? locations.zenzaiModel : nil
         try? FileManager.default.createDirectory(at: locations.azooKey, withIntermediateDirectories: true)
         return configuration

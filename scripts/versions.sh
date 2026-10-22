@@ -16,6 +16,10 @@ WANXIANG_SHA256=d02793a93b9f92cea6f4dc2fcc1d6f92316c2fc96a23753877cf767b114c11c1
 # word list.
 WANXIANG_DICTS="zi jichu cuoyin duoyin diming mingren yiren en"
 
+# The AzooKeyKanaKanjiConverter release Sugu's fork is based on; the fork's
+# commit is pinned in Packages/SuguKit/Package.swift.
+AZOOKEY_BASE=0.11.2
+
 # Tatoeba sentences (CC BY 2.0 FR) at an OPUS snapshot, for the character
 # language models (ADR 0005).
 TATOEBA_OPUS_VERSION=v2026-07-08

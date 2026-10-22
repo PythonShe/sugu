@@ -4163,6 +4163,29 @@
         }
       }
     },
+    "Type ん with a single n": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「ん」を n ひとつで入力"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用单个 n 输入「ん」"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用單個 n 輸入「ん」"
+          }
+        }
+      }
+    },
     "Type spaces in full width": {
       "extractionState": "manual",
       "localizations": {

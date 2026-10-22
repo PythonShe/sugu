@@ -27,9 +27,11 @@ let package = Package(
         .executable(name: "sugu-bench", targets: ["sugu-bench"]),
     ],
     dependencies: [
+        // Sugu's fork, on the release AZOOKEY_BASE in scripts/versions.sh
+        // names (decision.md D-101).
         .package(
-            url: "https://github.com/azooKey/AzooKeyKanaKanjiConverter",
-            exact: "0.11.2",
+            url: "https://github.com/PythonShe/AzooKeyKanaKanjiConverter",
+            revision: "302ed5680a2a2c0ac1bf14d0740d5660da94d77e",
             traits: ["Zenzai"]
         ),
         // Keep in step with SPARKLE_VERSION in scripts/versions.sh.

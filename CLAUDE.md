@@ -15,7 +15,7 @@ language in `CONTEXT.md`.
 | Shell | Swift + AppKit + InputMethodKit (IMKServer / IMKInputController) | one input source, installed in `/Library/Input Methods` |
 | Project | XcodeGen + SwiftPM | `project.yml` is the source of truth; `Sugu.xcodeproj` is generated and gitignored |
 | Chinese engine | librime (BSD-3-Clause) + rime-wanxiang data (CC-BY-4.0) | C API; built by script into a static `.xcframework` |
-| Japanese engine | AzooKeyKanaKanjiConverter (MIT) | SwiftPM, in-process; Zenzai trait compiled in, used only once the user downloads a model |
+| Japanese engine | AzooKeyKanaKanjiConverter (MIT) | SwiftPM, in-process, Sugu's fork pinned by commit (D-101); Zenzai trait compiled in, used only once the user downloads a model |
 | Updates | Sparkle | signed feed; releases on `sugu.zheng-she.com` (R2); system-profile reporting off |
 | Home page | Astro (static) on Cloudflare Pages | `site/`, pnpm; its functions serve the releases from R2 |
 

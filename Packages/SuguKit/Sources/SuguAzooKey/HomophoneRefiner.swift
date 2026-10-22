@@ -80,13 +80,17 @@ final class HomophoneRefiner {
             let baseLocal = local(word.word)
             var choice: (elements: [DicdataElement], value: PValue, score: Float)?
             var candidates = spellings(of: word.ruby)
+            // A typo correction the converter read the word through (げにん
+            // as 原因) took this off its value; its other spellings come
+            // from the same keys, so they pay it too.
+            let penalty = min(0, word.adjust)
             if standIns[index] {
                 let kana = WidthConversion.hiragana(word.ruby)
                 candidates.append([DicdataElement(word: kana, ruby: word.ruby, lcid: word.lcid, rcid: word.rcid, mid: word.mid, value: word.value())])
             }
             for spelling in candidates where spelling.map(\.word).joined() != word.word {
                 if standIns[index], spelling[0].lcid != word.lcid || spelling[spelling.count - 1].rcid != word.rcid { continue }
-                let trialValue = value - base + cost(of: spelling, between: previous, and: next)
+                let trialValue = value - base + cost(of: spelling, between: previous, and: next) + penalty
                 let trialScore = score - value + trialValue - baseLocal + local(spelling.map(\.word).joined())
                 if trialScore > choice?.score ?? score { choice = (spelling, trialValue, trialScore) }
             }
