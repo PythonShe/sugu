@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://sugu.zheng-she.com/sitemap.xml

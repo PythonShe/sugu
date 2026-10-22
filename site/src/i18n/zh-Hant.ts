@@ -4,6 +4,7 @@ export default {
   description: 'Sugu 是免費的 Mac 輸入法，可輸入中文和日文。',
   nav: { changelog: '更新紀錄', privacy: '隱私權', licenses: '授權', language: '語言' },
   home: {
+    pageTitle: 'Sugu – Mac 中文與日文輸入法',
     title: '心中所想，即刻呈現。',
     lead: 'Sugu 是一款 Mac 中文與日文輸入法。它把你想要的字詞放在第一位，用一個輸入法就能切換中文、日文和英文，轉換與學習都在你的 Mac 上完成。',
     download: '下載',

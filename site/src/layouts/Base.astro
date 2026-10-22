@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import faviconGraphite from '../../../Assets/svg/sugu-favicon-graphite.svg?url';
 import faviconPaper from '../../../Assets/svg/sugu-favicon-paper.svg?url';
+import shareImage from '../../../Assets/png/sugu-icon-stroke-light.png?url';
 import { languageNames, locales, type Locale } from '../i18n/locales';
 import { messagesFor } from '../i18n/messages';
 import { releases } from '../lib/releases';
@@ -17,6 +18,9 @@ const { locale, path, title } = Astro.props;
 const t = messagesFor(locale);
 const [latest] = await releases();
 const href = (target: Locale, page: string = path) => `/${target}/${page}`;
+const pageTitle = title ? `${title} – Sugu` : t.home.pageTitle;
+/** Open Graph wants a territory with each language. */
+const ogLocale: Record<Locale, string> = { en: 'en_US', ja: 'ja_JP', 'zh-Hans': 'zh_CN', 'zh-Hant': 'zh_TW' };
 ---
 
 <!doctype html>
@@ -25,10 +29,21 @@ const href = (target: Locale, page: string = path) => `/${target}/${page}`;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>{title ? `${title} – Sugu` : 'Sugu'}</title>
+    <title>{pageTitle}</title>
     <meta name="description" content={t.description} />
     <link rel="canonical" href={new URL(href(locale), Astro.site)} />
     {locales.map((other) => <link rel="alternate" hreflang={other} href={new URL(href(other), Astro.site)} />)}
+    <link rel="alternate" hreflang="x-default" href={new URL(href('en'), Astro.site)} />
+    <link rel="sitemap" href="/sitemap.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sugu" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={t.description} />
+    <meta property="og:url" content={new URL(href(locale), Astro.site)} />
+    <meta property="og:image" content={new URL(shareImage, Astro.site)} />
+    <meta property="og:locale" content={ogLocale[locale]} />
+    {locales.filter((other) => other !== locale).map((other) => <meta property="og:locale:alternate" content={ogLocale[other]} />)}
+    <meta name="twitter:card" content="summary" />
     <link rel="icon" href={faviconGraphite} type="image/svg+xml" media="(prefers-color-scheme: light)" />
     <link rel="icon" href={faviconPaper} type="image/svg+xml" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)" />

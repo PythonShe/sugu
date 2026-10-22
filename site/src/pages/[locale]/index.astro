@@ -19,6 +19,22 @@ const stroke =
 ---
 
 <Base locale={locale} path="">
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'Sugu',
+      description: t.description,
+      url: new URL(`/${locale}/`, Astro.site).href,
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: `macOS ${latest?.minimumSystemVersion ?? '14.0'}`,
+      inLanguage: ['zh-Hans', 'zh-Hant', 'ja', 'en'],
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      ...(latest && { softwareVersion: latest.version, datePublished: latest.date, downloadUrl: new URL('/download/', Astro.site).href }),
+    })}
+  />
   <section class="hero">
     <svg class="mark" viewBox="170 310 680 400" aria-hidden="true">
       <defs>

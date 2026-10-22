@@ -4,6 +4,7 @@ export default {
   description: 'Sugu は、Mac で中国語と日本語を入力するための無料のインプットメソッドです。',
   nav: { changelog: '更新履歴', privacy: 'プライバシー', licenses: 'ライセンス', language: '言語' },
   home: {
+    pageTitle: 'Sugu – Mac のための中国語・日本語入力',
     title: '思いどおりの言葉を、すぐに。',
     lead: 'Sugu は、Mac のための中国語・日本語入力システムです。思いどおりの言葉を真っ先に表示し、中国語・日本語・英語をひとつの入力ソースで切り替えられます。変換も学習も、すべて Mac の中で行われます。',
     download: 'ダウンロード',

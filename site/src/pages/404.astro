@@ -1,0 +1,28 @@
+---
+import '../styles/global.css';
+import { languageNames, locales } from '../i18n/locales';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="noindex" />
+    <title>Sugu</title>
+  </head>
+  <body>
+    <header class="bar">
+      <a class="home" href="/">Sugu</a>
+    </header>
+    <main>
+      <div class="prose">
+        <h1>404</h1>
+        <nav>
+          {locales.map((locale) => <p><a href={`/${locale}/`} lang={locale}>{languageNames[locale]}</a></p>)}
+        </nav>
+      </div>
+    </main>
+  </body>
+</html>

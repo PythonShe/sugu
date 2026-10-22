@@ -4,6 +4,7 @@ export default {
   description: 'Sugu 是一款免费的 Mac 输入法，用来输入中文和日文。',
   nav: { changelog: '更新记录', privacy: '隐私', licenses: '许可协议', language: '语言' },
   home: {
+    pageTitle: 'Sugu – Mac 中文与日文输入法',
     title: '心中所想，即刻上屏。',
     lead: 'Sugu 是一款 Mac 中文与日文输入法。它把你想要的词放在首位，一个输入法即可切换中文、日文和英文，转换与学习都在你的 Mac 上完成。',
     download: '下载',
