@@ -41,14 +41,16 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 
 - [x] **Developer ID Installer certificate:** in the login keychain (G2, 2026-10-20 to 2027-11-19; renew before then and update the secret). Export as `.p12` with a password.
 - [x] **Developer ID Application certificate:** in the login keychain (G2, to 2031-02-10).
-- [ ] **App Store Connect API key** (Developer role): the `.p8`, key ID, issuer ID.
+- [x] **App Store Connect API key** (Developer role): the `.p8`, key ID, issuer ID.
 - [x] **Developer ID provisioning profile with Private Cloud Compute:** not available. Apple offers the capability only to App Store apps, which input methods cannot be (ADR 0004 amendment 2026-10-21); releases use the on-device model, and the owner's Macs run development builds with it from `scripts/package-dev.sh`. Do not install a release package on those Macs: it replaces the development build.
-- [ ] **Sparkle keys:** `generate_keys`, then `generate_keys -x sparkle.key` (private) and `generate_keys -p` (public). Back up the private key offline: losing it strands every install on its version, and it also signs the feed.
+- [x] **Sparkle keys:** `generate_keys`, then `generate_keys -x sparkle.key` (private) and `generate_keys -p` (public). Back up the private key offline: losing it strands every install on its version, and it also signs the feed.
 - [x] **Cloudflare R2 API token:** Object Read & Write on `sugu-updates` only.
 - [x] **Cloudflare API token:** "Cloudflare Pages: Edit", for the site.
-- [ ] **Anthropic API key**, for the notes.
+- [x] **Anthropic API key**, for the notes.
 
 ## 2. GitHub secrets and variables (owner)
+
+All set (2026-10-21).
 
 | Purpose | Secrets |
 |---|---|
@@ -73,7 +75,7 @@ Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (defau
 
 ## 4. Proving it
 
-- [ ] **Dry run** of `release.yml` (dispatch, no tag, publish off): notarizes, staples, passes Gatekeeper; notes in the four-language shape.
+- [x] **Dry run** of `release.yml`: the v0.9.0 tag built, notarized, stapled and passed Gatekeeper, with notes in the four-language shape, as a GitHub release, published nowhere else (2026-10-21).
 - [ ] **First release `v0.9.0`** (or 1.0): install the `.pkg` from `/download/` on a clean user account; the input source registers, enables and selects (D-020).
 - [ ] **One Sparkle update between two notarized builds** (todo §15), with a second tag: offered, notes in the system language, EdDSA verified, installs into `/Library/Input Methods`, the input source and learned words survive.
   - A scheduled check shows **Update Available…** in the input menu rather than a window behind the frontmost app.
