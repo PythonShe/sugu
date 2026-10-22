@@ -4,6 +4,7 @@ import iconLight from '../../../Assets/svg/sugu-icon-stroke-light.svg?url';
 import iconDark from '../../../Assets/svg/sugu-icon-stroke-dark.svg?url';
 import { languageNames, locales, type Locale } from '../i18n/locales';
 import { messagesFor } from '../i18n/messages';
+import { releases } from '../lib/releases';
 
 interface Props {
   locale: Locale;
@@ -14,6 +15,7 @@ interface Props {
 
 const { locale, path, title } = Astro.props;
 const t = messagesFor(locale);
+const [latest] = await releases();
 const href = (target: Locale, page: string = path) => `/${target}/${page}`;
 ---
 
@@ -22,46 +24,40 @@ const href = (target: Locale, page: string = path) => `/${target}/${page}`;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
     <title>{title ? `${title} – Sugu` : 'Sugu'}</title>
     <meta name="description" content={t.description} />
     <link rel="canonical" href={new URL(href(locale), Astro.site)} />
     {locales.map((other) => <link rel="alternate" hreflang={other} href={new URL(href(other), Astro.site)} />)}
     <link rel="icon" href={iconLight} type="image/svg+xml" media="(prefers-color-scheme: light)" />
     <link rel="icon" href={iconDark} type="image/svg+xml" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0b0c" media="(prefers-color-scheme: dark)" />
   </head>
   <body>
-    <div class="page">
-      <header class="bar">
-        <a class="home" href={href(locale, '')}>
-          <picture>
-            <source srcset={iconDark} media="(prefers-color-scheme: dark)" />
-            <img src={iconLight} alt="" />
-          </picture>
-          Sugu
-        </a>
-        <nav>
-          <a href={href(locale, 'changelog/')} aria-current={path === 'changelog/' ? 'page' : undefined}>{t.nav.changelog}</a>
-          <a href={href(locale, 'privacy/')} aria-current={path === 'privacy/' ? 'page' : undefined}>{t.nav.privacy}</a>
-        </nav>
-      </header>
-      <main>
-        <slot />
-      </main>
-      <footer class="bar">
-        <nav aria-label={t.nav.language}>
-          {locales.map((other) => (
-            <a href={href(other)} hreflang={other} lang={other} aria-current={other === locale ? 'true' : undefined}>
-              {languageNames[other]}
-            </a>
-          ))}
-        </nav>
-        <nav>
-          <a href={href(locale, 'licenses/')}>{t.nav.licenses}</a>
-          <span>{t.footer.copyright}</span>
-        </nav>
-      </footer>
-    </div>
+    <header class="bar">
+      <a class="home" href={href(locale, '')}>Sugu</a>
+      <nav>
+        <a href={href(locale, 'changelog/')} aria-current={path === 'changelog/' ? 'page' : undefined}>{t.nav.changelog}</a>
+        <a href={href(locale, 'privacy/')} aria-current={path === 'privacy/' ? 'page' : undefined}>{t.nav.privacy}</a>
+        {latest && <a href="/download/">{t.home.download}</a>}
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="bar">
+      <nav aria-label={t.nav.language}>
+        {locales.map((other) => (
+          <a href={href(other)} hreflang={other} lang={other} aria-current={other === locale ? 'true' : undefined}>
+            {languageNames[other]}
+          </a>
+        ))}
+      </nav>
+      <nav>
+        <a href={href(locale, 'licenses/')}>{t.nav.licenses}</a>
+        <span>{t.footer.copyright}</span>
+      </nav>
+    </footer>
   </body>
 </html>
