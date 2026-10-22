@@ -1928,3 +1928,19 @@ checked against the code before it was changed.
   0.11.2; on, the main set is unchanged. Keystroke p99 about 2 ms.
 - Not done: n' (not in AzooKey's romaji table); offering the rules and
   the penalty fix upstream.
+
+## D-102 · Private Cloud Compute shown only where it can be used (2026-10-22)
+- Releases cannot carry the Private Cloud Compute entitlement (ADR 0004,
+  amendment 2026-10-21), yet their Language Model pane offered the level
+  and quietly fell back to the on-device model.
+- `AppleLanguageAssistant.privateCloudComputeAllowed` reads the
+  entitlement from the running app (`SecTaskCopyValueForEntitlement`).
+  Without it the pane offers Off and On This Mac, hides the conversions
+  switch (Private Cloud Compute only, D-081), and a stored Private Cloud
+  Compute level shows and acts as On This Mac; the stored value is kept,
+  so a development build finds it again.
+- Keyed to the entitlement, not the configuration: development builds are
+  Release builds too (`scripts/install-dev.sh`), and a release with a
+  profile granting it (if Apple allows one) offers the level again.
+- The home page, privacy page, README and release-notes prompt describe
+  releases: Apple's model on the Mac only.

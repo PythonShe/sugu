@@ -1,6 +1,7 @@
 import Foundation
 import FoundationModels
 import os
+import Security
 import SuguCore
 
 /// Sugu's language features on Apple's models (ADR 0004): the on-device
@@ -16,12 +17,20 @@ final class AppleLanguageAssistant: LanguageAssistant {
         self.preferences = preferences
     }
 
+    /// Whether this build may ask Private Cloud Compute: only builds signed
+    /// with its entitlement, which Developer ID releases cannot carry
+    /// (ADR 0004, amendment 2026-10-21).
+    static let privateCloudComputeAllowed: Bool = {
+        guard let task = SecTaskCreateFromSelf(nil) else { return false }
+        return SecTaskCopyValueForEntitlement(task, "com.apple.developer.private-cloud-compute" as CFString, nil) as? Bool == true
+    }()
+
     /// Whether a model for `level` can answer now.
     static func isReady(_ level: LanguageModelLevel) -> Bool {
         switch level {
         case .off: false
         case .onDevice: SystemLanguageModel.default.isAvailable
-        case .privateCloudCompute: PrivateCloudComputeLanguageModel().isAvailable || SystemLanguageModel.default.isAvailable
+        case .privateCloudCompute: privateCloudComputeAllowed && PrivateCloudComputeLanguageModel().isAvailable || SystemLanguageModel.default.isAvailable
         }
     }
 
@@ -36,7 +45,7 @@ final class AppleLanguageAssistant: LanguageAssistant {
             return local
         case .privateCloudCompute:
             let cloud = privateCloud
-            guard cloud.isAvailable, !cloud.quotaUsage.isLimitReached else { return local }
+            guard Self.privateCloudComputeAllowed, cloud.isAvailable, !cloud.quotaUsage.isLimitReached else { return local }
             return [cloud] + local
         }
     }

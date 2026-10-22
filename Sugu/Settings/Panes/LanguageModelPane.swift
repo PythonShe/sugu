@@ -6,11 +6,18 @@ import SuguCore
 final class LanguageModelPane: SettingsPane {
     override func build() {
         let model = model
-        form.popUp(String(localized: "Language model:"), options: [
-            (String(localized: "Off"), LanguageModelLevel.off),
-            (String(localized: "On This Mac"), LanguageModelLevel.onDevice),
-            (String(localized: "On This Mac and Apple Private Cloud Compute"), LanguageModelLevel.privateCloudCompute),
-        ], get: { model.preferences.languageModel }, set: { model.preferences.languageModel = $0 })
+        // Private Cloud Compute only where the build may use it; a level
+        // chosen in a development build reads as On This Mac here.
+        let cloud = AppleLanguageAssistant.privateCloudComputeAllowed
+        var options: [(title: String, value: LanguageModelLevel)] = [
+            (String(localized: "Off"), .off),
+            (String(localized: "On This Mac"), .onDevice),
+        ]
+        if cloud { options.append((String(localized: "On This Mac and Apple Private Cloud Compute"), .privateCloudCompute)) }
+        form.popUp(String(localized: "Language model:"), options: options, get: {
+            let level = model.preferences.languageModel
+            return level == .privateCloudCompute && !cloud ? .onDevice : level
+        }, set: { model.preferences.languageModel = $0 })
         let notReady = NSTextField(labelWithString: String(localized: "Not Ready"))
         notReady.textColor = .secondaryLabelColor
         let status = form.row(String(localized: "Status:"), notReady)
@@ -30,6 +37,7 @@ final class LanguageModelPane: SettingsPane {
                                     get: { model.preferences[keyPath: use.1] }, set: { model.preferences[keyPath: use.1] = $0 })
             // Conversions come from Private Cloud Compute only (D-081).
             let level: (LanguageModelLevel) -> Bool = use.1 == \.modelForConversion ? { $0 == .privateCloudCompute } : { $0 != .off }
+            if use.1 == \.modelForConversion && !cloud { form.grid.cell(for: box)?.row?.isHidden = true }
             form.onRefresh { box.isEnabled = level(model.preferences.languageModel) }
         }
     }

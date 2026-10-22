@@ -72,7 +72,8 @@ library) and withdraws the AI layer of ADR 0001 from current scope.
 12. **Signed, notarized `.pkg`; updates through Sparkle** with system-profile
     reporting disabled. Update checks and user-initiated downloads (dictionaries,
     grammar model, Zenzai) are the only network traffic Sugu makes — and,
-    since ADR 0004, Private Cloud Compute requests the user turned on.
+    since ADR 0004, Private Cloud Compute requests the user turned on in a
+    development build.
 
 ## Considered options
 

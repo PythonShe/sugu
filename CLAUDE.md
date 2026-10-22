@@ -62,8 +62,9 @@ pnpm --dir site check && pnpm --dir site build   # the home page
 - License: **proprietary** (`LICENSE`), free of charge; the repository is
   private and releases come only from `sugu.zheng-she.com` (ADR 0006).
 - Zero telemetry; composition, conversion, and learning resolve on-device.
-  The only network traffic is update checks, user-initiated downloads, and
-  Private Cloud Compute requests the user turned on (ADR 0004).
+  The only network traffic is update checks and user-initiated downloads;
+  Private Cloud Compute is for development builds only, which carry its
+  entitlement (ADR 0004).
 - Budgets: keystroke to updated candidates < 5 ms p99; candidate-window draw
   < 16 ms; resident memory < 200 MB in the default configuration.
 - Bundled third-party code and data are under permissive or

@@ -93,8 +93,9 @@ again in April 2026. The account's approval enables the capability on the
 App ID, and development profiles carry it, but a Developer ID profile
 generated after the approval does not. So:
 
-- Releases are Developer ID builds without the entitlement; the Private
-  Cloud Compute level falls back to the on-device model (D-045).
+- Releases are Developer ID builds without the entitlement; they offer
+  only Off and On This Mac, and a Private Cloud Compute level chosen in a
+  development build acts as On This Mac (D-045, D-102).
 - The owner's Macs run development-signed builds with the entitlement
   (`Config/Local.xcconfig`, `scripts/package-dev.sh`). They have no update
   key, so Sparkle never replaces them with a release.
@@ -114,9 +115,10 @@ generated after the approval does not. So:
 
 ## Consequences
 
-- `CLAUDE.md`/`AGENTS.md`, ADR 0002 decision 12 and the README state that
-  Private Cloud Compute requests, when the user turns them on, are network
-  traffic alongside update checks and downloads.
+- `CLAUDE.md`/`AGENTS.md` and ADR 0002 decision 12 state that Private
+  Cloud Compute requests, in a development build whose user turned them
+  on, are network traffic alongside update checks and downloads; the
+  README and the home page describe releases, on the Mac only.
 - Development builds carry the entitlement only when signed through an
   untracked `Config/Local.xcconfig`; Developer ID profiles do not offer
   the capability (amendment 2026-10-21).

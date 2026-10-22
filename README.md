@@ -6,7 +6,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Principles
 
-- **Local-first, privacy-first** — an input method reads everything you type. Sugu sends nothing you type: composition, conversion and learning stay on your Mac, and you can see the words it has learned and delete what it has learned. Apple's language models can translate and rewrite if you turn them on, on your Mac or, only if you choose it, in Apple Private Cloud Compute, which can also suggest conversions.
+- **Local-first, privacy-first** — an input method reads everything you type. Sugu sends nothing you type: composition, conversion and learning stay on your Mac, and you can see the words it has learned and delete what it has learned. Apple's on-device language model can translate and rewrite if you turn it on, on your Mac too.
 - **One input source** — Chinese, Japanese and English live in one input source, so switching never depends on macOS input-source switching.
 - **Fast and accurate, measured** — latency and memory budgets are checked by a benchmark that drives the whole input pipeline, and accuracy is measured on public test sets.
 - **Free** — no price, no account, no paid tier.

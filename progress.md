@@ -3,6 +3,12 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-22
+- Releases offer Apple's model on this Mac only: the Private Cloud Compute
+  level and the conversions switch show only in builds signed with its
+  entitlement (D-102). The home page redesigned around the icon's stroke,
+  with the features as cards, in light and dark; the site, README and
+  release-notes prompt no longer offer Private Cloud Compute, and the
+  install steps suggest a restart after the first installation.
 - A single n read as ん from context, an option (konya → 今夜, genin →
   原因), through Sugu's fork of AzooKey 0.11.2 (D-101): 29 of 30
   sentences right with it on and every bench set unchanged with it off.

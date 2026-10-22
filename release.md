@@ -35,7 +35,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 - [x] `.github/workflows/release.yml`: prepare → notes → build (macos-26) → publish (R2) → site. Dry run = dispatch without tag, publish off.
 - [x] `.github/workflows/release-notes.yml`: Claude, four languages, end_turn + shape check, fixed fallback; body through stdin.
 - [x] `.github/workflows/deploy-site.yml`: push to `main` on site paths, after each release, manual; `pnpm check`, build, `wrangler pages deploy`; skips deploying without the Cloudflare secrets.
-- [x] `site/`: home, changelog (from `releases.json` and notes at build time), privacy, licenses (`LICENSE` + notices), en/ja/zh-Hans/zh-Hant, security headers, no cookies or scripts beyond the language redirect.
+- [x] `site/`: home, changelog (from `releases.json` and notes at build time), privacy, licenses (`LICENSE` + notices), en/ja/zh-Hans/zh-Hant, security headers, no cookies; scripts only for the language redirect and the home page's animations.
 
 ## 1. Keys and accounts (owner)
 
