@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs><linearGradient id="plate-sugu-favicon-paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#ECECF0"/></linearGradient></defs>
+  <path d="M229.07 0.00L794.93 0.00C915.95 0.00 1024.00 108.05 1024.00 229.07L1024.00 794.93C1024.00 915.95 915.95 1024.00 794.93 1024.00L229.07 1024.00C108.05 1024.00 0.00 915.95 0.00 794.93L0.00 229.07C0.00 108.05 108.05 0.00 229.07 0.00Z" fill="url(#plate-sugu-favicon-paper)"/>
+  <g id="stroke" fill="#1D1D1F">
+    <path d="M117.94 541.72C145.22 537.93 173.26 536.41 208.12 536.41L798.41 536.41C804.47 536.41 807.51 534.90 807.51 531.87C807.51 530.35 806.75 528.83 803.72 525.80C760.52 489.43 746.89 478.82 701.42 443.97C673.38 476.55 665.05 487.16 639.28 520.50L208.12 520.50C170.23 520.50 138.40 517.47 112.64 512.16Z" stroke="#1D1D1F" stroke-width="76.80" stroke-linejoin="round"/>
+  </g>
+  <g id="caret" fill="#0A84FF">
+    <rect x="839.68" y="256.00" width="102.40" height="512.00" rx="51.20"/>
+  </g>
+</svg>

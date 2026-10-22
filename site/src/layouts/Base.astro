@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
-import iconLight from '../../../Assets/svg/sugu-icon-stroke-light.svg?url';
-import iconDark from '../../../Assets/svg/sugu-icon-stroke-dark.svg?url';
+import faviconGraphite from '../../../Assets/svg/sugu-favicon-graphite.svg?url';
+import faviconPaper from '../../../Assets/svg/sugu-favicon-paper.svg?url';
 import { languageNames, locales, type Locale } from '../i18n/locales';
 import { messagesFor } from '../i18n/messages';
 import { releases } from '../lib/releases';
@@ -29,8 +29,8 @@ const href = (target: Locale, page: string = path) => `/${target}/${page}`;
     <meta name="description" content={t.description} />
     <link rel="canonical" href={new URL(href(locale), Astro.site)} />
     {locales.map((other) => <link rel="alternate" hreflang={other} href={new URL(href(other), Astro.site)} />)}
-    <link rel="icon" href={iconLight} type="image/svg+xml" media="(prefers-color-scheme: light)" />
-    <link rel="icon" href={iconDark} type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href={faviconGraphite} type="image/svg+xml" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href={faviconPaper} type="image/svg+xml" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b0b0c" media="(prefers-color-scheme: dark)" />
   </head>

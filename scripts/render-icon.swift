@@ -1,6 +1,7 @@
 // Renders Sugu's app icon artwork from one set of geometry:
 //   Assets/svg/*.svg            flat icons (1024 canvas, 824 plate, no shadow)
 //   Assets/png/*.png            flat icons at 1024 with the system-style shadow
+//   Assets/svg/sugu-favicon-*.svg  favicons (plate fills the canvas, heavier marks for 16 px)
 //   Assets/*.icon/Assets/*.svg  layers for Icon Composer (1024 canvas, artwork only)
 //   Sugu/Resources/Assets.xcassets/AppIcon.appiconset/*.png   legacy sizes from the light stroke icon
 // Usage: swift scripts/render-icon.swift
@@ -30,7 +31,7 @@ struct Mark { let name: String; let color: Color; let shapes: [Shape] }
 func rrect(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> Shape { .rrect(CGRect(x: x, y: y, width: w, height: h), min(w, h) / 2) }
 
 // 一 from Hiragino Mincho ProN W6, as a path in plate coordinates (y down).
-func strokeGlyph(P: CGFloat) -> Shape {
+func strokeGlyph(P: CGFloat, weight: CGFloat = 0.026) -> Shape {
   let em = 0.74 * P
   let font = CTFontCreateWithName("HiraMinProN-W6" as CFString, em, nil)
   var glyph: CGGlyph = 0; var ch = Array("一".utf16)
@@ -39,12 +40,13 @@ func strokeGlyph(P: CGFloat) -> Shape {
   let left = 0.11 * P - 0.048 * em            // visual left edge of the stroke at 0.11 P
   let baseline = 0.512 * P + 0.388 * em        // body of the stroke centred slightly below middle
   var t = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: left, ty: baseline)
-  return .path(raw.copy(using: &t)!, strokeWidth: 0.026 * P)   // fatten the W6 outline to an icon weight
+  return .path(raw.copy(using: &t)!, strokeWidth: weight * P)   // fatten the W6 outline to an icon weight
 }
 
-func strokeMarks(P: CGFloat, inkColor: Color) -> [Mark] {
-  let barH = 0.44 * P, barW = 0.065 * P
-  return [Mark(name: "stroke", color: inkColor, shapes: [strokeGlyph(P: P)]),
+/// `small` thickens the stroke and caret so they survive 16 px.
+func strokeMarks(P: CGFloat, inkColor: Color, small: Bool = false) -> [Mark] {
+  let barH = (small ? 0.5 : 0.44) * P, barW = (small ? 0.1 : 0.065) * P
+  return [Mark(name: "stroke", color: inkColor, shapes: [strokeGlyph(P: P, weight: small ? 0.075 : 0.026)]),
           Mark(name: "caret", color: blue, shapes: [rrect(0.82 * P, 0.5 * P - barH / 2, barW, barH)])]
 }
 
@@ -99,9 +101,9 @@ func svgMarks(_ marks: [Mark], dx: CGFloat, dy: CGFloat) -> String {
 func svgDocument(_ body: String) -> String {
   "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1024\" height=\"1024\" viewBox=\"0 0 1024 1024\">\n\(body)\n</svg>\n"
 }
-func flatSVG(plate: Plate, marks: [Mark], id: String) -> String {
-  let inset = (GRID - 824) / 2
-  let sq = svgPath(squircle(inset, inset, 824), dx: 0, dy: 0)
+func flatSVG(plate: Plate, marks: [Mark], id: String, side: CGFloat = 824) -> String {
+  let inset = (GRID - side) / 2
+  let sq = svgPath(squircle(inset, inset, side), dx: 0, dy: 0)
   return svgDocument("""
   <defs><linearGradient id="plate-\(id)" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="\(plate.top.hex)"/><stop offset="1" stop-color="\(plate.bottom.hex)"/></linearGradient></defs>
   <path d="\(sq)" fill="url(#plate-\(id))"/>
@@ -194,6 +196,12 @@ let flat: [(String, Plate, [Mark])] = [
 for (name, plate, marks) in flat {
   try! flatSVG(plate: plate, marks: marks, id: name).write(to: svgDir.appendingPathComponent("\(name).svg"), atomically: true, encoding: .utf8)
   try! render(size: 1024, plate: plate, marks: marks).write(to: pngDir.appendingPathComponent("\(name).png"))
+}
+// Favicons: the plate fills the canvas, and each contrasts with the browser chrome
+// it is shown in (graphite on light tab bars, paper on dark ones).
+for (name, plate, color) in [("sugu-favicon-graphite", graphite, white), ("sugu-favicon-paper", paper, ink)] {
+  try! flatSVG(plate: plate, marks: strokeMarks(P: GRID, inkColor: color, small: true), id: name, side: GRID)
+    .write(to: svgDir.appendingPathComponent("\(name).svg"), atomically: true, encoding: .utf8)
 }
 // Icon Composer layers span the full 1024 canvas (the system supplies the plate).
 writeIcon("AppIcon", fillLight: hex("#F2F2F4"), fillDark: hex("#2A2A2C"),
