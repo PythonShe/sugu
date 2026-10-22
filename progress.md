@@ -2,6 +2,13 @@
 
 Running log of what was built, verified, and what is next. Newest first.
 
+## 2026-10-22
+- Chinese keystrokes about twice as fast at p99 (4.25 → 1.9 ms) from a
+  patch to librime's dictionary lookup that changes no candidate
+  (D-100), checked against a recorded reference of 9,250 keys; date
+  formatters made once. A faster patch that changed candidates was
+  declined.
+
 ## 2026-10-21
 - Feature requests (todo §24): importing a dictionary from a sheet
   that takes dropped files and shows the words first, plain word lists

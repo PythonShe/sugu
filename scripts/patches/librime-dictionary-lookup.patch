@@ -1,0 +1,352 @@
+diff --git a/src/rime/dict/dictionary.cc b/src/rime/dict/dictionary.cc
+index 58f21a3..ba819fa 100644
+--- a/src/rime/dict/dictionary.cc
++++ b/src/rime/dict/dictionary.cc
+@@ -44,8 +44,34 @@ struct Chunk {
+         matching_code_size(m),
+         credibility(cr),
+         quality_len(q) {}
++  // Sugu: takes the code instead of copying it.
++  Chunk(Table* t,
++        Code&& c,
++        const table::Entry* e,
++        size_t m,
++        double cr,
++        double q)
++      : table(t),
++        code(std::move(c)),
++        entries(e),
++        size(1),
++        cursor(0),
++        matching_code_size(m),
++        credibility(cr),
++        quality_len(q) {}
+   Chunk(Table* t, const TableAccessor& a, double cr = 0.0, double q = 0.0)
+       : Chunk(t, a, string(), cr, q) {}
++  // Sugu: takes the accessor's code, for an accessor no longer read.
++  Chunk(Table* t, TableAccessor&& a, double cr, double q)
++      : table(t),
++        entries(a.entry()),
++        size(a.remaining()),
++        cursor(0),
++        matching_code_size(a.index_code().size()),
++        credibility(cr),
++        quality_len(q) {
++    code = a.take_index_code();
++  }
+   Chunk(Table* t,
+         const TableAccessor& a,
+         const string& r,
+@@ -262,7 +288,8 @@ static void lookup_table(Table* table,
+               {table, a.code(), a.entry(), matching_code_size, cr, q});
+         } while (a.Next());
+       } else {
+-        (*collector)[end_pos].AddChunk({table, a, cr, q});
++        (*collector)[end_pos].AddChunk(
++            dictionary::Chunk(table, std::move(a), cr, q));
+       }
+     }
+   }
+diff --git a/src/rime/dict/table.cc b/src/rime/dict/table.cc
+index af7e70b..ee0d948 100644
+--- a/src/rime/dict/table.cc
++++ b/src/rime/dict/table.cc
+@@ -51,6 +51,16 @@ TableAccessor::TableAccessor(const Code& index_code,
+       credibility_(credibility),
+       quality_len_(quality_len) {}
+ 
++TableAccessor::TableAccessor(Code&& index_code,
++                             const List<table::Entry>* list,
++                             double credibility,
++                             double quality_len)
++    : index_code_(std::move(index_code)),
++      entries_(list->at.get()),
++      size_(list->size),
++      credibility_(credibility),
++      quality_len_(quality_len) {}
++
+ bool TableAccessor::exhausted() const {
+   if (entries_ || long_entries_) {
+     return !(size_ - cursor_);
+@@ -106,33 +116,55 @@ bool TableQuery::Advance(SyllableId syllable_id,
+   if (!Walk(syllable_id)) {
+     return false;
+   }
++  index_code_[level_] = syllable_id;
++  credibility_[level_] = credibility_sum() + credibility;
++  quality_len_[level_] = quality_len_sum() + quality_len;
++  last_pos_[level_] = last_pos;
+   ++level_;
+-  index_code_.push_back(syllable_id);
+-  credibility_.push_back(credibility_sum() + credibility);
+-  quality_len_.push_back(quality_len_sum() + quality_len);
+-  last_pos_.push_back(last_pos);
+   return true;
+ }
+ 
++void TableQuery::Descend(const Node& node,
++                         SyllableId syllable_id,
++                         double credibility,
++                         double quality_len,
++                         size_t last_pos) {
++  // as Walk() does on success
++  if (level_ == 0)
++    lv2_index_ = &node.next_level->trunk();
++  else if (level_ == 1)
++    lv3_index_ = &node.next_level->trunk();
++  else
++    lv4_index_ = &node.next_level->tail();
++  index_code_[level_] = syllable_id;
++  credibility_[level_] = credibility_sum() + credibility;
++  quality_len_[level_] = quality_len_sum() + quality_len;
++  last_pos_[level_] = last_pos;
++  ++level_;
++}
++
+ bool TableQuery::Backdate() {
+   if (level_ == 0)
+     return false;
+   --level_;
+-  if (index_code_.size() > level_) {
+-    index_code_.pop_back();
+-    credibility_.pop_back();
+-    quality_len_.pop_back();
+-    last_pos_.pop_back();
+-  }
+   return true;
+ }
+ 
+ void TableQuery::Reset() {
+   level_ = 0;
+-  index_code_.clear();
+-  credibility_.clear();
+-  quality_len_.clear();
+-  last_pos_.clear();
++}
++
++Code TableQuery::IndexCode() const {
++  Code code;
++  code.reserve(level_ + 1);
++  code.insert(code.end(), index_code_, index_code_ + level_);
++  return code;
++}
++
++Code TableQuery::IndexCode(SyllableId syllable_id) const {
++  Code code(IndexCode());
++  code.push_back(syllable_id);
++  return code;
+ }
+ 
+ inline static bool node_less(const table::TrunkIndexNode& a,
+@@ -182,11 +214,6 @@ bool TableQuery::Walk(SyllableId syllable_id) {
+   return true;
+ }
+ 
+-inline static Code add_syllable(Code code, SyllableId syllable_id) {
+-  code.push_back(syllable_id);
+-  return code;
+-}
+-
+ TableAccessor TableQuery::Access(SyllableId syllable_id,
+                                  double credibility,
+                                  double quality_len) const {
+@@ -197,7 +224,7 @@ TableAccessor TableQuery::Access(SyllableId syllable_id,
+         syllable_id >= static_cast<SyllableId>(lv1_index_->size))
+       return TableAccessor();
+     auto node = &lv1_index_->at[syllable_id];
+-    return TableAccessor(add_syllable(index_code_, syllable_id), &node->entries,
++    return TableAccessor(IndexCode(syllable_id), &node->entries,
+                          credibility, quality_len);
+   } else if (level_ == 1 || level_ == 2) {
+     auto index = (level_ == 1) ? lv2_index_ : lv3_index_;
+@@ -206,12 +233,12 @@ TableAccessor TableQuery::Access(SyllableId syllable_id,
+     auto node = find_node(index->begin(), index->end(), syllable_id);
+     if (node == index->end())
+       return TableAccessor();
+-    return TableAccessor(add_syllable(index_code_, syllable_id), &node->entries,
++    return TableAccessor(IndexCode(syllable_id), &node->entries,
+                          credibility, quality_len);
+   } else if (level_ == 3) {
+     if (!lv4_index_)
+       return TableAccessor();
+-    return TableAccessor(index_code_, lv4_index_, credibility, quality_len);
++    return TableAccessor(IndexCode(), lv4_index_, credibility, quality_len);
+   }
+   return TableAccessor();
+ }
+@@ -588,12 +615,60 @@ bool Table::Query(const SyllableGraph& syll_graph,
+     if (query.level() == Code::kIndexCodeMaxLength) {
+       TableAccessor accessor(query.Access(-1));
+       if (!accessor.exhausted()) {
+-        (*result)[current_pos].push_back(accessor);
++        (*result)[current_pos].push_back(std::move(accessor));
+       }
+       continue;
+     }
++    // Sugu: the syllables at a position come in ascending order, as the
++    // nodes of a trunk index are sorted, so each node is searched for once,
++    // from where the last one was found, for every spelling of its syllable
++    // and for both Access() and Advance(). Entries and queued queries are
++    // the same, in the same order, as calling those for each spelling.
++    table::TrunkIndexNode* trunk_begin = nullptr;
++    table::TrunkIndexNode* trunk_end = nullptr;
++    if (query.level_ == 1 || query.level_ == 2) {
++      auto trunk = (query.level_ == 1) ? query.lv2_index_ : query.lv3_index_;
++      if (!trunk)
++        continue;
++      trunk_begin = trunk->begin();
++      trunk_end = trunk->end();
++    }
+     for (const auto& spellings : index->second) {
+       SyllableId syll_id = spellings.first;
++      TableQuery::Node node;
++      if (query.level_ == 0) {
++        if (!query.lv1_index_ || syll_id < 0 ||
++            syll_id >= static_cast<SyllableId>(query.lv1_index_->size))
++          continue;
++        auto head = &query.lv1_index_->at[syll_id];
++        node.entries = &head->entries;
++        node.next_level = head->next_level.get();
++      } else {
++        // galloping search for the first node not less than syll_id
++        auto low = trunk_begin;
++        size_t step = 1;
++        while (step < static_cast<size_t>(trunk_end - low) &&
++               low[step].key < syll_id) {
++          low += step;
++          step *= 2;
++        }
++        auto high = step < static_cast<size_t>(trunk_end - low)
++                        ? low + step + 1
++                        : trunk_end;
++        auto found = std::lower_bound(
++            low, high, syll_id,
++            [](const table::TrunkIndexNode& a, SyllableId key) {
++              return a.key < key;
++            });
++        trunk_begin = found;
++        if (found == trunk_end)
++          break;
++        if (syll_id < found->key)
++          continue;
++        node.entries = &found->entries;
++        node.next_level = found->next_level.get();
++      }
++      bool has_entries = node.entries->at.get() && node.entries->size != 0;
+       for (auto props : spellings.second) {
+         size_t end_pos = props->end_pos;
+ 
+@@ -612,16 +687,17 @@ bool Table::Query(const SyllableGraph& syll_graph,
+         bool is_normal_spelling = props->type == kNormalSpelling;
+         double delta_quality_len =
+             (is_normal_spelling ? 1.0 : 0.0) * (end_pos - current_pos);
+-        TableAccessor accessor =
+-            query.Access(syll_id, next_credibility, delta_quality_len);
+-        if (!accessor.exhausted()) {
+-          (*result)[end_pos].push_back(accessor);
++        if (has_entries) {
++          // as Access() does
++          (*result)[end_pos].push_back(TableAccessor(
++              query.IndexCode(syll_id), node.entries,
++              next_credibility + query.credibility_sum(),
++              delta_quality_len + query.quality_len_sum()));
+         }
+-        if (end_pos < syll_graph.interpreted_length &&
+-            query.Advance(syll_id, next_credibility, delta_quality_len,
+-                          current_pos)) {
++        if (end_pos < syll_graph.interpreted_length && node.next_level) {
+           q.push({end_pos, query});
+-          query.Backdate();
++          q.back().second.Descend(node, syll_id, next_credibility,
++                                  delta_quality_len, current_pos);
+         }
+       }
+     }
+diff --git a/src/rime/dict/table.h b/src/rime/dict/table.h
+index 9a697b3..a6ae242 100644
+--- a/src/rime/dict/table.h
++++ b/src/rime/dict/table.h
+@@ -116,6 +116,11 @@ class TableAccessor {
+                 const table::TailIndex* code_map,
+                 double credibility = 0.0,
+                 double quality_len = 0.0);
++  // Sugu: takes the code instead of copying it.
++  TableAccessor(Code&& index_code,
++                const List<table::Entry>* entries,
++                double credibility,
++                double quality_len);
+ 
+   RIME_DLL bool Next();
+ 
+@@ -124,6 +129,8 @@ class TableAccessor {
+   RIME_DLL const table::Entry* entry() const;
+   RIME_DLL const table::Code* extra_code() const;
+   const Code& index_code() const { return index_code_; }
++  // Sugu: hands the code over to a caller done with this accessor.
++  Code take_index_code() { return std::move(index_code_); }
+   Code code() const;
+   double credibility() const { return credibility_; }
+   double quality_len() const { return quality_len_; }
+@@ -165,22 +172,41 @@ class TableQuery {
+   size_t level() const { return level_; }
+ 
+   double credibility_sum() const {
+-    return credibility_.empty() ? 0 : credibility_.back();
++    return level_ == 0 ? 0 : credibility_[level_ - 1];
+   }
+   double quality_len_sum() const {
+-    return quality_len_.empty() ? 0 : quality_len_.back();
++    return level_ == 0 ? 0 : quality_len_[level_ - 1];
+   }
+-  size_t last_pos() const { return last_pos_.empty() ? 0 : last_pos_.back(); }
++  size_t last_pos() const { return level_ == 0 ? 0 : last_pos_[level_ - 1]; }
+ 
+  protected:
++  // Sugu: the path walked so far, one element per level, held in place so
++  // that queued queries copy without allocating. Walk() stops at
++  // kIndexCodeMaxLength levels.
++  static const size_t kMaxLevel = Code::kIndexCodeMaxLength;
+   size_t level_ = 0;
+-  Code index_code_;
+-  vector<double> credibility_;
+-  vector<double> quality_len_;
+-  vector<size_t> last_pos_;
++  SyllableId index_code_[kMaxLevel] = {};
++  double credibility_[kMaxLevel] = {};
++  double quality_len_[kMaxLevel] = {};
++  size_t last_pos_[kMaxLevel] = {};
+ 
+  private:
++  friend class Table;
+   bool Walk(SyllableId syllable_id);
++  Code IndexCode() const;
++  Code IndexCode(SyllableId syllable_id) const;
++  // Sugu: what Access() and Walk() read for syllable_id at this level,
++  // found once for both; the entries and next level are null when absent.
++  struct Node {
++    const List<table::Entry>* entries = nullptr;
++    table::PhraseIndex* next_level = nullptr;
++  };
++  // Moves to the level below through `node`, as Advance() does.
++  void Descend(const Node& node,
++               SyllableId syllable_id,
++               double credibility,
++               double quality_len,
++               size_t last_pos);
+ 
+   table::HeadIndex* lv1_index_ = nullptr;
+   table::TrunkIndex* lv2_index_ = nullptr;
+diff --git a/src/rime/gear/script_translator.cc b/src/rime/gear/script_translator.cc
+index aef6217..3410632 100644
+--- a/src/rime/gear/script_translator.cc
++++ b/src/rime/gear/script_translator.cc
+@@ -688,6 +688,9 @@ void ScriptTranslation::EnrollEntries(
+       while (homophones.size() < translator_->max_homophones() &&
+              !y.second.exhausted()) {
+         homophones.push_back(y.second.Peek());
++        // Sugu: the iterator is not read once the list is full.
++        if (homophones.size() >= translator_->max_homophones())
++          break;
+         if (!y.second.Next())
+           break;
+       }

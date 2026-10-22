@@ -34,6 +34,61 @@ struct RimeEngineTests {
         }
     }
 
+    /// Initials alone, and initials after full syllables, still type
+    /// words while a syllable is unfinished.
+    @Test func initialsTypeWordsAfterFullSyllables() async throws {
+        #expect(try await first("wxq") == "微信群")
+        #expect(try await first("sjk") == "数据库")
+        #expect(try await first("woxq") == "我想起")
+        #expect(try await first("wxiangq") == "我想起")
+        #expect(try await first("woxiangzh") == "我想着")
+        #expect(try await first("tamenshibs") == "他们是不是")
+        try await Shared.runtime.prepare(RimeSchema(), version: "test")
+        let engine = RimeEngine(runtime: Shared.runtime)
+        defer { engine.clear() }
+        engine.insert("woaq")
+        #expect(engine.state.candidates.prefix(5).map(\.text).contains("我爱去"))
+    }
+
+    /// librime's candidates after every key of the Chinese bench and of
+    /// mixed and abbreviated input, against a recorded reference: Sugu
+    /// patches librime's lookup for speed (D-100), which must change no
+    /// result, and a librime upgrade must not either without a look.
+    /// `SUGU_RECORD_CANDIDATES=1` records the reference anew.
+    @Test func librimesCandidatesMatchTheReference() async throws {
+        let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Fixtures")
+        let reference = fixtures.appendingPathComponent("librime-candidates.txt")
+        let bench = engineDataDirectory.deletingLastPathComponent().appendingPathComponent("Bench/zh.tsv")
+        let sentences = try String(contentsOf: bench, encoding: .utf8).split(separator: "\n")
+            .filter { !$0.hasPrefix("#") }.compactMap { $0.split(separator: "\t").first.map(String.init) }
+        let probes = ["wxq", "sjk", "woxq", "wxiangq", "woaq", "woxiangzh", "woxiangchif", "tamenshibs", "chanc", "genj",
+                      "zhongguor", "changanj", "xianr", "dangan", "fangan", "jiangq", "tiane", "xiane", "zgrm", "bjdx",
+                      "zwdmzs", "wobuzhid", "gangang", "anan", "eee", "ng", "lve", "nvren", "xian'an", "zhonghuarenmingongheguo"]
+        try RimeUserDictionary.write("", in: Shared.user)
+        var lines: [String] = []
+        for (name, schema) in [("default", RimeSchema()), ("fuzzy", RimeSchema(fuzzy: [.zZh, .cCh, .sSh]))] {
+            try await Shared.runtime.prepare(schema, version: "test")
+            let engine = RimeEngine(runtime: Shared.runtime)
+            _ = engine.reloadUserDictionary()
+            for input in probes + sentences {
+                for key in input {
+                    engine.insert(String(key))
+                    lines.append("\(name)\t\(engine.state.reading)\t" + engine.state.candidates.prefix(10).map(\.text).joined(separator: " "))
+                }
+                engine.clear()
+            }
+        }
+        let recorded = lines.joined(separator: "\n") + "\n"
+        if ProcessInfo.processInfo.environment["SUGU_RECORD_CANDIDATES"] == "1" {
+            try recorded.write(to: reference, atomically: true, encoding: .utf8)
+            return
+        }
+        let expected = try String(contentsOf: reference, encoding: .utf8).split(separator: "\n", omittingEmptySubsequences: false)
+        let differences = zip(expected, lines).filter { $0 != $1 }
+        #expect(expected.count == lines.count + 1)
+        #expect(differences.isEmpty, "\(differences.count) keys differ, first: \(differences.first.map { "\($0.0) → \($0.1)" } ?? "")")
+    }
+
     @Test func fullPinyin() async throws {
         #expect(try await first("nihao") == "你好")
         #expect(try await first("woaibeijingtiananmen") == "我爱北京天安门")

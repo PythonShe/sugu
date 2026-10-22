@@ -21,6 +21,8 @@ checkout() { # name url ref
     git clone --quiet --filter=blob:none "$2" "$dir"
   fi
   git -C "$dir" fetch --quiet --tags origin
+  # Drops Sugu's patches from the last build before moving to the ref.
+  git -C "$dir" checkout --quiet -- .
   git -C "$dir" checkout --quiet "$3"
 }
 
@@ -29,6 +31,10 @@ mkdir -p "$WORK/src" "$PREFIX"
 checkout librime https://github.com/rime/librime.git "$LIBRIME_COMMIT"
 git -C "$WORK/src/librime" submodule update --init --quiet \
   deps/leveldb deps/marisa-trie deps/opencc deps/yaml-cpp
+# Sugu's patches to librime (D-100).
+for patch in "$ROOT"/scripts/patches/librime-*.patch; do
+  git -C "$WORK/src/librime" apply "$patch"
+done
 checkout librime-octagram https://github.com/lotem/librime-octagram.git "$OCTAGRAM_REF"
 ln -sfn "$WORK/src/librime-octagram" "$WORK/src/librime/plugins/octagram"
 

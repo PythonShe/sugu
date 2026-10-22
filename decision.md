@@ -1852,3 +1852,33 @@ checked against the code before it was changed.
   and the typo penalty, which it computes but does not apply), but the
   table is private: it needs a fork of AzooKey pinned by revision, or the
   change upstream.
+
+## D-100 · librime's dictionary lookup patched for speed (2026-10-22)
+
+- Profiled with a Fable advisor and reviewed by Codex: about three
+  quarters of a Chinese key's time is librime's `process_key`, nearly
+  all of it `Table::Query` under `PrepareForMakingSentence`; the tail is
+  keys ending in a bare consonant, where the wanxiang algebra's
+  abbreviations give each position many syllables.
+- `scripts/patches/librime-dictionary-lookup.patch`, applied by
+  `scripts/build-librime.sh` to a clean checkout: each syllable's index
+  node is found once (a galloping search, as the syllables and trunk
+  nodes are both in ascending order) for all its spellings and for both
+  access and descent; queued queries hold their path in fixed arrays
+  instead of vectors; codes move instead of being copied. Chinese p99
+  4.25 → 1.9 ms, worst key 6.7 → 2.9 ms (alternating runs); Japanese
+  unchanged.
+- No result changes: candidates after every key of the Chinese bench
+  sets and a hundred mixed and abbreviated inputs, with and without
+  fuzzy pinyin, were identical to stock librime. A test now holds that
+  as a reference (`Tests/Fixtures/librime-candidates.txt`, 9,250 keys,
+  recorded on stock 1.17.0).
+- Declined: a syllabifier patch that drops abbreviations inside a fully
+  spelled prefix (p99 1.0 ms, 0.74 with this one) changed the first page
+  on about 7% of bench keys and the first candidate in 40 (chanc lost
+  长安城, wozaid 我最爱的 → 我在打).
+- librime stays pinned (`LIBRIME_COMMIT`). On an upgrade a patch that
+  no longer applies stops the build rather than being skipped; rebase it
+  or drop it (it is speed only). One that applies but no longer fits
+  shows in the reference test. CI's dependency cache is keyed on the
+  patches too.
