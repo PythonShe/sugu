@@ -2,7 +2,7 @@ name: Release
 
 # Builds, signs, notarizes and publishes a Sugu release.
 #
-#   prepare ── notes (release-notes.yml) ── build (xcode-27) ── publish (R2) ── site (deploy-site.yml)
+#   prepare ── notes (release-notes.yml), check (ci.yml) ── build (xcode-27) ── publish (R2) ── site (deploy-site.yml)
 #
 # A pushed vX.Y.Z tag releases it; project.yml's MARKETING_VERSION must
 # match. Releases go to sugu.zheng-she.com, not GitHub (ADR 0006), unless
@@ -115,8 +115,15 @@ jobs:
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
+  # Tests, fuzzing and the benchmark (scripts/ci.sh) on the commit being released.
+  check:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+
   build:
-    needs: [prepare, notes]
+    needs: [prepare, notes, check]
     runs-on: xcode-27
     timeout-minutes: 150
     steps:

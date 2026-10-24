@@ -1,10 +1,17 @@
-# Runs scripts/ci.sh. Manual only while the repository is private, where
-# macOS runner minutes are billed (decision.md D-019); add `push` and
-# `pull_request` triggers to run it on every change.
+# Runs scripts/ci.sh, by hand and before every release build (release.yml).
+# Not on every push while the repository is private, where macOS runner
+# minutes are billed (decision.md D-019); add `push` and `pull_request`
+# triggers to run it on every change.
 name: CI
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Commit to check"
+        required: true
+        type: string
 
 jobs:
   check:
@@ -12,6 +19,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_27.1.app

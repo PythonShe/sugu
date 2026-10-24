@@ -33,7 +33,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
   - After a failed publish, re-run **failed jobs only**: re-running all of them rebuilds the release with different bytes (new signature timestamps), and that version can no longer be published.
 - [x] `release.yml`: publishes one tag at a time (`release-publish`); every action pinned to a commit. GitHub keeps one publish waiting at most: a third tag pushed meanwhile cancels the waiting one, which is then re-run.
 - Publishing locally with `cf` asks the bucket by listing the key, as the AWS CLI path does. `deploy-site.yml` deploys `main`, also when a release calls it from its tag.
-- [x] `.github/workflows/release.yml`: prepare → notes → build (macos-26) → publish (R2) → site. Dry run = dispatch without tag, publish off.
+- [x] `.github/workflows/release.yml`: prepare → notes and check (`ci.yml`) → build (xcode-27) → publish (R2) → site. Dry run = dispatch without tag, publish off.
 - [x] `.github/workflows/release-notes.yml`: Claude, four languages, end_turn + shape check, fixed fallback; body through stdin.
 - [x] `.github/workflows/deploy-site.yml`: push to `main` on site paths, after each release, manual; `pnpm check`, build, `wrangler pages deploy`; skips deploying without the Cloudflare secrets.
 - [x] `site/`: home, changelog (from `releases.json` and notes at build time), privacy, licenses (`LICENSE` + notices), en/ja/zh-Hans/zh-Hant, security headers, no cookies; scripts only for the language redirect and the home page's animations.

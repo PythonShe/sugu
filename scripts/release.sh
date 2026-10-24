@@ -71,8 +71,8 @@ curl -fsSL -o "$WORK/sparkle.tar.xz" \
 echo "$SPARKLE_TOOLS_SHA256  $WORK/sparkle.tar.xz" | shasum -a 256 -c -
 tar -xJf "$WORK/sparkle.tar.xz" -C "$TOOLS" ./bin
 
-# Tests and budgets are scripts/ci.sh's, run before tagging; a release only
-# builds.
+# Tests and budgets are scripts/ci.sh's: the release workflow runs it before
+# this build, and a local release should too.
 scripts/prepare.sh
 
 # No entitlements and no profile, whatever Config/Local.xcconfig says.
