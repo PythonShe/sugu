@@ -10,6 +10,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 scripts/prepare.sh
+# The committed notices are what make-notices.sh writes from today's pins.
+scripts/make-notices.sh >/dev/null
+git diff --exit-code --stat Sugu/Resources/ThirdPartyNotices.txt \
+  || { echo "ThirdPartyNotices.txt is out of date: run scripts/make-notices.sh" >&2; exit 1; }
 
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS,arch=arm64' \
   -configuration Release CODE_SIGNING_ALLOWED=NO -onlyUsePackageVersionsFromResolvedFile build -quiet
