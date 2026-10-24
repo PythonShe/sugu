@@ -230,6 +230,7 @@ jobs:
             dist/appcast.xml
             dist/release.json
             dist/notes/
+            dist/symbols/
 
       - name: Clean up keys
         if: always()

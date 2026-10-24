@@ -1,7 +1,8 @@
 #!/bin/bash
 # Builds a release: a Developer ID–signed, notarized installer package and a
 # notarized, EdDSA-signed archive for Sparkle, with release.json describing
-# the archive and the signed appcast. Output goes to dist/. Nothing is
+# the archive and the signed appcast, and the debug symbols in
+# dist/symbols/ for reading crash reports. Output goes to dist/. Nothing is
 # uploaded: scripts/publish-release.sh publishes it all to
 # sugu.zheng-she.com (ADR 0006). The release workflow runs this on CI; it
 # runs the same way locally.
@@ -60,7 +61,7 @@ BUILD_NUMBER="$(scripts/build-number.sh ${RELEASE_VERSION:+"v$RELEASE_VERSION"})
 
 DIST="$ROOT/dist"
 WORK="$DIST/work"
-rm -rf "${WORK:?}" && mkdir -p "$WORK"
+rm -rf "${WORK:?}" "${DIST:?}/symbols" && mkdir -p "$WORK"
 
 # Sparkle's command-line tools, pinned and verified on every release: they
 # handle the private key, so no cached copy is trusted.
@@ -206,5 +207,10 @@ python3 -I "$ROOT/scripts/appcast.py" "$DIST/release.json" "$DIST/appcast.xml" $
 "$TOOLS/bin/sign_update" ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} "$DIST/appcast.xml"
 "$TOOLS/bin/sign_update" ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} --verify "$DIST/appcast.xml"
 
+# The debug symbols, kept privately: without them no crash report from this
+# build can be read.
+mkdir -p "$DIST/symbols"
+ditto -c -k --keepParent "$WORK/Sugu.xcarchive/dSYMs" "$DIST/symbols/Sugu-$VERSION-$BUILD.dSYMs.zip"
+
 rm -rf "${WORK:?}"
-echo "dist: $(basename "$PKG"), $(basename "$ZIP"), release.json, appcast.xml"
+echo "dist: $(basename "$PKG"), $(basename "$ZIP"), release.json, appcast.xml, symbols/"

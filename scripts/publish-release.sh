@@ -7,7 +7,9 @@
 #   releases.json, latest.json                    every release, and the newest
 #   appcast.xml                                   the signed Sparkle feed
 #
-# in that order, so whatever a reader finds points at files that exist. A
+# in that order, so whatever a reader finds points at files that exist. The
+# debug symbols go to symbols/<version>/ first, which the site never serves.
+# A
 # version already out is never replaced with different files (caches and
 # signatures would disagree), and a feed for an older build than the live
 # one is refused. Running it again for the same files only finishes what is
@@ -36,6 +38,8 @@ PREFIX="releases/$VERSION"
 PKG="$DIST/Sugu-$VERSION.pkg"
 ZIP="$DIST/Sugu-$VERSION.zip"
 [[ -f "$PKG" && -f "$ZIP" ]] || fail "Missing the package or the archive for $VERSION in dist/."
+SYMBOLS="$DIST/symbols/Sugu-$VERSION-$BUILD.dSYMs.zip"
+[[ -f "$SYMBOLS" ]] || fail "Missing dist/symbols/$(basename "$SYMBOLS")."
 [[ "$(field url)" == "$SITE/$PREFIX/Sugu-$VERSION.zip" ]] || fail "release.json points somewhere else: $(field url)"
 [[ "$(field length)" == "$(wc -c <"$ZIP" | tr -d ' ')" ]] || fail "release.json's length is not the archive's."
 
@@ -121,6 +125,16 @@ jq '.[0]' "$WORK/releases.new.json" >"$WORK/latest.json"
 [[ "$(jq -r .version "$WORK/latest.json")" == "$VERSION" ]] || fail "A newer release than $VERSION is already listed."
 
 IMMUTABLE="public, max-age=31536000, immutable"
+
+# The debug symbols: private, kept once per build.
+key="symbols/$VERSION/$(basename "$SYMBOLS")"
+if stored "$key"; then
+  echo "Already stored: $key"
+else
+  put "$SYMBOLS" "$key" application/zip private
+  stored "$key" || fail "The bucket does not hold $key after the upload."
+  echo "Stored: $key"
+fi
 
 # The downloads: uploaded once, then only ever confirmed. Both are
 # compared with what is out before either is uploaded.

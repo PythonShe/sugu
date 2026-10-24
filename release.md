@@ -15,7 +15,8 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 - **Where they go** (`scripts/publish-release.sh`, bucket `sugu-updates`, served at `https://sugu.zheng-she.com`):
   - `releases/<version>/Sugu-<version>.{pkg,zip}` (immutable; never replaced by different bytes);
   - `releases/<version>/notes/<lang>.md`;
-  - `releases.json`, `latest.json`, then `appcast.xml` last.
+  - `releases.json`, `latest.json`, then `appcast.xml` last;
+  - the debug symbols at `symbols/<version>/Sugu-<version>-<build>.dSYMs.zip`, which the site never serves (the bucket's r2.dev address is off).
 - **Home page:** `site/` (Astro) on Cloudflare Pages project `sugu`; its functions serve the same paths from the bucket, plus `/download/` → newest `.pkg`.
 - **Repository:** private. No GitHub releases; tags mark releases.
 
