@@ -23,7 +23,7 @@ Verify third-party licenses from COPYING files in a clone before shipping a
 dependency.
 
 ```bash
-xcodegen generate     # after any project.yml change
+scripts/generate-project.sh   # after any project.yml change
 xcodebuild -project Sugu.xcodeproj -scheme Sugu \
   -destination 'platform=macOS' build   # must pass
 swift test --package-path Packages/SuguKit   # package tests
@@ -105,9 +105,9 @@ pnpm --dir site check && pnpm --dir site build   # the home page
   `Config/Local.xcconfig` (local signing overrides, from
   `Local.xcconfig.example`), `.cloudflare/` (the Cloudflare CLI's cache),
   `site/node_modules/`, `site/dist/`, `site/.astro/` and `site/.wrangler/`
-  (the home page's dependencies and builds), and `Sugu.xcodeproj/` except
-  its SwiftPM `Package.resolved`.
-  `Packages/SuguKit/Package.resolved` is tracked.
+  (the home page's dependencies and builds), and `Sugu.xcodeproj/`.
+  `Packages/SuguKit/Package.resolved` is tracked and holds every pin;
+  `scripts/generate-project.sh` copies it into the generated workspace.
 - Pinned third-party versions live in `scripts/versions.sh`.
 - The app icon's sources are `Assets/` (Icon Composer packages, flat SVG and
   PNG); `swift scripts/render-icon.swift` regenerates them and the legacy

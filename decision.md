@@ -219,6 +219,10 @@ any call made without the owner present. Each entry: what, why, reversibility.
   source the user has chosen.
 - Sparkle 2.10.0 lives in the `SuguUpdates` package target, so Xcode and
   SwiftPM resolve one dependency graph and agree on `Package.resolved`.
+  Xcode reads only a workspace's resolved file, so
+  `scripts/generate-project.sh` copies SuguKit's into the generated
+  workspace and releases build with `-onlyUsePackageVersionsFromResolvedFile`
+  (2026-10-25).
   The public key is a build setting set only by the release script; builds
   without it never start the updater. System profiling is off in
   Info.plist and in the delegate. Automatic checks default on (update checks

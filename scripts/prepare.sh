@@ -19,4 +19,4 @@ missing = [p for p in pins if p not in script]
 sys.exit("no notice for: " + ", ".join(missing)) if missing else None' \
   Packages/SuguKit/Package.resolved scripts/make-notices.sh
 
-xcodegen generate --quiet
+scripts/generate-project.sh

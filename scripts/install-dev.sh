@@ -11,7 +11,7 @@ cd "$ROOT"
 CONFIGURATION="${1:-Release}"
 DERIVED="$ROOT/.build-dev"
 
-xcodegen generate --quiet
+scripts/generate-project.sh
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration "$CONFIGURATION" \
   -destination 'platform=macOS,arch=arm64' -derivedDataPath "$DERIVED" build -quiet
 

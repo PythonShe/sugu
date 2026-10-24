@@ -45,7 +45,7 @@ Requires Xcode 26 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen), C
 scripts/build-librime.sh   # librime + octagram → Frameworks/librime.xcframework
 scripts/fetch-data.sh      # rime-wanxiang dictionary sources, Tatoeba sentences, CLDR emoji names
 scripts/build-data.sh      # compiled dictionaries and language model → Data/
-xcodegen generate
+scripts/generate-project.sh
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' build
 ```
 

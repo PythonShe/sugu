@@ -12,7 +12,7 @@ cd "$ROOT"
 scripts/prepare.sh
 
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS,arch=arm64' \
-  -configuration Release CODE_SIGNING_ALLOWED=NO build -quiet
+  -configuration Release CODE_SIGNING_ALLOWED=NO -onlyUsePackageVersionsFromResolvedFile build -quiet
 PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -showBuildSettings 2>/dev/null | awk '$1 == "BUILT_PRODUCTS_DIR" { print $3 }')"
 "${PRODUCTS:?}/Sugu.app/Contents/MacOS/Sugu" --measure-draw
@@ -21,7 +21,8 @@ if grep -rlis "CC BY-SA\|CC-BY-SA\|ShareAlike" "${PRODUCTS:?}/Sugu.app/Contents/
   echo "share-alike data in the app" >&2; exit 1
 fi
 
-xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS,arch=arm64' test -quiet
+xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS,arch=arm64' \
+  -onlyUsePackageVersionsFromResolvedFile test -quiet
 # The settings window and every pane, built offscreen by the debug app.
 DEBUG_PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Debug \
   -showBuildSettings 2>/dev/null | awk '$1 == "BUILT_PRODUCTS_DIR" { print $3 }')"

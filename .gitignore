@@ -28,15 +28,8 @@ build/
 /.build-dev/
 /Config/Local.xcconfig
 
-# XcodeGen output; only SwiftPM's resolved pins are kept
-/Sugu.xcodeproj/*
-!/Sugu.xcodeproj/project.xcworkspace/
-/Sugu.xcodeproj/project.xcworkspace/*
-!/Sugu.xcodeproj/project.xcworkspace/xcshareddata/
-/Sugu.xcodeproj/project.xcworkspace/xcshareddata/*
-!/Sugu.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
-/Sugu.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/*
-!/Sugu.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+# XcodeGen output; scripts/prepare.sh copies SuguKit's pins into it
+/Sugu.xcodeproj/
 
 # Cloudflare CLI cache
 /.cloudflare/

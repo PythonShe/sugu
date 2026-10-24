@@ -81,6 +81,7 @@ ENTITLEMENTS=""
 [[ -n "${DEVELOPER_ID_PROFILE:-}" ]] && ENTITLEMENTS="Sugu/App/Sugu-PCC.entitlements"
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$WORK/Sugu.xcarchive" archive -quiet \
+  -onlyUsePackageVersionsFromResolvedFile \
   CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_IDENTITY="$DEVELOPER_ID_APPLICATION" \
   SUGU_ENTITLEMENTS="$ENTITLEMENTS" SUGU_PROFILE="${DEVELOPER_ID_PROFILE:-}" \
   OTHER_CODE_SIGN_FLAGS="$SIGN_FLAGS" SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY" \

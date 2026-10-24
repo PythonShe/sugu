@@ -20,7 +20,7 @@ DERIVED="$ROOT/.build-dev"
 OPEN=1
 [[ "${1:-}" == --no-open ]] && OPEN=0
 
-xcodegen generate --quiet
+scripts/generate-project.sh
 # The build number is yymmddvv, as in releases.
 BUILD="$(scripts/build-number.sh)"
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
