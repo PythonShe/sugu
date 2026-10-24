@@ -76,8 +76,9 @@ Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (defau
 ## 4. Proving it
 
 - [x] **Dry run** of `release.yml`: the v0.9.0 tag built, notarized, stapled and passed Gatekeeper, with notes in the four-language shape, as a GitHub release, published nowhere else (2026-10-21).
-- [ ] **First release `v0.9.0`** (or 1.0): install the `.pkg` from `/download/` on a clean user account; the input source registers, enables and selects (D-020).
-- [ ] **One Sparkle update between two notarized builds** (todo §15), with a second tag: offered, notes in the system language, EdDSA verified, installs into `/Library/Input Methods`, the input source and learned words survive.
+- [x] **First releases published:** 0.9.1 (build 26102201) and 0.9.2 (26102202), 2026-10-22, from tags through `release.yml` to R2 and the site.
+- [ ] **Clean install:** install the `.pkg` from `/download/` on a clean user account; the input source registers, enables and selects (D-020); the installer shows the license and refuses macOS 13.
+- [ ] **One Sparkle update between two notarized builds** (todo §15), e.g. 0.9.2 to 1.0.0: offered, notes in the system language, EdDSA verified, installs into `/Library/Input Methods`, the input source and learned words survive.
   - A scheduled check shows **Update Available…** in the input menu rather than a window behind the frontmost app.
   - Also check: Sugu running for a second logged-in user while the update installs, and Sparkle's relaunch while macOS starts Sugu for a key.
 - [ ] **Signed feed:** an installed build rejects a feed edited after signing.
