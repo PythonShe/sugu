@@ -201,7 +201,6 @@ final class CandidateView: NSView {
     // MARK: Accessibility
 
     /// A candidate or page button, pressable from VoiceOver.
-    /// A candidate or page button, pressable from VoiceOver.
     private final class Element: NSAccessibilityElement {
         private let action: @MainActor @Sendable () -> Void
 
