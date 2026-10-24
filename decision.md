@@ -1922,6 +1922,8 @@ checked against the code before it was changed.
     A word read just as typed is not marked: azooKey's deduplication can
     keep the prediction's copy of a user's word, and marking it lost
     user words and the greetings of D-099.
+  - `takeZenzaiModel(from:)`, added 2026-10-25 (D-103): a converter takes
+    over the Zenzai model another loaded.
   - Its tests pass, but for `testMozcEvaluationData`, which crashes on
     stock 0.11.2 too.
 - In Sugu the kana shows as typed, and a commit is learned under the
@@ -1983,15 +1985,21 @@ checked against the code before it was changed.
   half when full (`GenerationalCache`); the Settings window and its panes
   are released on close. Personal n-grams stay as designed, at most
   100,000 per mode.
+- Zenzai runs on the Japanese engine's dictionary in memory: the model
+  still loads off the main thread on a converter of its own, and the
+  engine's converter takes it over through the fork's
+  `takeZenzaiModel(from:)` (commit 8d10d75), so the second, unloaded
+  dictionary goes with that converter. Bench with Zenzai: footprint 200 →
+  127 MB, resident 359 → 295 MB, results unchanged; a 600-session soak
+  with Zenzai holds at about 125 MB.
 - The fuzzer now also switches fields, changes settings (redeploys
   included), pauses for engines being set up, changes learned words,
   selects text to reconvert, turns secure input on and off, and presses
   F6–F10, ⌃⌫, 英数 and かな (twice too), ⌥, ⌃⇧K/J/R and the Emacs keys.
-  `--failed-deploy` gives librime no data.
+  `--failed-deploy` gives librime no data; `--zenzai` converts with a
+  model.
 - Zenzai ships in 1.0 without the Experimental label.
 - Not done:
-  - Zenzai sharing the preloaded dictionary, which needs the fork's
-    `takeZenzaiModel(from:)` published first;
-  - the AppKit candidate window and Zenzai in the soak;
+  - the AppKit candidate window in the soak;
   - a store on a full disk, which the unit test covers only by a failed
     write.

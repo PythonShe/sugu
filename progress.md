@@ -16,7 +16,9 @@ Running log of what was built, verified, and what is next. Newest first.
     times out;
   - a crash loop starts afresh;
   - the caches keep their recent half;
-  - the Settings window is released on close.
+  - the Settings window is released on close;
+  - Zenzai runs on the dictionary already in memory: 200 → 127 MB
+    with Zenzai on.
 - The fuzzer covers field switches, settings and redeploys mid-composition,
   learned-word changes, reconversion, secure input and the remaining
   keys, and a failed librime deployment. It found a composition broken by

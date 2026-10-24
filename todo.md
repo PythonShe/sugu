@@ -231,5 +231,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Stability: learning pauses after a failed write; librime rebuilds when a session will not open; deployment timeout; crash-loop recovery; no engine while a deployment is queued
 - [x] Memory: generational caches; the Settings window released on close
 - [x] Fuzzer: fields, settings, redeploys, pauses, learned words, reconversion, secure input, the remaining keys; `--failed-deploy`
-- [ ] Zenzai shares the preloaded dictionary (fork commit `takeZenzaiModel(from:)` to publish first); a `--zenzai` soak
+- [x] Zenzai on the engine's dictionary in memory (fork `takeZenzaiModel(from:)`); a `--zenzai` soak
 - [ ] Soak the AppKit candidate window
