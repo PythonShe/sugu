@@ -19,9 +19,9 @@ export default {
     install: {
       title: 'Install',
       steps: [
-        'Open the downloaded package and follow the installer. If this is your first time installing Sugu, restart your Mac.',
-        'Choose Sugu from the Input menu. If it isn’t there, add it in System Settings › Keyboard › Input Sources › Edit, under Chinese, Simplified.',
-        'Sugu keeps itself up to date. You can turn this off in its settings.',
+        'Open the downloaded package and follow the installer.',
+        'Choose Sugu from the Input menu. If it isn’t there, add it in System Settings › Keyboard › Input Sources › Edit, under Chinese, Simplified; if it isn’t listed yet, log out and back in.',
+        'Sugu checks for updates itself and installs them with an administrator’s password. You can turn the checks off in its settings.',
       ],
     },
   },
@@ -39,7 +39,7 @@ export default {
         body: [
           'The words and phrases Sugu learns from what you commit, and the words you add, stay in a database on your Mac. You can search and delete them, forget the last hour, stop learning in some apps, or turn learning off.',
           'Text already in the field, which Sugu reads to rank candidates, is never stored.',
-          'Apple’s language model, if you turn it on to translate or rewrite text, runs on your Mac and sends nothing.',
+          'Apple’s language model (macOS 27 or later), if you turn it on to translate or rewrite text, runs on your Mac and sends nothing.',
           'If you choose a folder to sync learned words between Macs, Sugu writes them there; whatever syncs that folder carries them.',
         ],
       },
@@ -50,7 +50,7 @@ export default {
         ],
         list: [
           'Update checks, which you can turn off: to sugu.zheng-she.com for Sugu, and, when you open Settings, at most once a day to GitHub for newer releases of the rime-ice dictionary and grammar model you downloaded. They send nothing about your Mac; the request to sugu.zheng-she.com names Sugu’s version.',
-          'Downloads you start: the optional rime-ice dictionary and grammar model from GitHub, and the Zenzai model from Hugging Face.',
+          'Downloads you start: the optional rime-ice dictionary from GitHub, the grammar model from GitHub or sugu.zheng-she.com, and the Zenzai model from Hugging Face.',
         ],
       },
       {

@@ -9,7 +9,7 @@ public enum Downloader {
     public static func fetch(
         _ download: Download,
         to destination: URL,
-        session: URLSession = .shared,
+        session: URLSession = .sugu,
         progress: @escaping @MainActor @Sendable (Double) -> Void = { _ in }
     ) async throws {
         let fm = FileManager.default

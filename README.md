@@ -6,7 +6,7 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Principles
 
-- **Local-first, privacy-first** — an input method reads everything you type. Sugu sends nothing you type: composition, conversion and learning stay on your Mac, and you can see the words it has learned and delete what it has learned. Apple's on-device language model can translate and rewrite if you turn it on, on your Mac too.
+- **Local-first, privacy-first** — an input method reads everything you type. Sugu sends nothing you type: composition, conversion and learning stay on your Mac, and you can see the words it has learned and delete what it has learned. On macOS 27 or later, Apple's on-device language model can translate and rewrite if you turn it on, on your Mac too.
 - **One input source** — Chinese, Japanese and English live in one input source, so switching never depends on macOS input-source switching.
 - **Fast and accurate, measured** — latency and memory budgets are checked by a benchmark that drives the whole input pipeline, and accuracy is measured on public test sets.
 - **Free** — no price, no account, no paid tier.
@@ -24,22 +24,22 @@ The name is the thesis: the right word should appear *immediately* — in the fi
 
 ## Install
 
-Requires macOS 14 or later. Download `Sugu-<version>.pkg` from [sugu.zheng-she.com](https://sugu.zheng-she.com) and open it; Sugu is added to the input menu. If it is missing, add it in **System Settings › Keyboard › Input Sources › Edit**, under Chinese, Simplified; log out and back in if it is not listed yet. Sugu checks for updates itself; this can be turned off in its settings.
+Requires macOS 14 or later. Download `Sugu-<version>.pkg` from [sugu.zheng-she.com](https://sugu.zheng-she.com) and open it; Sugu is added to the input menu. If it is missing, add it in **System Settings › Keyboard › Input Sources › Edit**, under Chinese, Simplified; log out and back in if it is not listed yet. Sugu checks for updates itself and installs them with an administrator's password; the checks can be turned off in its settings.
 
 To uninstall, remove Sugu from **Input Sources**, then in Terminal:
 
 ```bash
+killall Sugu
 sudo rm -rf "/Library/Input Methods/Sugu.app"
 sudo pkgutil --forget com.zheng-she.inputmethod.Sugu.pkg
 rm -rf ~/Library/Application\ Support/Sugu   # learned words and downloads
+rm -rf ~/Library/Caches/com.zheng-she.inputmethod.Sugu ~/Library/HTTPStorages/com.zheng-she.inputmethod.Sugu
 defaults delete com.zheng-she.inputmethod.Sugu
 ```
 
-Log out and back in to end the running copy.
-
 ## Building
 
-Requires Xcode 26 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen), CMake and Ninja.
+Requires Xcode 27 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen), CMake and Ninja.
 
 ```bash
 scripts/build-librime.sh   # librime + octagram → Frameworks/librime.xcframework

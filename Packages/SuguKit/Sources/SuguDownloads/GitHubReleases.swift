@@ -24,7 +24,7 @@ public enum GitHubReleases {
     /// out moving tags such as a nightly build).
     public static func newest(
         _ asset: String, in repository: String, tag: String? = nil, versions: Regex<Substring>? = nil,
-        minimumAge: TimeInterval, now: Date = .now, session: URLSession = .shared
+        minimumAge: TimeInterval, now: Date = .now, session: URLSession = .sugu
     ) async throws -> Release? {
         let path = tag.map { "releases/tags/\($0)" } ?? "releases?per_page=10"
         var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(repository)/\(path)")!)

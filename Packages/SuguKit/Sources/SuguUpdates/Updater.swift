@@ -3,7 +3,8 @@ import Sparkle
 
 /// Update checks through Sparkle. Off in builds without an update signing
 /// key (development builds), so they never offer someone else's release.
-/// No system profile is sent (Info.plist, and the delegate below).
+/// No system profile is sent (Info.plist, and the delegate below), and no
+/// preferred languages: requests name only Sugu's and Sparkle's versions.
 ///
 /// Sugu runs in the background, so an update found by a scheduled check
 /// is not put in front of the app being typed in: it waits as
@@ -19,6 +20,7 @@ public final class Updater: NSObject, SPUUpdaterDelegate, @MainActor SPUStandard
         let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
         guard !key.isEmpty else { return }
         controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: self)
+        controller?.updater.httpHeaders = ["Accept-Language": "*"]
     }
 
     public var isAvailable: Bool { controller != nil }
