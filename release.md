@@ -58,7 +58,6 @@ All set (2026-10-21).
 | Signing the app | `APPLE_CERTIFICATE` (base64 `.p12`), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY` |
 | Signing the `.pkg` | `APPLE_INSTALLER_CERTIFICATE`, `APPLE_INSTALLER_CERTIFICATE_PASSWORD`, `APPLE_INSTALLER_SIGNING_IDENTITY` |
 | Notarization | `APPLE_API_KEY` (base64 `.p8`), `APPLE_API_KEY_ID`, `APPLE_API_ISSUER` |
-| Private Cloud Compute (unavailable to Developer ID; leave unset) | `APPLE_PROVISIONING_PROFILE` (base64) |
 | Sparkle | `SPARKLE_PRIVATE_KEY` (the contents of the file from `generate_keys -x`) |
 | R2 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
 | Pages | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |

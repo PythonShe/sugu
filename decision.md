@@ -612,7 +612,9 @@ any call made without the owner present. Each entry: what, why, reversibility.
   `DEVELOPER_ID_PROFILE` names an installed Developer ID profile with the
   capability, and then checks the signed app has it. Otherwise the release
   has no entitlement, and the Private Cloud Compute level falls back to
-  the on-device model.
+  the on-device model. Superseded 2026-10-25: Developer ID cannot have the
+  capability (ADR 0004 amendment), so the path is gone and a release with
+  any entitlement fails.
 - Signing settings go through `SUGU_ENTITLEMENTS` and `SUGU_PROFILE` in
   `Config/Signing.xcconfig`, which only the app target includes: passed
   as `CODE_SIGN_ENTITLEMENTS` on the command line they also reached the

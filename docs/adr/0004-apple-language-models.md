@@ -99,8 +99,9 @@ generated after the approval does not. So:
 - The owner's Macs run development-signed builds with the entitlement
   (`Config/Local.xcconfig`, `scripts/package-dev.sh`). They have no update
   key, so Sparkle never replaces them with a release.
-- If Apple opens Private Cloud Compute to Developer ID, a profile with it
-  in `APPLE_PROVISIONING_PROFILE` is all a release needs.
+- Releases are checked to carry no entitlement at all; if Apple opens
+  Private Cloud Compute to Developer ID, the release path is added back
+  (2026-10-25).
 
 ## Considered options
 

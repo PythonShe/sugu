@@ -182,7 +182,6 @@ jobs:
         env:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
         run: |
           set -euo pipefail
           umask 077
@@ -195,21 +194,6 @@ jobs:
             echo "APPLE_API_KEY_FILE=$RUNNER_TEMP/api-key.p8"
             echo "SPARKLE_PRIVATE_KEY_FILE=$RUNNER_TEMP/sparkle.key"
           } >> "$GITHUB_ENV"
-          # Private Cloud Compute ships only with a profile that grants it.
-          if [ -n "${APPLE_PROVISIONING_PROFILE:-}" ]; then
-            PROFILE="$RUNNER_TEMP/release.provisionprofile"
-            echo "$APPLE_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE"
-            PLIST="$(security cms -D -i "$PROFILE")"
-            NAME="$(plutil -extract Name raw -o - - <<<"$PLIST")"
-            UUID="$(plutil -extract UUID raw -o - - <<<"$PLIST")"
-            for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
-              mkdir -p "$dir"
-              cp "$PROFILE" "$dir/$UUID.provisionprofile"
-            done
-            echo "DEVELOPER_ID_PROFILE=$NAME" >> "$GITHUB_ENV"
-          else
-            echo "::warning::No provisioning profile: this build uses the on-device model only."
-          fi
 
       - name: Build, sign and notarize
         shell: bash
@@ -246,7 +230,7 @@ jobs:
         run: |
           KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
           if [ -f "$KEYCHAIN" ]; then security delete-keychain "$KEYCHAIN" || true; fi
-          rm -f "$RUNNER_TEMP/api-key.p8" "$RUNNER_TEMP/sparkle.key" "$RUNNER_TEMP/release.provisionprofile"
+          rm -f "$RUNNER_TEMP/api-key.p8" "$RUNNER_TEMP/sparkle.key"
 
   # vars.RELEASE_TO_GITHUB=true also attaches each tagged release to a GitHub
   # release on this private repository.

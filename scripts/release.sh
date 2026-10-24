@@ -25,10 +25,9 @@
 #   SPARKLE_PRIVATE_KEY_FILE    otherwise sign_update reads the keychain
 #   RELEASE_NOTES_DIR           the notes for the appcast, one Markdown file
 #                               per language (scripts/appcast.py)
-#   DEVELOPER_ID_PROFILE        name of an installed Developer ID
-#                               provisioning profile with Private Cloud Compute
-#                               (ADR 0004). Without it the build carries no
-#                               entitlement and uses the on-device model only.
+#
+# A release carries no entitlement: Private Cloud Compute is for development
+# builds only (ADR 0004), and the build fails if anything signs one in.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -76,15 +75,12 @@ tar -xJf "$WORK/sparkle.tar.xz" -C "$TOOLS" ./bin
 # builds.
 scripts/prepare.sh
 
-# The entitlement is restricted: it ships only with a profile that grants
-# it. These settings override any Config/Local.xcconfig.
-ENTITLEMENTS=""
-[[ -n "${DEVELOPER_ID_PROFILE:-}" ]] && ENTITLEMENTS="Sugu/App/Sugu-PCC.entitlements"
+# No entitlements and no profile, whatever Config/Local.xcconfig says.
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$WORK/Sugu.xcarchive" archive -quiet \
   -onlyUsePackageVersionsFromResolvedFile \
   CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_IDENTITY="$DEVELOPER_ID_APPLICATION" \
-  SUGU_ENTITLEMENTS="$ENTITLEMENTS" SUGU_PROFILE="${DEVELOPER_ID_PROFILE:-}" \
+  SUGU_ENTITLEMENTS="" SUGU_PROFILE="" \
   OTHER_CODE_SIGN_FLAGS="$SIGN_FLAGS" SPARKLE_PUBLIC_ED_KEY="$SPARKLE_PUBLIC_ED_KEY" \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
@@ -97,13 +93,12 @@ fi
 # Xcode signs the frameworks it embeds, but not the helpers inside
 # Sparkle's, which notarization refuses. Sugu is not sandboxed, so
 # Sparkle's XPC services go unused and are removed; the rest is signed
-# from the inside out, the app last with the entitlements it was built with.
+# from the inside out, the app last.
 SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
 rm -rf "${SPARKLE:?}/XPCServices" "${SPARKLE:?}/Versions/B/XPCServices"
 for code in "$SPARKLE/Versions/B/Autoupdate" "$SPARKLE/Versions/B/Updater.app" "$SPARKLE" "$APP"; do
   # shellcheck disable=SC2086 # SIGN_FLAGS holds several flags.
-  codesign --force --options runtime $SIGN_FLAGS --sign "$DEVELOPER_ID_APPLICATION" \
-    --preserve-metadata=entitlements "$code"
+  codesign --force --options runtime $SIGN_FLAGS --sign "$DEVELOPER_ID_APPLICATION" "$code"
 done
 
 codesign --verify --deep --strict "$APP"
@@ -120,10 +115,13 @@ grep -q "Authority=Developer ID Application" <<<"$SIGNATURE_INFO" \
   || { echo "the app is not signed with Developer ID" >&2; exit 1; }
 grep -Eq "^(CodeDirectory|Flags).*runtime" <<<"$SIGNATURE_INFO" \
   || { echo "the app is missing the hardened runtime" >&2; exit 1; }
-if [[ -n "$ENTITLEMENTS" ]]; then
-  codesign -d --entitlements :- "$APP" 2>/dev/null | grep -q "com.apple.developer.private-cloud-compute" \
-    || { echo "the Private Cloud Compute entitlement is missing" >&2; exit 1; }
-fi
+# No piece of code inside carries an entitlement.
+while IFS= read -r -d '' code; do
+  [[ -d "$code" ]] || file -b "$code" | grep -q "Mach-O" || continue
+  entitlements="$(codesign -d --entitlements - --xml "$code" 2>/dev/null)"
+  [[ -z "$entitlements" ]] || ! grep -q "<key>" <<<"$entitlements" \
+    || { echo "signed with entitlements: ${code#"$APP"/}" >&2; exit 1; }
+done < <(find "$APP" \( -name "*.app" -o -name "*.framework" -o -name "*.dylib" -o \( -type f -perm -u+x \) \) -print0)
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")"
 MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")"
