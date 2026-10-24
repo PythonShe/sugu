@@ -1701,8 +1701,9 @@ checked against the code before it was changed.
   Sparkle itself: its "immediate focus" means launched or idle, not
   focused. The download mirror falls back on network errors too. HEAD
   ignores Range. Publishing counts a file as absent only on a real "not
-  found" from the bucket, checks the downloads' keys too, and with `cf`
-  (which cannot ask) needs `FIRST_RELEASE=1` for the first release.
+  found" from the bucket and checks the downloads' keys too; with `cf`
+  it lists the bucket under the key (`FIRST_RELEASE=1` is gone,
+  2026-10-25).
 
 ## D-092 · Build numbers by date; 0.9.0 on GitHub releases (2026-10-21)
 

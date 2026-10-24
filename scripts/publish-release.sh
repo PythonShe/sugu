@@ -78,9 +78,14 @@ else
   put() {
     cf r2 buckets objects upload "$2" --bucket-name "$BUCKET" --file "$1" --content-type "$3" >/dev/null
   }
-  # The bucket is not asked here: a file the site does not serve counts as
-  # there, unless FIRST_RELEASE=1 says nothing was published yet.
-  stored() { [[ "${FIRST_RELEASE:-}" != 1 ]]; }
+  # Whether the bucket holds a file, whatever the site serves; a failed
+  # listing stops the publish.
+  stored() {
+    local output
+    output="$(cf r2 buckets objects list --bucket-name "$BUCKET" --prefix "$1" 2>&1)" \
+      || fail "Could not ask the bucket for $1: $output"
+    jq -e --arg key "$1" 'any(.[]; .key == $key)' <<<"$output" >/dev/null
+  }
 fi
 
 # Every check comes before the first upload, so a refused release leaves
