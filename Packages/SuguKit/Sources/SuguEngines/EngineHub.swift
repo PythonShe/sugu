@@ -29,6 +29,10 @@ public final class EngineHub: EngineSource {
     /// Reads AzooKey's dictionary into memory once the Japanese engine is made.
     private var japaneseDictionaryLoading: Task<Void, Never>?
     private var preparing: Task<Void, Never>?
+    /// A deployment is set to run or running: librime still reports the
+    /// last one ready, but a session opened now would lose its
+    /// composition to the deployment.
+    private var deploying = false
     /// A redeployment waiting for the Chinese composition to end.
     private var pendingRedeploy: Task<Void, Never>?
     private var userWordsRefresh: Task<Void, Never>?
@@ -86,7 +90,7 @@ public final class EngineHub: EngineSource {
     public func engine(for mode: InputMode) -> (any CompositionEngine)? {
         switch mode {
         case .chinese:
-            guard runtime.isReady else { warmUp(.chinese); return nil }
+            guard runtime.isReady, !deploying else { warmUp(.chinese); return nil }
             if let chinese {
                 guard chinese.openSession() else { sessionFailed(); return nil }
                 sessionRetry = nil
@@ -207,11 +211,23 @@ public final class EngineHub: EngineSource {
         // A retry rebuilds from the bundled data, in case the build left
         // behind is what fails.
         let rebuild = retry?.schema == schema
+        deploying = true
         preparing = Task {
             let started = ContinuousClock.now
+            // Settings changed back before it began: the build is already
+            // what they ask for.
+            if !rebuild, runtime.isReady, runtime.schema == self.schema {
+                deploying = false
+                preparing = nil
+                onEngineReady?(.chinese)
+                return
+            }
             do {
                 if rebuild { runtime.discardBuild() }
-                try await runtime.prepare(schema, version: version)
+                do {
+                    defer { deploying = false }
+                    try await runtime.prepare(schema, version: version)
+                }
                 await loadChineseRespelling(for: schema)
                 Log.engines.notice("Chinese ready in \(ContinuousClock.now - started, privacy: .public)\(rebuild ? " after a rebuild" : "", privacy: .public)")
                 chineseError = nil
