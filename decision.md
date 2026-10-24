@@ -1952,3 +1952,46 @@ checked against the code before it was changed.
   profile granting it (if Apple allows one) offers the level again.
 - The home page, privacy page, README and release-notes prompt describe
   releases: Apple's model on the Mac only.
+
+## D-103 · Hardening before 1.0 (2026-10-25)
+- Four audits before 1.0 (release, app, privacy and licenses,
+  stability), and a memory measurement of the running app, found no
+  leak: two heap snapshots 20 minutes apart differed by about 1 MB. The
+  growth seen came from capped caches and Zenzai's second dictionary.
+- Release: the app builds with SuguKit's package pins
+  (`scripts/generate-project.sh`, `-onlyUsePackageVersionsFromResolvedFile`);
+  the full check runs on the tagged commit before a build; tags must be
+  annotated; releases carry no entitlement, checked on every Mach-O;
+  debug symbols are kept privately in the bucket; the installer has a
+  title, the license, the minimum macOS and installs for the Mac only.
+- Network: downloads and update checks send `User-Agent: Sugu` and
+  `Accept-Language: *`, from an ephemeral session, so they name no
+  language and keep no cookies or cache.
+- Stability:
+  - a failed learned-word write pauses learning for a minute;
+  - SQLite runs with `synchronous = NORMAL`;
+  - a librime session that does not open rebuilds librime, with a
+    growing wait;
+  - a deployment past five minutes fails;
+  - after three launches within a minute, Sugu starts from a fresh
+    librime build and holds back the grammar model and Zenzai for two
+    minutes;
+  - no Chinese engine is handed out while a deployment is set to run.
+    Settings changed back and forth had let a session open on the old
+    build, and the deployment then broke its composition.
+- Memory: the respelling, Zhuyin and homophone caches keep their recent
+  half when full (`GenerationalCache`); the Settings window and its panes
+  are released on close. Personal n-grams stay as designed, at most
+  100,000 per mode.
+- The fuzzer now also switches fields, changes settings (redeploys
+  included), pauses for engines being set up, changes learned words,
+  selects text to reconvert, turns secure input on and off, and presses
+  F6–F10, ⌃⌫, 英数 and かな (twice too), ⌥, ⌃⇧K/J/R and the Emacs keys.
+  `--failed-deploy` gives librime no data.
+- Zenzai ships in 1.0 without the Experimental label.
+- Not done:
+  - Zenzai sharing the preloaded dictionary, which needs the fork's
+    `takeZenzaiModel(from:)` published first;
+  - the AppKit candidate window and Zenzai in the soak;
+  - a store on a full disk, which the unit test covers only by a failed
+    write.

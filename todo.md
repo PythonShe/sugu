@@ -1,7 +1,7 @@
 # Sugu — work plan
 
 Jobs in build order. `[x]` done, `[~]` in progress, `[ ]` open. Scope is
-ADR 0002 + ADR 0003 + Zenzai as an experimental option (decision.md D-007).
+ADR 0002 + ADR 0003 + Zenzai as an option (decision.md D-007; shipped in 1.0, D-103).
 Progress notes live in `progress.md`; decisions in `decision.md`.
 
 ## 1. Foundation
@@ -222,3 +222,14 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Katakana input without a JIS keyboard: ⌃⇧K and ⌃⇧J, the input menu and the mode indicator (D-097)
 - [x] Phonetic romaji (optional): wa → は, e → へ, o → を as particles (research with a Fable advisor, D-099)
 - [x] A single n before a vowel or y read from context, an option, through a fork of AzooKey (D-101)
+
+## 25. Hardening before 1.0 (four audits, D-103)
+- [x] Release: package pins enforced; full check on the tagged commit; annotated tags; no entitlements; symbols kept; installer title, license, minimum macOS, Mac-only domain
+- [x] Notices: darts-clone, RapidJSON, X11 key symbols; CI fails on stale notices
+- [x] Network: User-Agent and Accept-Language fixed, ephemeral sessions
+- [x] Settings: imported values validated; reset and import ask before a shorter expiry; diagnostics read off the main actor
+- [x] Stability: learning pauses after a failed write; librime rebuilds when a session will not open; deployment timeout; crash-loop recovery; no engine while a deployment is queued
+- [x] Memory: generational caches; the Settings window released on close
+- [x] Fuzzer: fields, settings, redeploys, pauses, learned words, reconversion, secure input, the remaining keys; `--failed-deploy`
+- [ ] Zenzai shares the preloaded dictionary (fork commit `takeZenzaiModel(from:)` to publish first); a `--zenzai` soak
+- [ ] Soak the AppKit candidate window

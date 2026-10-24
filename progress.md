@@ -2,6 +2,28 @@
 
 Running log of what was built, verified, and what is next. Newest first.
 
+## 2026-10-25
+- Hardening before 1.0 from four audits and a memory measurement
+  (D-103), no leak found:
+  - the app builds with the package pins;
+  - every release is checked first;
+  - each release keeps its symbols;
+  - the installer shows the license;
+  - downloads name no language;
+  - imported settings are validated;
+  - learning pauses after a failed write;
+  - librime rebuilds when a session will not open, and a deployment
+    times out;
+  - a crash loop starts afresh;
+  - the caches keep their recent half;
+  - the Settings window is released on close.
+- The fuzzer covers field switches, settings and redeploys mid-composition,
+  learned-word changes, reconversion, secure input and the remaining
+  keys, and a failed librime deployment. It found a composition broken by
+  a deployment queued while settings changed back. Fixed: no engine is
+  handed out until the deployment has run or been skipped.
+- Version 1.0.0; Zenzai ships without the Experimental label.
+
 ## 2026-10-22
 - Releases offer Apple's model on this Mac only: the Private Cloud Compute
   level and the conversions switch show only in builds signed with its
