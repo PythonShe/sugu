@@ -1,4 +1,5 @@
 import AppKit
+import SuguCore
 import UniformTypeIdentifiers
 
 final class AdvancedPane: SettingsPane {
@@ -9,7 +10,7 @@ final class AdvancedPane: SettingsPane {
         form.row(String(localized: "Settings file:"), NSStackView(views: [importButton, exportButton]))
         form.button(String(localized: "Reset…"), label: String(localized: "Default settings:")) { [weak self] in
             self?.confirm(String(localized: "Reset all settings to their defaults?"), action: String(localized: "Reset"), destructive: true) {
-                model.resetSettings()
+                self?.apply(model.defaultSettings)
             }
         }
 
@@ -93,12 +94,31 @@ final class AdvancedPane: SettingsPane {
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
             MainActor.assumeIsolated {
+                guard let self else { return }
                 do {
-                    try self?.model.importSettings(from: url)
+                    self.apply(try self.model.readSettings(from: url))
                 } catch {
-                    self?.presentError(message: String(localized: "The settings file could not be read."))
+                    self.presentError(message: String(localized: "The settings file could not be read."))
                 }
             }
+        }
+    }
+
+    /// Applies imported or default settings. A shorter time to forget
+    /// unused words deletes words at once, so it asks first, as the
+    /// Learning pane does; declined, the current time stays.
+    private func apply(_ settings: Preferences) {
+        var settings = settings
+        let days = settings.learnedWordExpiryDays
+        let current = model.preferences.learnedWordExpiryDays
+        guard days != current, model.wordsExpiring(olderThan: days) > 0 else {
+            model.preferences = settings
+            return
+        }
+        settings.learnedWordExpiryDays = current
+        model.preferences = settings
+        confirm(String(localized: "Delete learned words not used in the last \(days) days?"), action: String(localized: "Delete"), destructive: true) { [weak self] in
+            self?.model.preferences.learnedWordExpiryDays = days
         }
     }
 

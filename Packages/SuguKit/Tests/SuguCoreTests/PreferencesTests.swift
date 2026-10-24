@@ -11,6 +11,23 @@ struct PreferencesTests {
         #expect(decoded.noLearnApps == Preferences.defaultNoLearnApps)
     }
 
+    @Test func decodedValuesStayWithinWhatSettingsAllows() throws {
+        let data = Data(#"{"enabledModes": ["english", "english"], "candidatesPerPage": 40, "candidateFontSize": 99, "learnedWordExpiryDays": 1}"#.utf8)
+        let decoded = try JSONDecoder().decode(Preferences.self, from: data)
+        #expect(decoded.enabledModes == Preferences().enabledModes)
+        #expect(decoded.candidatesPerPage == 10)
+        #expect(decoded.candidateFontSize == 28)
+        #expect(decoded.learnedWordExpiryDays == 30)
+    }
+
+    @Test func decodedModesKeepTheirOrderWithEnglishLast() throws {
+        let data = Data(#"{"enabledModes": ["english", "japanese", "japanese"], "candidateFontSize": 13, "learnedWordExpiryDays": 400}"#.utf8)
+        let decoded = try JSONDecoder().decode(Preferences.self, from: data)
+        #expect(decoded.enabledModes == [.japanese, .english])
+        #expect(decoded.candidateFontSize == 14)
+        #expect(decoded.learnedWordExpiryDays == 0)
+    }
+
     @Test func roundTrip() throws {
         var preferences = Preferences()
         preferences.fuzzyPinyin = [.zZh, .nL]

@@ -213,13 +213,14 @@ final class SettingsModel {
         return try encoder.encode(preferences)
     }
 
-    func importSettings(from url: URL) throws {
+    func readSettings(from url: URL) throws -> Preferences {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-        preferences = try JSONDecoder().decode(Preferences.self, from: Data(contentsOf: url))
+        return try JSONDecoder().decode(Preferences.self, from: Data(contentsOf: url))
     }
 
-    func resetSettings() { preferences = Preferences() }
+    /// The settings of a fresh install.
+    var defaultSettings: Preferences { Preferences(preferredLanguages: Locale.preferredLanguages) }
 
     func showDataFolder() {
         let folder = environment.locations.support

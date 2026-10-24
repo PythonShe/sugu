@@ -130,6 +130,33 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.noLearnApps, into: &noLearnApps)
         load(.syncFolderPath, into: &syncFolderPath)
         load(.syncLearnedWords, into: &syncLearnedWords)
+        validate()
+    }
+
+    /// The choices Settings offers for forgetting unused words; 0 is never.
+    public static let expiryOptions = [30, 90, 180, 365, 0]
+
+    /// Brings decoded values, which may come from an edited or older
+    /// settings file, within what Settings itself allows.
+    private mutating func validate() {
+        // Each mode once, English always, and Chinese or Japanese with it.
+        var seen = Set<InputMode>()
+        let modes = enabledModes.filter { seen.insert($0).inserted }
+        enabledModes = modes.contains(where: { $0 != .english })
+            ? modes.filter { $0 != .english } + [.english]
+            : Preferences().enabledModes
+        candidatesPerPage = min(10, max(5, candidatesPerPage))
+        // The text size slider's ticks: 12 to 28 in steps of 2.
+        candidateFontSize = candidateFontSize.isFinite
+            ? min(28, max(12, (candidateFontSize / 2).rounded() * 2))
+            : Preferences().candidateFontSize
+        // An unknown expiry becomes the next longer choice, so it deletes
+        // no word the file's value would have kept.
+        if !Self.expiryOptions.contains(learnedWordExpiryDays) {
+            learnedWordExpiryDays = learnedWordExpiryDays < 0
+                ? Preferences().learnedWordExpiryDays
+                : Self.expiryOptions.filter { $0 > learnedWordExpiryDays }.min() ?? 0
+        }
     }
 
     /// Password managers: Sugu neither learns from nor reads text in them.
