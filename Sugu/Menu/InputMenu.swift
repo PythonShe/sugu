@@ -5,7 +5,7 @@ import SuguCore
 @MainActor
 final class InputMenu {
     private enum Command: Int {
-        case chinese = 1, japanese, english
+        case chinese = 1, english = 3
         case reconvert
         case learning
         case learnedWords
@@ -44,7 +44,7 @@ final class InputMenu {
                 }
                 continue
             }
-            let item = Self.item(mode.localizedName, command: Self.command(for: mode))
+            let item = Self.item(mode.localizedName, command: mode == .chinese ? .chinese : .english)
             item.state = coordinator.mode == mode ? .on : .off
             menu.addItem(item)
         }
@@ -115,7 +115,6 @@ final class InputMenu {
         }
         switch Command(rawValue: item.tag) {
         case .chinese: coordinator.select(.chinese)
-        case .japanese: coordinator.select(.japanese)
         case .english: coordinator.select(.english)
         case .hiragana: coordinator.setKatakana(false)
         case .katakana: coordinator.setKatakana(true)
@@ -126,14 +125,6 @@ final class InputMenu {
         case .settings: AppEnvironment.shared.showSettings()
         case .checkForUpdates: AppEnvironment.shared.updater.checkForUpdates()
         case nil: break
-        }
-    }
-
-    private static func command(for mode: InputMode) -> Command {
-        switch mode {
-        case .chinese: .chinese
-        case .japanese: .japanese
-        case .english: .english
         }
     }
 
