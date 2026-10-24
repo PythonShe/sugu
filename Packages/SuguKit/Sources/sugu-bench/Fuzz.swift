@@ -26,10 +26,11 @@ enum Fuzz {
     /// standard error. With `soak`, the memory in use is printed every
     /// `soak` sessions, and between sessions the main queue and run loop
     /// run and autoreleased objects go, as between events in the app. With
-    /// `failedDeploy`, librime has no data, so every deployment fails.
+    /// `failedDeploy`, librime has no data, so every deployment fails; with
+    /// `zenzaiModel`, Japanese converts with Zenzai.
     /// Sessions that change settings or pause depend on how long engines
     /// take to set up, so they may not replay exactly.
-    static func run(data: URL, sessions: Range<Int>, seed: UInt64, trace: Bool, soak: Int? = nil, failedDeploy: Bool = false, configure: (inout Preferences) -> Void) async throws -> [Failure] {
+    static func run(data: URL, sessions: Range<Int>, seed: UInt64, trace: Bool, soak: Int? = nil, failedDeploy: Bool = false, zenzaiModel: URL? = nil, configure: (inout Preferences) -> Void) async throws -> [Failure] {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-fuzz-\(getpid())", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: work) }
         var preferences = Preferences()
@@ -40,15 +41,21 @@ enum Fuzz {
         try FileManager.default.createDirectory(at: rime, withIntermediateDirectories: true)
         let syllables = Lexicon.load(Lexicon.syllablesFile, in: lexicon)
         let store = try LearnedStore(url: work.appendingPathComponent("learned.sqlite"), syllabary: PinyinSyllabary(syllables))
+        let locations = EngineHub.Locations(
+            rimeShared: rime,
+            rimeUser: work.appendingPathComponent("Rime"),
+            azooKey: work.appendingPathComponent("AzooKey"),
+            models: work.appendingPathComponent("Models"),
+            lexicon: lexicon,
+            languageModels: data.appendingPathComponent("LM")
+        )
+        if let zenzaiModel {
+            try FileManager.default.createDirectory(at: locations.models, withIntermediateDirectories: true)
+            try FileManager.default.createSymbolicLink(at: locations.zenzaiModel, withDestinationURL: zenzaiModel)
+            preferences.zenzaiEnabled = true
+        }
         let engines = EngineHub(
-            locations: EngineHub.Locations(
-                rimeShared: rime,
-                rimeUser: work.appendingPathComponent("Rime"),
-                azooKey: work.appendingPathComponent("AzooKey"),
-                models: work.appendingPathComponent("Models"),
-                lexicon: lexicon,
-                languageModels: data.appendingPathComponent("LM")
-            ),
+            locations: locations,
             preferences: preferences,
             store: store,
             version: "fuzz",
@@ -56,6 +63,10 @@ enum Fuzz {
         )
         await engines.waitUntilReady()
         engines.prepare(.japanese)
+        // Japanese as it runs once settled: its dictionary in memory, with
+        // Zenzai on it when there is a model.
+        await engines.waitForJapaneseDictionary()
+        await engines.waitForZenzai()
         let latin = LatinInference(syllables: syllables, englishWords: Lexicon.load(Lexicon.englishWordsFile, in: lexicon))
         let session = InputSession(preferences: preferences, engines: engines, store: store, latin: latin)
         // Focus moves between two fields of different apps.
