@@ -17,7 +17,7 @@ enum DiagnosticsReport {
 
     private static func report(settings: Data) throws -> String {
         let bundle = Bundle.main
-        var lines = [
+        let lines = [
             "Sugu \(bundle.shortVersion) (\(bundle.buildVersion))",
             "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)",
             "",
