@@ -17,6 +17,10 @@ tags_of() {
 }
 
 if [[ -n "$TAG" ]]; then
+  # An annotated tag carries the day it was made; a lightweight one would
+  # take its commit's, and an older commit a lower number than the live one.
+  [[ "$(git cat-file -t "refs/tags/$TAG" 2>/dev/null)" == tag ]] \
+    || { echo "$TAG is not an annotated tag: git tag -a $TAG -m $TAG" >&2; exit 2; }
   read -r DAY STAMP < <(TZ=UTC git for-each-ref "refs/tags/$TAG" \
     --format='%(creatordate:format-local:%y%m%d) %(creatordate:unix)')
   [[ -n "${DAY:-}" ]] || { echo "no tag $TAG" >&2; exit 2; }

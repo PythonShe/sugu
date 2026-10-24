@@ -91,6 +91,14 @@ jobs:
             echo "::error::project.yml has MARKETING_VERSION $VERSION but the tag is $TAG."
             exit 1
           fi
+          # The build number is the tag's day, which only an annotated tag carries.
+          if [ -n "$TAG" ]; then
+            git fetch --no-tags origin "+refs/tags/$TAG:refs/tags/$TAG"
+            if [ "$(git cat-file -t "refs/tags/$TAG")" != tag ]; then
+              echo "::error::$TAG is a lightweight tag; tag releases with git tag -a $TAG -m $TAG."
+              exit 1
+            fi
+          fi
           {
             echo "sha=$(git rev-parse HEAD)"
             echo "tag=$TAG"

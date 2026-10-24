@@ -18,7 +18,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
   - `releases.json`, `latest.json`, then `appcast.xml` last;
   - the debug symbols at `symbols/<version>/Sugu-<version>-<build>.dSYMs.zip`, which the site never serves (the bucket's r2.dev address is off).
 - **Home page:** `site/` (Astro) on Cloudflare Pages project `sugu`; its functions serve the same paths from the bucket, plus `/download/` → newest `.pkg`.
-- **Repository:** private. No GitHub releases; tags mark releases.
+- **Repository:** private. No GitHub releases; tags mark releases. Tags are annotated (`git tag -a vX.Y.Z -m vX.Y.Z`): the build number is the tag's day, and the release refuses a lightweight tag.
 
 ## Built (not yet run)
 
