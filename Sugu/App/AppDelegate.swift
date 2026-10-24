@@ -14,4 +14,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }
+
+    /// Opening Sugu.app (Finder, Spotlight) while it runs as the input
+    /// method opens Settings.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        AppEnvironment.shared.showSettings()
+        return false
+    }
 }
