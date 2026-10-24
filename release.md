@@ -9,7 +9,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
 ## Shape
 
 - **Artifacts** (`scripts/release.sh`): a Developer ID–signed app inside
-  - a notarized, stapled `.pkg` (Developer ID Installer) that installs into `/Library/Input Methods`;
+  - a notarized, stapled `.pkg` (Developer ID Installer) that installs into `/Library/Input Methods`, shows the license, and refuses macOS versions below the app's minimum (`scripts/make-package.sh`);
   - a notarized `.zip` of the stapled app, EdDSA-signed, for Sparkle;
   - `release.json` and `appcast.xml`, signed with the notes in it (the app requires a signed feed).
 - **Where they go** (`scripts/publish-release.sh`, bucket `sugu-updates`, served at `https://sugu.zheng-she.com`):

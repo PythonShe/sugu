@@ -31,18 +31,9 @@ APP="$DERIVED/Build/Products/Release/Sugu.app"
 codesign --verify --deep --strict "$APP"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
 
-# The same package layout as scripts/release.sh, unsigned.
-WORK="$DERIVED/package"
-rm -rf "${WORK:?}" && mkdir -p "$WORK/root"
-ditto "$APP" "$WORK/root/Sugu.app"
-pkgbuild --analyze --root "$WORK/root" "$WORK/components.plist"
-plutil -replace 0.BundleIsRelocatable -bool NO "$WORK/components.plist"
-plutil -replace 0.BundleIsVersionChecked -bool NO "$WORK/components.plist"
+# The same package as scripts/release.sh, unsigned.
 rm -f "$DERIVED"/Sugu-*-dev.pkg
 PKG="$DERIVED/Sugu-$VERSION-$BUILD-dev.pkg"
-pkgbuild --root "$WORK/root" --component-plist "$WORK/components.plist" \
-  --install-location "/Library/Input Methods" --scripts "$ROOT/scripts/pkg" \
-  --identifier com.zheng-she.inputmethod.Sugu.pkg --version "$VERSION" "$PKG"
-rm -rf "${WORK:?}"
+scripts/make-package.sh "$APP" "$PKG"
 echo "$PKG"
 if (( OPEN )); then open "$PKG"; fi

@@ -163,21 +163,9 @@ gatekeeper exec "$APP"
 ZIP="$DIST/Sugu-$VERSION.zip"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 
-# Installer package. The bundle is not relocatable, so the installer never
-# updates some other copy of Sugu.app instead of /Library/Input Methods,
-# and not version checked, so a package always installs its own version,
-# an older one too, rather than silently keeping what is there.
-STAGE="$WORK/root"
-mkdir -p "$STAGE"
-ditto "$APP" "$STAGE/Sugu.app"
-pkgbuild --analyze --root "$STAGE" "$WORK/components.plist"
-plutil -replace 0.BundleIsRelocatable -bool NO "$WORK/components.plist"
-plutil -replace 0.BundleIsVersionChecked -bool NO "$WORK/components.plist"
-pkgbuild --root "$STAGE" --component-plist "$WORK/components.plist" \
-  --install-location "/Library/Input Methods" --scripts "$ROOT/scripts/pkg" \
-  --identifier com.zheng-she.inputmethod.Sugu.pkg --version "$VERSION" "$WORK/Sugu-component.pkg"
+# Installer package.
 PKG="$DIST/Sugu-$VERSION.pkg"
-productbuild --package "$WORK/Sugu-component.pkg" "${PRODUCT_SIGN[@]}" "$PKG"
+scripts/make-package.sh "$APP" "$PKG" "${PRODUCT_SIGN[@]}"
 notarize "$PKG"
 xcrun stapler staple "$PKG"
 xcrun stapler validate "$PKG"
