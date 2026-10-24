@@ -81,6 +81,7 @@ Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (defau
 - [ ] **One Sparkle update between two notarized builds** (todo §15), e.g. 0.9.2 to 1.0.0: offered, notes in the system language, EdDSA verified, installs into `/Library/Input Methods`, the input source and learned words survive.
   - A scheduled check shows **Update Available…** in the input menu rather than a window behind the frontmost app.
   - Also check: Sugu running for a second logged-in user while the update installs, and Sparkle's relaunch while macOS starts Sugu for a key.
+  - The install asks for an administrator's password (the app is root-owned in `/Library/Input Methods`); on a standard account, an administrator's name and password are asked for.
 - [ ] **Signed feed:** an installed build rejects a feed edited after signing.
 - [ ] **Rollback guard:** publishing an older build is refused; republishing a version with different bytes is refused.
 - [ ] **Soak test** (`sugu-bench --fuzz N --soak K`): footprint flat over a long run; record the peak during a librime deploy.
