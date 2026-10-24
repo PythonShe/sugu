@@ -37,6 +37,7 @@ fetch() {
 fetch mozc-LICENSE "https://raw.githubusercontent.com/google/mozc/$MOZC_REF/LICENSE" "$MOZC_LICENSE_SHA256"
 fetch cldr-LICENSE "https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_REF/LICENSE" "$CLDR_LICENSE_SHA256"
 fetch llama.cpp-LICENSE "https://raw.githubusercontent.com/azooKey/llama.cpp/$LLAMA_CPP_REF/LICENSE" "$LLAMA_CPP_LICENSE_SHA256"
+fetch rapidjson-LICENSE "https://raw.githubusercontent.com/Tencent/rapidjson/$RAPIDJSON_REF/license.txt" "$RAPIDJSON_LICENSE_SHA256"
 fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle/$SPARKLE_VERSION/LICENSE" "$SPARKLE_LICENSE_SHA256"
 fetch cc-by-2.0-fr.html \
   "https://raw.githubusercontent.com/creativecommons/cc-legal-tools-data/$CC_LEGAL_TOOLS_REF/docs/licenses/by/2.0/fr/legalcode.fr.html" \
@@ -51,6 +52,10 @@ TATOEBA_NOTICE="$CACHE/tatoeba-notice.txt"
   echo
   textutil -convert txt -stdout "$CACHE/cc-by-2.0-fr.html" | sed -n '/^Paternité - 2.0/,$p'
 } >"$TATOEBA_NOTICE"
+
+# The X11 key names librime compiles in carry their notice in the header.
+X11_NOTICE="$CACHE/x11-keysym-notice.txt"
+sed -n '2,/^\*\*\*\*/p' "$RIME/librime/include/X11/keysymdef.h" | sed '$d' >"$X11_NOTICE"
 
 version() {
   python3 -I -c 'import json, sys
@@ -86,6 +91,9 @@ entry "LevelDB (with librime)" "https://github.com/google/leveldb" "BSD-3-Clause
 entry "marisa-trie (with librime and SwiftyMarisa)" "https://github.com/s-yata/marisa-trie" \
   "BSD-2-Clause (chosen from BSD-2-Clause OR LGPL-2.1-or-later)" "$RIME/librime/deps/marisa-trie/COPYING.md"
 entry "OpenCC (with librime, including its conversion tables)" "https://github.com/BYVoid/OpenCC" "Apache-2.0" "$RIME/librime/deps/opencc/LICENSE"
+entry "darts-clone (with librime and OpenCC)" "https://github.com/s-yata/darts-clone" "BSD-2-Clause" "$RIME/librime/include/COPYING.darts-clone"
+entry "RapidJSON 1.1.0 (with OpenCC)" "https://github.com/Tencent/rapidjson" "MIT" "$CACHE/rapidjson-LICENSE"
+entry "X11 key symbols (with librime)" "https://gitlab.freedesktop.org/xorg/proto/xorgproto" "MIT-open-group" "$X11_NOTICE"
 entry "yaml-cpp (with librime)" "https://github.com/jbeder/yaml-cpp" "MIT" "$RIME/librime/deps/yaml-cpp/LICENSE"
 entry "Boost $BOOST_VERSION (headers, with librime)" "https://www.boost.org" "BSL-1.0" "$RIME/boost/LICENSE_1_0.txt"
 entry "rime-wanxiang $WANXIANG_REF (dictionary data, compiled)" "https://github.com/amzxyz/rime_wanxiang" "CC-BY-4.0" "$ROOT/.vendor/wanxiang/LICENSE"
