@@ -93,15 +93,24 @@ final class AppEnvironment {
     }
 
     func showSettings(_ pane: SettingsWindowController.Pane? = nil) {
-        let controller = settings ?? SettingsWindowController(model: SettingsModel(environment: self))
-        settings = controller
-        controller.show(pane)
+        settingsController().show(pane)
     }
 
     func showAddWord(_ draft: WordDraft) {
-        let controller = settings ?? SettingsWindowController(model: SettingsModel(environment: self))
+        settingsController().addWord(draft)
+    }
+
+    /// The settings window, made when it opens and released when it closes:
+    /// the process runs for days, and the panes hold every learned word.
+    private func settingsController() -> SettingsWindowController {
+        if let settings { return settings }
+        let controller = SettingsWindowController(model: SettingsModel(environment: self))
+        controller.onClose = { [weak self, weak controller] in
+            guard let self, let controller, settings === controller, controller.window?.isVisible != true else { return }
+            settings = nil
+        }
         settings = controller
-        controller.addWord(draft)
+        return controller
     }
 
     private func preferencesDidChange() {

@@ -43,7 +43,9 @@ final class SettingsModel {
     private var wordsReload: Task<Void, Never>?
 
     private let environment: AppEnvironment
-    private var observers: [any NSObjectProtocol] = []
+    /// Removed in `deinit`, when the closed settings window is released;
+    /// NotificationCenter takes removals from any thread.
+    nonisolated(unsafe) private var observers: [any NSObjectProtocol] = []
     private var listeners: [(Change) -> Void] = []
 
     /// Registers a listener for changes; panes refresh their controls here.
@@ -71,6 +73,10 @@ final class SettingsModel {
         environment.library.onChange = { [weak self] _ in self?.reloadDownloads() }
         environment.sync?.onChange = { [weak self] in self?.reloadSync() }
         environment.engines.onChineseStatusChange = { [weak self] in self?.notify(.engines) }
+    }
+
+    deinit {
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
     }
 
     private func preferencesChanged() {

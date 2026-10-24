@@ -17,6 +17,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     private let tabs = SettingsTabs()
     private let model: SettingsModel
+    /// Called once the window has closed, to release the controller and
+    /// its panes; the pane shown and the frame are kept in user defaults.
+    var onClose: (() -> Void)?
 
     init(model: SettingsModel) {
         self.model = model
@@ -84,6 +87,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         model.isVisible = false
+        // After this callback returns: it runs on the controller.
+        Task { [weak self] in self?.onClose?() }
     }
 }
 
