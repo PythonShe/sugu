@@ -4325,25 +4325,25 @@
         }
       }
     },
-    "Use Zenzai (Experimental)": {
+    "Use Zenzai": {
       "extractionState": "manual",
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zenzaiを使用（試験的）"
+            "value": "Zenzaiを使用"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用 Zenzai（实验性）"
+            "value": "使用 Zenzai"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用 Zenzai（實驗性）"
+            "value": "使用 Zenzai"
           }
         }
       }

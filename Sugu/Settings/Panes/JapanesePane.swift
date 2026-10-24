@@ -33,7 +33,7 @@ final class JapanesePane: SettingsPane {
 
         form.gap()
         let zenzaiLabel = String(localized: "Neural conversion:")
-        let zenzai = form.checkbox(String(localized: "Use Zenzai (Experimental)"), label: zenzaiLabel,
+        let zenzai = form.checkbox(String(localized: "Use Zenzai"), label: zenzaiLabel,
                                    get: { model.preferences.zenzaiEnabled && model.isInstalled(.zenzaiModel) },
                                    set: { model.preferences.zenzaiEnabled = $0 })
         form.onRefresh { zenzai.isEnabled = model.isInstalled(.zenzaiModel) }
