@@ -64,14 +64,26 @@ final class AdvancedPane: SettingsPane {
     }
 
     private func exportDiagnostics() {
-        guard let window = view.window else { return }
-        let report: String
+        guard view.window != nil else { return }
+        let settings: Data
         do {
-            report = try DiagnosticsReport.make(settings: model.exportSettings())
+            settings = try model.exportSettings()
         } catch {
             presentError(message: error.localizedDescription)
             return
         }
+        Task { [weak self] in
+            do {
+                let report = try await DiagnosticsReport.make(settings: settings)
+                self?.save(report)
+            } catch {
+                self?.presentError(message: error.localizedDescription)
+            }
+        }
+    }
+
+    private func save(_ report: String) {
+        guard let window = view.window else { return }
         let panel = NSSavePanel()
         panel.nameFieldStringValue = String(localized: "Sugu Diagnostics")
         panel.allowedContentTypes = [.plainText]
