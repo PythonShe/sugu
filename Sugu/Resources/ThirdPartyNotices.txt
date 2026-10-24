@@ -808,7 +808,7 @@ Creative Commons may be contacted at creativecommons.org.
 
 ================================================================================
 
-AzooKeyKanaKanjiConverter 0.11.2, with Sugu's changes (302ed5680a2a)
+AzooKeyKanaKanjiConverter 0.11.2, with Sugu's changes (8d10d75e746d)
 https://github.com/PythonShe/AzooKeyKanaKanjiConverter
 License: MIT
 

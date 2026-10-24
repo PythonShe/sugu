@@ -152,7 +152,9 @@ public final class AzooKeyEngine: CompositionEngine {
 
     /// A converter that has loaded a Zenzai model, made off the main thread:
     /// the first load compiles Metal shaders, seconds after an install or a
-    /// system update, which must not happen inside a keystroke.
+    /// system update, which must not happen inside a keystroke. Only its
+    /// model is kept; the engine's converter, on the engine's dictionary,
+    /// takes it over.
     public struct ZenzaiConverter: @unchecked Sendable {
         // Handed from the thread that made it to the engine, never shared.
         fileprivate let converter: KanaKanjiConverter
@@ -176,12 +178,14 @@ public final class AzooKeyEngine: CompositionEngine {
         }.value
     }
 
-    /// Takes over a converter that loaded Zenzai; call between compositions.
+    /// Takes over the model a converter loaded; call between compositions.
+    /// Its converter goes with its dictionary, so one dictionary stays in
+    /// memory.
     public func adopt(_ loaded: ZenzaiConverter) {
-        precondition(state.isEmpty, "a converter is swapped only between compositions")
-        converter = loaded.converter
+        precondition(state.isEmpty, "the Zenzai model is taken over only between compositions")
+        converter.takeZenzaiModel(from: loaded.converter)
         loadedZenzai = loaded.model
-        prepareConverter()
+        lastRequest = nil
     }
 
     /// Swaps a converter holding a Zenzai model that is no longer used for a
@@ -208,13 +212,14 @@ public final class AzooKeyEngine: CompositionEngine {
     }
 
     /// Takes over a dictionary held in memory; call between compositions.
-    /// A converter holding Zenzai keeps its own until it is released.
+    /// A Zenzai model already loaded moves to the converter on it.
     public func adopt(_ loaded: MemoryDictionary) {
         precondition(state.isEmpty, "the dictionary is swapped only between compositions")
         dictionary = loaded.store
         loadedRefiner = nil
-        guard loadedZenzai == nil else { return }
-        converter = KanaKanjiConverter(dicdataStore: dictionary)
+        let next = KanaKanjiConverter(dicdataStore: dictionary)
+        if loadedZenzai != nil { next.takeZenzaiModel(from: converter) }
+        converter = next
         prepareConverter()
     }
 
