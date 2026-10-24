@@ -162,10 +162,10 @@ public final class SentenceRespeller {
 
     /// Log probabilities of text in context, kept across keystrokes: most
     /// of a sentence is the same as at the keystroke before.
-    private var scores: [UInt64: Float] = [:]
+    private var scores = GenerationalCache<UInt64, Float>(limit: cacheLimit)
     /// The model's version the scores are for.
     private var scoredVersion = 0
-    private var spellingCache: [UInt64: [PinyinWords.Spelling]] = [:]
+    private var spellingCache = GenerationalCache<UInt64, [PinyinWords.Spelling]>(limit: spellingCacheLimit)
     /// Texts of the user's learned words; characters inside one keep their
     /// spelling.
     public var userWords: Set<String> = [] {
@@ -201,7 +201,7 @@ public final class SentenceRespeller {
         guard let pieces = readings.lazy.compactMap({ self.segment(characters, $0) }).first else { return nil }
         let kept = userWordCharacters(in: characters)
         if model.version != scoredVersion {
-            scores = [:]
+            scores.removeAll()
             scoredVersion = model.version
         }
         let history = String(history.suffix(contextLength))
@@ -267,7 +267,7 @@ public final class SentenceRespeller {
         var hasher = WordKey()
         hasher.add(syllables[...])
         let key = hasher.value
-        if let known = spellingCache[key] { return known }
+        if let known = spellingCache.value(for: key) { return known }
         var found: [PinyinWords.Spelling] = []
         func extend(_ position: Int, _ text: String, _ logProbability: Float) {
             guard found.count < Self.enumerationLimit else { return }
@@ -285,8 +285,7 @@ public final class SentenceRespeller {
         if found.count > Self.scoredSpellings {
             found = Array(found.sorted { $0.logProbability > $1.logProbability }.prefix(Self.scoredSpellings))
         }
-        if spellingCache.count >= Self.spellingCacheLimit { spellingCache = [:] }
-        spellingCache[key] = found
+        spellingCache.insert(found, for: key)
         return found
     }
 
@@ -302,10 +301,9 @@ public final class SentenceRespeller {
             hasher.add(CollectionOfOne(0x1F))
         }
         let key = hasher.value
-        if let known = scores[key] { return known }
+        if let known = scores.value(for: key) { return known }
         let value = model.logProbability(of: text + after, after: context)
-        if scores.count >= Self.cacheLimit { scores = [:] }
-        scores[key] = value
+        scores.insert(value, for: key)
         return value
     }
 

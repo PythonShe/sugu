@@ -16,9 +16,9 @@ final class HomophoneRefiner {
     private let lookup: KanaKanjiConverter
     private let options: ConvertRequestOptions
     /// Spellings by reading, kept for the session: a lookup is a small
-    /// conversion and costs most of a millisecond.
-    private var spellings: [String: [[DicdataElement]]] = [:]
-    private static let cacheLimit = 4096
+    /// conversion and costs most of a millisecond. Each holds dictionary
+    /// entries, so fewer are kept than readings typed in a long session.
+    private var spellings = GenerationalCache<String, [[DicdataElement]]>(limit: 2048)
 
     init(dictionary: DicdataStore, options: ConvertRequestOptions) {
         self.dictionary = dictionary
@@ -180,7 +180,7 @@ final class HomophoneRefiner {
 
     /// Ways to write a reading (katakana) as one or more dictionary words.
     private func spellings(of ruby: String) -> [[DicdataElement]] {
-        if let known = spellings[ruby] { return known }
+        if let known = spellings.value(for: ruby) { return known }
         var text = ComposingText()
         text.insertAtCursorPosition(WidthConversion.hiragana(ruby), inputStyle: .direct)
         let result = lookup.requestCandidates(text, options: options)
@@ -190,8 +190,7 @@ final class HomophoneRefiner {
             .filter { !$0.data.isEmpty && $0.data.map(\.ruby).joined() == ruby && $0.data.map(\.word).joined() == $0.text }
             .map(\.data)
             .filter { seen.insert($0.map { "\($0.word)\t\($0.lcid)\t\($0.rcid)" }).inserted }
-        if spellings.count >= Self.cacheLimit { spellings = [:] }
-        spellings[ruby] = found
+        spellings.insert(found, for: ruby)
         return found
     }
 }

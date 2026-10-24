@@ -33,7 +33,7 @@ public final class ZhuyinEngine: CompositionEngine {
     private var highlighted: Int?
     /// librime's sentences by input, for the session: a choice or a new
     /// syllable reconverts only the run it changed.
-    private var sentences: [String: String] = [:]
+    private var sentences = GenerationalCache<String, String>(limit: 512)
     /// The last commit's choices and literals, for a commit taken back.
     private var lastCommit: (reading: String, syllables: [Zhuyin.Syllable], literals: [String?], fixed: [Fixed])?
     /// The start of a sentence grown past `longestSentence`, let go of.
@@ -43,14 +43,14 @@ public final class ZhuyinEngine: CompositionEngine {
     /// pinyin, where the characters that change are librime's under their
     /// tones.
     public var respelling: ChineseRespelling? {
-        didSet { respelled = [:] }
+        didSet { respelled.removeAll() }
     }
     /// The user's words for a reading in codes (`ni3hao3`), best first and
     /// in the script in use: learned or added in Zhuyin, they lead
     /// librime's words of their length at the caret.
     public var learnedWords: ((String) -> [String])?
     /// Respelled sentences by input and the text before them.
-    private var respelled: [String: String] = [:]
+    private var respelled = GenerationalCache<String, String>(limit: 512)
     private var leftContext = ""
 
     private struct Fixed: Equatable {
@@ -81,14 +81,14 @@ public final class ZhuyinEngine: CompositionEngine {
     public func reloadUserDictionary() -> Bool {
         guard state.isEmpty else { return false }
         session.destroy()
-        sentences = [:]
+        sentences.removeAll()
         return session.open()
     }
 
     public func setScript(_ script: ChineseScript) {
         guard script != session.script else { return }
         session.script = script
-        sentences = [:]
+        sentences.removeAll()
         // Chosen words are in the old script; librime chooses afresh.
         fixed = []
         lastCommit = nil
@@ -448,10 +448,9 @@ public final class ZhuyinEngine: CompositionEngine {
     }
 
     private func sentence(for input: String) -> String? {
-        if let known = sentences[input] { return known }
+        if let known = sentences.value(for: input) { return known }
         guard let sentence = session.sentence(for: input) else { return nil }
-        if sentences.count >= 512 { sentences = [:] }
-        sentences[input] = sentence
+        sentences.insert(sentence, for: input)
         return sentence
     }
 
@@ -490,15 +489,14 @@ public final class ZhuyinEngine: CompositionEngine {
         let before = leftContext + text(of: 0..<range.lowerBound)
         let context = String(before.suffix(respelling.respeller.contextLength))
         let key = input(for: range) + "\t" + context
-        if let known = respelled[key] { return known.isEmpty ? nil : known }
+        if let known = respelled.value(for: key) { return known.isEmpty ? nil : known }
         let result = respelling.respelled(sentence, readings: [syllables[range].compactMap(\.pinyin)], after: context, script: session.script)
             .flatMap { candidate -> String? in
                 let new = Array(candidate), old = Array(sentence)
                 guard new.count == old.count else { return nil }
                 return new.indices.allSatisfy { new[$0] == old[$0] || types(new[$0], as: syllables[range.lowerBound + $0]) } ? candidate : nil
             }
-        if respelled.count >= 512 { respelled = [:] }
-        respelled[key] = result ?? ""
+        respelled.insert(result ?? "", for: key)
         return result
     }
 
