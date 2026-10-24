@@ -37,6 +37,15 @@ public final class LearnedStore {
     /// Learned words unused this many days are deleted, and not taken from
     /// other Macs either; 0 keeps them. Set by `expire(olderThan:)`.
     public private(set) var expiryDays = 0
+    /// When learning last failed in a way that read the store back from
+    /// disk, on the main thread: learning pauses for `learningRetry` rather
+    /// than pay that at every commit while, say, the disk is full. A file
+    /// another process holds changes nothing and reads nothing back, and
+    /// learning goes on.
+    private var learningFailedAt: Date?
+    static let learningRetry: TimeInterval = 60
+    /// Whether the last failed `write` read the store back from disk.
+    private var lastFailureReadBack = false
 
     private struct IndexKey: Hashable {
         var mode: InputMode
@@ -285,6 +294,7 @@ public final class LearnedStore {
     /// Chinese was typed in.
     public func learn(_ commit: Commit, mode: InputMode, script: ChineseScript? = nil) {
         let now = clock()
+        if let failed = learningFailedAt, now.timeIntervalSince(failed) < Self.learningRetry { return }
         do {
             try write {
                 for (reading, text) in Self.pairs(learnedFrom: commit) {
@@ -293,7 +303,9 @@ public final class LearnedStore {
                 try learnNGrams(of: commit, mode: mode, at: now)
                 try database.run("DELETE FROM events WHERE at < ?", [.real(now.addingTimeInterval(-7_200).timeIntervalSinceReferenceDate)])
             }
+            learningFailedAt = nil
         } catch {
+            if lastFailureReadBack { learningFailedAt = now }
             Log.learning.error("Learning not saved: \(String(describing: error), privacy: .public)")
         }
         notify()
@@ -702,6 +714,7 @@ public final class LearnedStore {
                 try body()
             }
         } catch {
+            lastFailureReadBack = began
             if began { try? loadAll() }
             throw error
         }

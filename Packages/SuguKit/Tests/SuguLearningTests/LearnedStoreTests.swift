@@ -211,6 +211,20 @@ struct LearnedStoreTests {
         #expect(Set(try makeStore().allWords().map(\.text)) == ["速贵", "快"])
     }
 
+    /// Learning whose write failed, and so read the store back from disk,
+    /// pauses for a minute instead of doing that at every commit. Here
+    /// another process already stored the word.
+    @Test func learningPausesAfterAFailedWrite() throws {
+        let store = try makeStore()
+        try makeStore().learn(Commit(text: "晴れ", reading: "はれ"), mode: .japanese)
+        store.learn(Commit(text: "晴れ", reading: "はれ"), mode: .japanese)
+        store.learn(Commit(text: "雨", reading: "あめ"), mode: .japanese)
+        #expect(store.allWords().map(\.text) == ["晴れ"])
+        clock.advance(hours: 1)
+        store.learn(Commit(text: "雨", reading: "あめ"), mode: .japanese)
+        #expect(store.lookup("あめ", mode: .japanese).map(\.text) == ["雨"])
+    }
+
     /// A Sugu file the user imports brings back what Delete All removed.
     @Test func restoringBringsBackDeletedWords() async throws {
         let store = try makeStore()

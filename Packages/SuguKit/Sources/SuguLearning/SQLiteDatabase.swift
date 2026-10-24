@@ -44,6 +44,10 @@ final class SQLiteDatabase {
         // the main thread.
         sqlite3_busy_timeout(handle, 200)
         try execute("PRAGMA journal_mode = WAL")
+        // In WAL mode this keeps the file whole through a crash or power
+        // loss, without waiting for the disk on every commit; at worst the
+        // last few commits are not learned.
+        try execute("PRAGMA synchronous = NORMAL")
         try execute("PRAGMA foreign_keys = ON")
     }
 
