@@ -3933,6 +3933,30 @@
         }
       }
     },
+    "The file has no words to import.": {
+      "comment": "Shown when a dictionary file is read but holds no words.",
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このファイルには読み込める単語がありません。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个文件中没有可导入的词。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這個檔案中沒有可匯入的字詞。"
+          }
+        }
+      }
+    },
     "The settings file could not be read.": {
       "extractionState": "manual",
       "localizations": {
@@ -4163,29 +4187,6 @@
         }
       }
     },
-    "Type ん with a single n": {
-      "extractionState": "manual",
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「ん」を n ひとつで入力"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用单个 n 输入「ん」"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用單個 n 輸入「ん」"
-          }
-        }
-      }
-    },
     "Type spaces in full width": {
       "extractionState": "manual",
       "localizations": {
@@ -4205,6 +4206,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "輸入全形空格"
+          }
+        }
+      }
+    },
+    "Type ん with a single n": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「ん」を n ひとつで入力"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用单个 n 输入「ん」"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用單個 n 輸入「ん」"
           }
         }
       }

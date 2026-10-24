@@ -121,7 +121,11 @@ final class ImportSheet: NSObject, NSTableViewDataSource, NSTableViewDelegate {
             do {
                 let previews = try await model.previewDictionaries(urls)
                 guard !Task.isCancelled else { return }
-                show(previews)
+                if previews.allSatisfy(\.entries.isEmpty) {
+                    show(failure: String(localized: "The file has no words to import."))
+                } else {
+                    show(previews)
+                }
             } catch DictionaryImporter.Error.tooLarge {
                 show(failure: String(localized: "The dictionary has too many words to import."))
             } catch {
