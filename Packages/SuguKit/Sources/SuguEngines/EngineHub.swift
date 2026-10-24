@@ -56,6 +56,11 @@ public final class EngineHub: EngineSource {
     /// the wait after another failure (`sessionFailed`).
     private var sessionRetry: (at: ContinuousClock.Instant, wait: Duration)?
     public var onEngineReady: ((InputMode) -> Void)?
+    /// After a crash loop (`recoverFromCrashLoop`): Chinese without the
+    /// grammar model and Japanese without Zenzai, until the run has lasted
+    /// `recoveryLength`.
+    public private(set) var isRecovering = false
+    static let recoveryLength = Duration.seconds(120)
     private var chineseScript: ChineseScript
     /// Converters by script, opened on first use and kept, so switching
     /// between apps with different scripts does not reopen them.
@@ -423,7 +428,7 @@ public final class EngineHub: EngineSource {
             keyboard: preferences.chineseKeyboard,
             scheme: preferences.pinyinScheme,
             fuzzy: preferences.fuzzyPinyin,
-            grammar: preferences.useGrammarModel ? locations.grammarModel?.deletingPathExtension().lastPathComponent : nil,
+            grammar: preferences.useGrammarModel && !isRecovering ? locations.grammarModel?.deletingPathExtension().lastPathComponent : nil,
             dictionary: preferences.chineseDictionary == .rimeIce && isRimeIceInstalled ? .rimeIce : .wanxiang
         )
     }
@@ -491,10 +496,28 @@ public final class EngineHub: EngineSource {
         warmUp(.chinese)
     }
 
+    /// Starts this run as after a crash loop, before any engine loads: the
+    /// librime build is made again from the bundled data, and the grammar
+    /// model and Zenzai, the likeliest to crash while loading, wait until
+    /// the run has lasted `recoveryLength`.
+    public func recoverFromCrashLoop() {
+        Log.engines.fault("Started several times within a minute; recovering")
+        isRecovering = true
+        runtime.discardBuild()
+        Task { [weak self] in
+            try? await Task.sleep(for: Self.recoveryLength)
+            guard let self else { return }
+            Log.engines.notice("Recovered")
+            isRecovering = false
+            redeployChinese()
+            loadZenzai()
+        }
+    }
+
     /// Loads Zenzai off the main thread and hands the converter to the
     /// Japanese engine between compositions (decision D-032).
     private func loadZenzai() {
-        guard preferences.zenzaiEnabled, isZenzaiModelInstalled, japanese != nil,
+        guard preferences.zenzaiEnabled, isZenzaiModelInstalled, japanese != nil, !isRecovering,
               zenzaiLoaded != locations.zenzaiModel, zenzaiLoading == nil else { return }
         let model = locations.zenzaiModel
         let workingDirectory = locations.azooKey

@@ -53,6 +53,7 @@ final class AppEnvironment {
             store: store,
             version: Bundle.main.shortVersion
         )
+        if LaunchHistory.recordLaunch(in: locations.support) { engines.recoverFromCrashLoop() }
         let latin = LatinInference(
             syllables: syllables,
             englishWords: Lexicon.load(Lexicon.englishWordsFile, in: locations.bundledLexicon)

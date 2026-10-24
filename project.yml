@@ -92,6 +92,7 @@ targets:
       - path: Sugu/Input/TextInputClient.swift
       - path: Sugu/Diagnostics/DiagnosticsReport.swift
       - path: Sugu/App/Bundle+Version.swift
+      - path: Sugu/App/LaunchHistory.swift
       - path: Sugu/Candidates/CandidateView.swift
       - path: Sugu/Candidates/FloatingPanel.swift
       - path: Sugu/Settings/Form/ControlHandler.swift
