@@ -51,7 +51,8 @@ public final class RimeRuntime {
         if isInitialized, self.schema == schema, !isStale { return }
         let task = Task { try await deploy(schema, version: version) }
         deployment = task
-        defer { deployment = nil }
+        // Another caller may have started a newer deployment meanwhile.
+        defer { if deployment == task { deployment = nil } }
         try await task.value
     }
 
