@@ -25,7 +25,9 @@ final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
     }
 
     override func modelDidChange(_ change: SettingsModel.Change) {
-        if change == .preferences, model.preferences.appRules.keys.sorted() != apps { reload() }
+        // Only a change in which apps have rules reloads: a reload ends a
+        // selection, and the pane's own pop-ups change rules too.
+        if change == .preferences, Set(model.preferences.appRules.keys) != Set(apps) { reload() }
     }
 
     private func reload() {
