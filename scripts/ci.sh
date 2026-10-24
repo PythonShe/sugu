@@ -56,3 +56,5 @@ fuzz 200 --zhuyin
 for layout in eten ibm; do
   fuzz 50 --zhuyin --zhuyin-layout "$layout"
 done
+# Chinese that never sets up: letters wait, then commit as typed.
+fuzz 100 --failed-deploy

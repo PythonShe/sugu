@@ -16,7 +16,7 @@ func option(_ name: String) -> String? {
 }
 
 guard let data = option("--data"), let bench = option("--bench") else {
-    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>] [--no-language-model] [variant...]\n       sugu-bench --data <dir> --bench <dir> --fuzz <sessions> [--seed <n>] [--fuzz-session <n>] [--fuzz-trace] [variant...]\nvariants: --no-predictions --no-typo-correction --live-conversion --phonetic --contextual-n --fuzzy-pinyin --kana-input --zhuyin --zhuyin-layout <layout> --scheme <scheme> --script <script>\n".utf8))
+    FileHandle.standardError.write(Data("usage: sugu-bench --data <dir> --bench <dir> [--json <file>] [--check] [--zenzai <model.gguf>] [--grammar <model.gram>] [--no-language-model] [variant...]\n       sugu-bench --data <dir> --bench <dir> --fuzz <sessions> [--seed <n>] [--fuzz-session <n>] [--fuzz-trace] [--soak <n>] [--failed-deploy] [variant...]\nvariants: --no-predictions --no-typo-correction --live-conversion --phonetic --contextual-n --fuzzy-pinyin --kana-input --zhuyin --zhuyin-layout <layout> --scheme <scheme> --script <script>\n".utf8))
     exit(2)
 }
 
@@ -24,6 +24,7 @@ guard let data = option("--data"), let bench = option("--bench") else {
 // key sequences per language, checked after every key, instead of the
 // bench. Runs replay with SWIFT_DETERMINISTIC_HASHING=1 in the environment.
 // --soak <n> prints the memory in use every n sessions, for long runs.
+// --failed-deploy gives librime no data, so Chinese never sets up.
 let configure: (inout Preferences) -> Void = { preferences in
     // Variants for comparing configurations.
     if arguments.contains("--no-predictions") { preferences.japanesePredictions = false }
@@ -42,7 +43,8 @@ if let count = option("--fuzz").flatMap(Int.init) {
     let seed = option("--seed").flatMap(UInt64.init) ?? 1
     let sessions = option("--fuzz-session").flatMap(Int.init).map { $0..<($0 + 1) } ?? 0..<count
     let failures = try await Fuzz.run(data: URL(fileURLWithPath: data), sessions: sessions, seed: seed, trace: arguments.contains("--fuzz-trace"),
-                                      soak: option("--soak").flatMap(Int.init).map { max($0, 1) }, configure: configure)
+                                      soak: option("--soak").flatMap(Int.init).map { max($0, 1) },
+                                      failedDeploy: arguments.contains("--failed-deploy"), configure: configure)
     print("fuzz: \(sessions.count) sessions per language, seed \(seed), \(failures.count) failures")
     failures.forEach { print($0) }
     exit(failures.isEmpty ? 0 : 1)

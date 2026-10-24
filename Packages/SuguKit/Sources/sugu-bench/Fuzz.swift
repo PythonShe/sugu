@@ -25,19 +25,24 @@ enum Fuzz {
     /// With `trace`, every key and the composition before it go to
     /// standard error. With `soak`, the memory in use is printed every
     /// `soak` sessions, and between sessions the main queue and run loop
-    /// run and autoreleased objects go, as between events in the app.
-    static func run(data: URL, sessions: Range<Int>, seed: UInt64, trace: Bool, soak: Int? = nil, configure: (inout Preferences) -> Void) async throws -> [Failure] {
+    /// run and autoreleased objects go, as between events in the app. With
+    /// `failedDeploy`, librime has no data, so every deployment fails.
+    /// Sessions that change settings or pause depend on how long engines
+    /// take to set up, so they may not replay exactly.
+    static func run(data: URL, sessions: Range<Int>, seed: UInt64, trace: Bool, soak: Int? = nil, failedDeploy: Bool = false, configure: (inout Preferences) -> Void) async throws -> [Failure] {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-fuzz-\(getpid())", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: work) }
         var preferences = Preferences()
         preferences.rememberModePerApp = false
         configure(&preferences)
         let lexicon = data.appendingPathComponent("Lexicon")
+        let rime = failedDeploy ? work.appendingPathComponent("NoRime") : data.appendingPathComponent("Rime")
+        try FileManager.default.createDirectory(at: rime, withIntermediateDirectories: true)
         let syllables = Lexicon.load(Lexicon.syllablesFile, in: lexicon)
         let store = try LearnedStore(url: work.appendingPathComponent("learned.sqlite"), syllabary: PinyinSyllabary(syllables))
         let engines = EngineHub(
             locations: EngineHub.Locations(
-                rimeShared: data.appendingPathComponent("Rime"),
+                rimeShared: rime,
                 rimeUser: work.appendingPathComponent("Rime"),
                 azooKey: work.appendingPathComponent("AzooKey"),
                 models: work.appendingPathComponent("Models"),
@@ -53,25 +58,44 @@ enum Fuzz {
         engines.prepare(.japanese)
         let latin = LatinInference(syllables: syllables, englishWords: Lexicon.load(Lexicon.englishWordsFile, in: lexicon))
         let session = InputSession(preferences: preferences, engines: engines, store: store, latin: latin)
-        let field = FuzzField()
+        // Focus moves between two fields of different apps.
+        let fields = [FuzzField(bundleIdentifier: "com.zheng-she.sugu-fuzz"), FuzzField(bundleIdentifier: "com.zheng-she.sugu-fuzz.other")]
+        var focused = 0
+        var field: FuzzField { fields[focused] }
         session.attach(field)
 
         var failures: [Failure] = []
         for mode in [InputMode.chinese, .japanese] {
             for number in sessions {
-                // Sessions can switch languages; each starts in its own.
+                // Each session starts from the settings of the run, in the
+                // first field, typing hiragana, in its own language.
+                session.isSecureInput = false
+                if session.preferences != preferences {
+                    engines.apply(preferences)
+                    session.preferences = preferences
+                    await engines.waitUntilReady()
+                }
+                if focused != 0 {
+                    session.detach(field)
+                    focused = 0
+                    session.attach(field)
+                }
+                if session.typesKatakana { session.setKatakana(false) }
                 session.setMode(mode)
                 // Where a trap stopped the run.
                 FileHandle.standardError.write(Data("fuzz \(mode) \(number)\n".utf8))
                 var random = SplitMix(seed: seed &+ UInt64(number) &* 0x9E37_79B9)
                 var keys: [String] = []
                 func fail(_ problem: String) -> Failure { Failure(mode: mode, session: number, keys: keys, problem: problem) }
-                field.reset()
-                // Whether Zhuyin is composing now; a session may switch languages.
-                var zhuyin: Bool { session.mode == .chinese && preferences.chineseKeyboard == .zhuyin }
+                fields.forEach { $0.reset() }
+                // Whether Zhuyin is composing now; a session may switch
+                // languages and keyboards.
+                var zhuyin: Bool { session.mode == .chinese && session.preferences.chineseKeyboard == .zhuyin }
                 do {
                     for _ in 0..<random.next(below: 60) + 5 {
-                        let (name, action) = randomAction(&random, mode: mode, zhuyin: mode == .chinese && preferences.chineseKeyboard == .zhuyin ? preferences.zhuyinLayout : nil)
+                        let layout = session.preferences.chineseKeyboard == .zhuyin ? session.preferences.zhuyinLayout : nil
+                        let (name, action) = randomAction(&random, mode: mode, zhuyin: mode == .chinese ? layout : nil)
+                        let previous = keys.last
                         keys.append(name)
                         if trace { FileHandle.standardError.write(Data("  \(name) → \(session.display.segments.map(\.text).joined())\n".utf8)) }
                         // In Zhuyin, Return in the candidate window takes the
@@ -83,7 +107,42 @@ enum Fuzz {
                         case .key(let pressed): key = pressed
                         case .shiftTap: session.shiftTapped(); try check(session, field, fail); continue
                         case .switchLanguage: session.switchCJKMode(); try check(session, field, fail); continue
-                        case .click: session.caretMayHaveMoved(); try check(session, field, fail); continue
+                        case .click: field.click(); session.caretMayHaveMoved(); try check(session, field, fail); continue
+                        case .switchField:
+                            let left = field
+                            session.detach(left)
+                            focused = 1 - focused
+                            session.attach(field)
+                            guard left.marked.isEmpty else { throw fail("the field left still shows a composition") }
+                            try check(session, field, fail)
+                            continue
+                        case .changeSetting(let change):
+                            var changed = session.preferences
+                            change(&changed)
+                            // In the order the app applies them.
+                            engines.apply(changed)
+                            session.preferences = changed
+                            try check(session, field, fail)
+                            continue
+                        case .pause(let duration):
+                            try? await Task.sleep(for: duration)
+                            try check(session, field, fail)
+                            continue
+                        case .changeWords(let change):
+                            change(store)
+                            engines.learnedWordsDidChange()
+                            try check(session, field, fail)
+                            continue
+                        case .select(let count): field.select(last: count); try check(session, field, fail); continue
+                        case .secureInput: session.isSecureInput.toggle(); try check(session, field, fail); continue
+                        case .retryChinese: engines.retryChinese(); try check(session, field, fail); continue
+                        }
+                        // 英数 or かな twice retypes the last commit, as the
+                        // shell checks before the session has the key.
+                        if name == previous, key.keyCode == VirtualKey.eisu || key.keyCode == VirtualKey.kana,
+                           session.retypeLastCommit(asRomaji: key.keyCode == VirtualKey.eisu) {
+                            try check(session, field, fail)
+                            continue
                         }
                         if !session.handle(key) { field.typeUnhandled(key) }
                         try check(session, field, fail)
@@ -154,6 +213,21 @@ enum Fuzz {
         case switchLanguage
         /// The caret moved by a click.
         case click
+        /// Focus moved to the other field.
+        case switchField
+        /// A setting changed, as in the Settings window.
+        case changeSetting((inout Preferences) -> Void)
+        /// Time passed between keys, while engines are being set up.
+        case pause(Duration)
+        /// Learned words changed elsewhere: an import, a sync, the Settings
+        /// window.
+        case changeWords((LearnedStore) -> Void)
+        /// The last characters typed were selected.
+        case select(Int)
+        /// Secure input turned on or off.
+        case secureInput
+        /// Chinese setup tried again, as from Settings.
+        case retryChinese
     }
 
     /// What a person might do while composing, with its name for the
@@ -163,9 +237,76 @@ enum Fuzz {
         case 0..<10: return ("⇧tap", .shiftTap)
         case 10..<15: return ("⌃␣", .switchLanguage)
         case 15..<20: return ("click", .click)
+        case 20..<24: return ("focus", .switchField)
+        case 24..<28:
+            let (name, change) = randomSetting(&random)
+            return ("set \(name)", .changeSetting(change))
+        case 28..<31:
+            let milliseconds = 1 + random.next(below: 50)
+            return ("wait \(milliseconds)ms", .pause(.milliseconds(milliseconds)))
+        case 31..<34:
+            let (name, change) = randomWordsChange(&random, mode: mode)
+            return ("words \(name)", .changeWords(change))
+        case 34..<38:
+            let count = 1 + random.next(below: 4)
+            return ("select \(count)", .select(count))
+        case 38..<40: return ("secure", .secureInput)
+        case 40..<41: return ("retry", .retryChinese)
         default:
             let (name, key) = randomKey(&random, mode: mode, zhuyin: zhuyin)
             return (name, .key(key))
+        }
+    }
+
+    /// A setting someone might change while typing.
+    private static func randomSetting(_ random: inout SplitMix) -> (String, (inout Preferences) -> Void) {
+        func pick<T: CaseIterable>(_ type: T.Type) -> T {
+            let cases = Array(T.allCases)
+            return cases[random.next(below: cases.count)]
+        }
+        switch random.next(below: 12) {
+        case 0:
+            let script = pick(ChineseScript.self)
+            return ("script \(script)", { $0.chineseScript = script })
+        case 1:
+            let size = 5 + random.next(below: 6)
+            return ("page \(size)", { $0.candidatesPerPage = size })
+        case 2:
+            let layout = pick(CandidateLayout.self)
+            return ("layout \(layout)", { $0.candidateLayout = layout })
+        case 3: return ("live conversion", { $0.liveConversion.toggle() })
+        case 4: return ("predictions", { $0.japanesePredictions.toggle() })
+        case 5: return ("typo correction", { $0.typoCorrection.toggle() })
+        case 6: return ("kana input", { $0.kanaInput.toggle() })
+        case 7: return ("fuzzy pinyin", { $0.fuzzyPinyin = $0.fuzzyPinyin.isEmpty ? Set(FuzzyPinyin.allCases) : [] })
+        case 8:
+            let scheme = pick(PinyinScheme.self)
+            return ("scheme \(scheme)", { $0.pinyinScheme = scheme })
+        case 9:
+            let keyboard = pick(ChineseKeyboard.self)
+            return ("keyboard \(keyboard)", { $0.chineseKeyboard = keyboard })
+        case 10:
+            let width = pick(PunctuationWidth.self)
+            return ("punctuation \(width)", { $0.punctuationWidth = width })
+        default:
+            let modes: [[InputMode]] = [[.chinese, .japanese, .english], [.japanese, .chinese, .english], [.chinese, .english], [.japanese, .english]]
+            let enabled = modes[random.next(below: modes.count)]
+            return ("modes \(enabled.map { "\($0)" }.joined(separator: ","))", { $0.enabledModes = enabled })
+        }
+    }
+
+    /// A change to the learned words from outside the composition.
+    private static func randomWordsChange(_ random: inout SplitMix, mode: InputMode) -> (String, (LearnedStore) -> Void) {
+        let words = mode == .chinese ? [("ceshi", "测试"), ("nihao", "你好"), ("zhongwen", "中文")] : [("てすと", "テスト"), ("すぐ", "直ぐ"), ("にほん", "日本")]
+        switch random.next(below: 4) {
+        case 0:
+            let (reading, text) = words[random.next(below: words.count)]
+            return ("add \(text)", { _ = $0.addUserWord(reading: reading, text: text, mode: mode) })
+        case 1:
+            let count = 1 + random.next(below: 3)
+            return ("delete \(count)", { store in store.delete(ids: store.allWords(mode: mode).prefix(count).map(\.id)) })
+        case 2: return ("forget", { $0.forget() })
+        default: return ("delete all", { $0.deleteAll(mode: mode) })
         }
     }
 
@@ -178,7 +319,7 @@ enum Fuzz {
             let typed = shifted ?? (shift ? Character(character.uppercased()) : character)
             return (String(typed), KeyInput(keyCode: keyCodes[character] ?? 0, characters: String(typed), charactersIgnoringModifiers: String(character), modifiers: shift ? .shift : []))
         }
-        switch random.next(below: 100) {
+        switch random.next(below: 112) {
         case 0..<55 where zhuyin != nil && mode == .chinese:
             // Symbols three times as often as tones, as syllables have them.
             let layout = zhuyinKeys(zhuyin ?? .standard)
@@ -205,7 +346,30 @@ enum Fuzz {
         case 92..<93: return special("⇥", VirtualKey.tab)
         case 93..<96: return ("⎋", KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
         case 96..<98: return ("⏎", KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
-        default:
+        case 100..<102:
+            let keys: [(String, UInt16)] = [("F6", VirtualKey.f6), ("F7", VirtualKey.f7), ("F8", VirtualKey.f8), ("F9", VirtualKey.f9), ("F10", VirtualKey.f10)]
+            let (name, code) = keys[random.next(below: keys.count)]
+            return special(name, code)
+        case 102..<104: return special("⌃⌫", VirtualKey.delete, .control)
+        case 104: return special("英数", VirtualKey.eisu)
+        case 105: return special("かな", VirtualKey.kana)
+        case 106:
+            let letter = Character(UnicodeScalar(UInt8(97 + random.next(below: 26))))
+            return ("⌥\(letter)", KeyInput(keyCode: keyCodes[letter] ?? 0, characters: String(letter), charactersIgnoringModifiers: String(letter), modifiers: .option))
+        case 107:
+            // ⌃⇧K and ⌃⇧J choose katakana and hiragana; ⌃⇧R reconverts.
+            let letter = Array("kjr")[random.next(below: 3)]
+            return ("⌃⇧\(letter.uppercased())", KeyInput(keyCode: keyCodes[letter] ?? 0, characters: "", charactersIgnoringModifiers: String(letter), modifiers: [.control, .shift]))
+        case 108..<110:
+            // The Emacs keys, and a few that are no binding.
+            let letter = Array("hdaebfngmiojkl;[xc")[random.next(below: 18)]
+            return ("⌃\(letter)", KeyInput(keyCode: keyCodes[letter] ?? 0, characters: "", charactersIgnoringModifiers: String(letter), modifiers: .control))
+        case 110:
+            let keys: [(String, UInt16)] = [("⇞", VirtualKey.pageUp), ("↖", VirtualKey.home), ("↘", VirtualKey.end), ("⌦", VirtualKey.forwardDelete)]
+            let (name, code) = keys[random.next(below: keys.count)]
+            return special(name, code)
+        case 111: return ("⇧␣", KeyInput(keyCode: VirtualKey.space, characters: " ", modifiers: .shift))
+        case 98..<100:
             let punctuation = Array(",.?!-[]<>")[random.next(below: 9)]
             switch punctuation {
             case "?": return printable("/", shift: true, typing: "?")
@@ -214,6 +378,7 @@ enum Fuzz {
             case ">": return printable(".", shift: true, typing: ">")
             default: return printable(punctuation)
             }
+        default: return ("⏎", KeyInput(keyCode: VirtualKey.returnKey, characters: "\r"))
         }
     }
 
@@ -228,43 +393,74 @@ enum Fuzz {
 }
 
 /// A field that keeps what was committed, which is also the text before
-/// the caret, and the marked text.
+/// the caret, and the marked text. A selection is the end of what was
+/// committed, and what is typed or marked next replaces it.
 @MainActor
 private final class FuzzField: InputClient {
     private(set) var committed = ""
     private(set) var marked: [CompositionSegment] = []
-    var bundleIdentifier: String? { "com.zheng-she.sugu-fuzz" }
+    private var selection = 0
+    let bundleIdentifier: String?
+
+    init(bundleIdentifier: String) {
+        self.bundleIdentifier = bundleIdentifier
+    }
 
     func reset() {
         committed = ""
         marked = []
+        selection = 0
+    }
+
+    func select(last count: Int) {
+        guard marked.isEmpty else { return }
+        selection = min(count, committed.count)
+    }
+
+    func click() { selection = 0 }
+
+    private func replaceSelection() {
+        committed.removeLast(selection)
+        selection = 0
     }
 
     func commit(_ text: String) {
+        replaceSelection()
         committed += text
         marked = []
     }
 
     /// What the app does with a key Sugu passes on.
     func typeUnhandled(_ key: KeyInput) {
-        if key.keyCode == VirtualKey.delete, !committed.isEmpty {
+        if key.keyCode == VirtualKey.delete, selection > 0 {
+            replaceSelection()
+        } else if key.keyCode == VirtualKey.delete, !committed.isEmpty {
             committed.removeLast()
         } else if !key.isShortcut, let character = key.printable {
+            replaceSelection()
             committed.append(character)
+        } else {
+            // Any other key collapses the selection where it ends.
+            selection = 0
         }
     }
 
-    func setMarkedText(_ segments: [CompositionSegment], caret: Int) { marked = segments }
-    func textBeforeCaret(limit: Int) -> String? { String(committed.suffix(limit)) }
+    func setMarkedText(_ segments: [CompositionSegment], caret: Int) {
+        if !segments.isEmpty { replaceSelection() }
+        marked = segments
+    }
+
+    func textBeforeCaret(limit: Int) -> String? { String(committed.dropLast(selection).suffix(limit)) }
     func textAfterCaret(limit: Int) -> String? { "" }
 
     func deleteBeforeCaret(count: Int) -> Bool {
-        guard committed.count >= count else { return false }
-        committed.removeLast(count)
+        guard committed.count - selection >= count else { return false }
+        let selected = committed.suffix(selection)
+        committed = String(committed.dropLast(selection).dropLast(count)) + selected
         return true
     }
 
-    func selectedText() -> String? { nil }
+    func selectedText() -> String? { selection > 0 ? String(committed.suffix(selection)) : nil }
 }
 
 /// A small deterministic generator (SplitMix64), so a seed replays.
