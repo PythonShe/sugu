@@ -95,17 +95,32 @@ public final class RimeRuntime {
         // The sessions are gone and the build is being replaced: not ready
         // again until this deployment succeeds.
         self.schema = nil
-        let succeeded = await Task.detached(priority: .userInitiated) {
-            let api = RimeAPI.shared.api
-            guard api.start_maintenance?(1) ?? 0 != 0 else { return (api.is_maintenance_mode?() ?? 0) == 0 }
-            api.join_maintenance_thread?()
-            return true
-        }.value
+        let succeeded = try await maintain()
         // librime reports a failed build step (disk full, an unwritable
         // folder) only in its log; the compiled schema is the evidence.
         let compiled = directories.user.appendingPathComponent("build/\(RimeSchema.schemaID).schema.yaml")
         guard succeeded, FileManager.default.fileExists(atPath: compiled.path) else { throw Error.deploymentFailed }
         self.schema = schema
+    }
+
+    /// How long a deployment may run before it counts as failed; a full
+    /// rebuild of a large dictionary takes about a minute.
+    static let deploymentLimit = Duration.seconds(300)
+
+    /// Runs librime's maintenance and waits for it without holding a
+    /// thread: one that never ends fails the deployment after
+    /// `deploymentLimit`, and the engine hub tries again later, rather than
+    /// leave Chinese waiting for good.
+    private func maintain() async throws -> Bool {
+        guard api.start_maintenance?(1) ?? 0 != 0 else { return (api.is_maintenance_mode?() ?? 0) == 0 }
+        let deadline = ContinuousClock.now + Self.deploymentLimit
+        while api.is_maintenance_mode?() ?? 0 != 0 {
+            guard ContinuousClock.now < deadline else { return false }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        // The thread has finished; this only releases it.
+        api.join_maintenance_thread?()
+        return true
     }
 
     private func makeTraits(version: String) -> RimeTraits {
