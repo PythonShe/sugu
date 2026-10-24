@@ -70,9 +70,10 @@ public final class ZhuyinEngine: CompositionEngine {
         session = RimeSession(runtime: runtime, script: script)
     }
 
-    /// Opens the librime session ahead of the first key.
-    public func openSession() {
-        _ = session.open()
+    /// Opens the librime session unless it is open, ahead of the first
+    /// key; false when librime cannot.
+    @discardableResult public func openSession() -> Bool {
+        session.open()
     }
 
     /// Reopens the session so librime reads the user dictionary again,

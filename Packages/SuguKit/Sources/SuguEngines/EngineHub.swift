@@ -52,6 +52,9 @@ public final class EngineHub: EngineSource {
     /// the wait after another failure. The wait doubles up to ten minutes,
     /// so a broken deployment is not repeated on every keystroke.
     private var retry: (schema: RimeSchema, at: ContinuousClock.Instant, wait: Duration)?
+    /// After librime gave no session: when the build may be made again, and
+    /// the wait after another failure (`sessionFailed`).
+    private var sessionRetry: (at: ContinuousClock.Instant, wait: Duration)?
     public var onEngineReady: ((InputMode) -> Void)?
     private var chineseScript: ChineseScript
     /// Converters by script, opened on first use and kept, so switching
@@ -79,7 +82,11 @@ public final class EngineHub: EngineSource {
         switch mode {
         case .chinese:
             guard runtime.isReady else { warmUp(.chinese); return nil }
-            if let chinese { return chinese }
+            if let chinese {
+                guard chinese.openSession() else { sessionFailed(); return nil }
+                sessionRetry = nil
+                return chinese
+            }
             let engine: any ChineseEngine
             if runtime.schema?.keyboard == .zhuyin {
                 let zhuyin = ZhuyinEngine(runtime: runtime, script: chineseScript)
@@ -94,6 +101,8 @@ public final class EngineHub: EngineSource {
             attachRespelling(to: engine)
             chinese = engine
             chineseWordsNeedReload = false
+            guard engine.openSession() else { sessionFailed(); return nil }
+            sessionRetry = nil
             return engine
         case .japanese:
             if let japanese { return japanese }
@@ -208,7 +217,6 @@ public final class EngineHub: EngineSource {
                     // Opening the session reads the user dictionary; done
                     // here, not on the first keystroke.
                     _ = engine(for: .chinese)
-                    chinese?.openSession()
                     updateChineseWords(after: .zero)
                     onEngineReady?(.chinese)
                 }
@@ -263,12 +271,33 @@ public final class EngineHub: EngineSource {
         engine.respelling = .init(respeller: chineseRespelling.respeller, decoder: decoder) { [weak self] in self?.converter(for: $0) }
     }
 
+    /// librime deployed but gives no session: the build is taken as broken
+    /// and made again from the bundled data, while typed letters wait in
+    /// the loading engine rather than vanish. The first time at once, then
+    /// after a wait that doubles up to ten minutes, until a session opens.
+    private func sessionFailed() {
+        chinese = nil
+        chineseError = RimeRuntime.Error.sessionUnavailable
+        let now = ContinuousClock.now
+        if let sessionRetry, now < sessionRetry.at { return }
+        let wait = sessionRetry.map { min($0.wait * 2, .seconds(600)) } ?? .seconds(5)
+        sessionRetry = (now + wait, wait)
+        Log.engines.error("Chinese session did not open; rebuilding, then waiting \(wait, privacy: .public) before another")
+        runtime.setNeedsDeployment()
+        retry = (schema, now, wait)
+        warmUp(.chinese)
+    }
+
     public func isFailing(_ mode: InputMode) -> Bool {
         mode == .chinese && chineseError != nil
     }
 
     /// Tries a failed Chinese deployment again now, from a fresh build.
     public func retryChinese() {
+        if sessionRetry != nil {
+            sessionRetry = nil
+            runtime.setNeedsDeployment()
+        }
         guard let retry else { return }
         self.retry = (retry.schema, ContinuousClock.now, retry.wait)
         warmUp(.chinese)

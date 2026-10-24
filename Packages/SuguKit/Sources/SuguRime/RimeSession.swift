@@ -145,8 +145,9 @@ final class RimeSession {
 /// A Chinese engine on librime, as the engine hub keeps it.
 @MainActor
 public protocol ChineseEngine: CompositionEngine {
-    /// Opens the librime session ahead of the first key.
-    func openSession()
+    /// Opens the librime session unless it is open, ahead of the first
+    /// key; false when librime cannot.
+    @discardableResult func openSession() -> Bool
     /// Reopens the session so librime reads the user dictionary again,
     /// unless a composition is in progress; returns whether it reopened.
     func reloadUserDictionary() -> Bool
