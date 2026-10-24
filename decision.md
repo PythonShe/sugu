@@ -1803,7 +1803,8 @@ checked against the code before it was changed.
 
 - ⌃⇧K types katakana and ⌃⇧J hiragana, Apple's Japanese input's keys,
   from any mode with Japanese on; the input menu lists Hiragana and
-  Katakana under Japanese, and the mode indicator shows ア.
+  Katakana in place of Japanese (the system's input menu drops
+  indentation, 2026-10-25), and the mode indicator shows ア.
 - While it types katakana, the kana being typed shows and commits in
   katakana (a live conversion gives way to it); Space converts as usual.
   F7 and ⌃K still turn one composition into katakana.

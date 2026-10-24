@@ -33,19 +33,20 @@ final class InputMenu {
         let menu = NSMenu()
         let enabled = preferences.preferences.enabledModes
         for mode in enabled.filter({ $0 != .english }) + [.english] {
-            let item = Self.item(mode.localizedName, command: Self.command(for: mode))
-            item.state = coordinator.mode == mode ? .on : .off
-            menu.addItem(item)
-            if mode == .japanese {
+            // The system's input menu drops indentation, so Japanese is listed as its two kana, as Apple's Japanese input does.
+            guard mode != .japanese else {
                 for katakana in [false, true] {
                     let kana = Self.item(katakana ? String(localized: "Katakana") : String(localized: "Hiragana"), command: katakana ? .katakana : .hiragana)
                     kana.keyEquivalent = katakana ? "k" : "j"
                     kana.keyEquivalentModifierMask = [.control, .shift]
-                    kana.indentationLevel = 1
                     kana.state = coordinator.mode == .japanese && coordinator.typesKatakana == katakana ? .on : .off
                     menu.addItem(kana)
                 }
+                continue
             }
+            let item = Self.item(mode.localizedName, command: Self.command(for: mode))
+            item.state = coordinator.mode == mode ? .on : .off
+            menu.addItem(item)
         }
         menu.addItem(.separator())
         if enabled.contains(.chinese) { menu.addItem(scriptMenu()) }
