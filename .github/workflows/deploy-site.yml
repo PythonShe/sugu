@@ -64,6 +64,8 @@ jobs:
         run: pnpm check
 
       - name: Build
+        env:
+          SUGU_REQUIRE_RELEASES: "1"
         run: pnpm build
 
       - name: Deploy
