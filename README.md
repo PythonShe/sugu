@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Assets/svg/sugu-icon-stroke-dark.svg">
+    <img src="Assets/svg/sugu-icon-stroke-light.svg" alt="Sugu" width="128" height="128">
+  </picture>
+</p>
+
 # Sugu
 
 **Sugu** (すぐ, *"immediately"*) is a free, open-source input method for macOS for Japanese and Chinese. The right word should appear immediately, in the first candidate slot.
