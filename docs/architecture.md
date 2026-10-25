@@ -1,8 +1,8 @@
 # Architecture
 
 How Sugu's code is laid out and how a keystroke travels through it. The
-reasons behind each choice are in `docs/adr/` (product) and `decision.md`
-(implementation); the words are defined in `CONTEXT.md`.
+reasons behind each choice are in `docs/adr/`; the words are defined in
+`CONTEXT.md`.
 
 ## Two halves
 

@@ -34,5 +34,6 @@ build/
 # Cloudflare CLI cache
 /.cloudflare/
 
-# Scratch material from design sessions
+# Working notes (decision log, todo, progress, release plan) and
+# design-session scratch, kept out of the repository
 /docs/internal/

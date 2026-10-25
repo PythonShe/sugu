@@ -3,10 +3,11 @@
 Sugu is a free, open-source (GPL-3.0-or-later), privacy-first input method
 for macOS for Japanese and Chinese composition. Single-component repo — Swift / AppKit / InputMethodKit.
 `AGENTS.md` is a verbatim copy of `CLAUDE.md`; after editing either, re-copy it
-over the other in the same commit. Product decisions live in `docs/adr/`,
-implementation decisions in `decision.md`, the work plan in `todo.md`, the
-build log in `progress.md`, and the release plan in `release.md`; domain
-language in `CONTEXT.md`.
+over the other in the same commit. Product decisions live in `docs/adr/` and
+domain language in `docs/CONTEXT.md`. The working notes are untracked, in
+`docs/internal/`: implementation decisions in `decision.md`, the work plan
+in `todo.md`, the build log in `progress.md`, and the release plan in
+`release.md`.
 
 ## 0. Tech Stack & Dev Commands
 
