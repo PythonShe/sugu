@@ -5,8 +5,8 @@ name: Release
 #   prepare ── notes (release-notes.yml), check (ci.yml) ── build (xcode-27) ── publish (R2) ── site (deploy-site.yml)
 #
 # A pushed vX.Y.Z tag releases it; project.yml's MARKETING_VERSION must
-# match. Releases go to sugu.zheng-she.com, not GitHub (ADR 0006), unless
-# vars.R2_PUBLISH and vars.RELEASE_TO_GITHUB send them to a GitHub release.
+# match. Releases go to sugu.zheng-she.com (vars.R2_PUBLISH) and, with
+# vars.RELEASE_TO_GITHUB, to a GitHub release once that publish succeeded.
 # Dispatched by hand without a tag and with publishing off, it is a dry run
 # of the current branch: everything up to notarization, nothing published.
 # The notes come before the build because the build signs them into the
@@ -240,10 +240,13 @@ jobs:
           rm -f "$RUNNER_TEMP/api-key.p8" "$RUNNER_TEMP/sparkle.key"
 
   # vars.RELEASE_TO_GITHUB=true also attaches each tagged release to a GitHub
-  # release on this private repository.
+  # release on this repository, after the publish to R2 (when there is one)
+  # succeeded, so both carry the same bytes.
   github-release:
-    needs: [prepare, build]
-    if: needs.prepare.outputs.tag != '' && vars.RELEASE_TO_GITHUB == 'true'
+    needs: [prepare, build, publish]
+    if: >-
+      !cancelled() && needs.build.result == 'success' && needs.publish.result != 'failure'
+      && needs.prepare.outputs.tag != '' && vars.RELEASE_TO_GITHUB == 'true'
     runs-on: ubuntu-26.04
     permissions:
       contents: write
