@@ -20,7 +20,7 @@ checkout() { # name url ref
   if [[ ! -d "$dir/.git" ]]; then
     git clone --quiet --filter=blob:none "$2" "$dir"
   fi
-  git -C "$dir" fetch --quiet --tags origin
+  git -C "$dir" fetch --quiet --tags --force origin
   # Drops Sugu's patches from the last build before moving to the ref.
   git -C "$dir" checkout --quiet -- .
   git -C "$dir" checkout --quiet "$3"
