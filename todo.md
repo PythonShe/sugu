@@ -240,5 +240,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] README, CONTRIBUTING (DCO), SECURITY, issue and pull request templates
 - [x] CI on every push and pull request; DCO check
 - [x] GitHub releases again, after the R2 publish
-- [ ] Repository settings, rulesets (no force push), security features
-- [ ] Make the repository public
+- [x] Repository settings, rulesets (no force push), security features
+- [x] Make the repository public (2026-10-25)
