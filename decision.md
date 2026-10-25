@@ -1927,7 +1927,9 @@ checked against the code before it was changed.
   - Taught words under Zenzai, added 2026-10-25 (D-103): the lookup finds
     a user word read past every dictionary prefix; zenz-v3 prompts leave
     out the user dictionary condition; a taught word is judged by its
-    first token and kept whole after it.
+    first token and kept whole after it. Offered upstream as
+    azooKey/AzooKeyKanaKanjiConverter#370; once merged and released, the
+    fork drops them on its next rebase.
   - Its tests pass, but for `testMozcEvaluationData`, which crashes on
     stock 0.11.2 too.
 - In Sugu the kana shows as typed, and a commit is learned under the
@@ -2020,6 +2022,10 @@ checked against the code before it was changed.
     preference AzooKey gives its own learned words, and kept whole once
     taken; Zenzai still chooses between it and another word by context.
   The remaining miss is 琴葉駅, which the model rejects at its first token.
+  Other misses are the model's own choices: 桐谷かなでさんと役で会いました
+  comes out with nothing taught too, on upstream main as well. Leaving
+  `辞書:…` in the v3 prompt got that 駅 right only by accident.
+  Offered upstream as azooKey/AzooKeyKanaKanjiConverter#370.
   The fork's own Zenzai tests need azooKeyMac's model in a fixed place and
   fail without it, before these changes and after alike.
 - Not done:
