@@ -19,7 +19,11 @@ xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS,arc
   -configuration Release CODE_SIGNING_ALLOWED=NO -onlyUsePackageVersionsFromResolvedFile build -quiet
 PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Release \
   -showBuildSettings 2>/dev/null | awk '$1 == "BUILT_PRODUCTS_DIR" { print $3 }')"
-"${PRODUCTS:?}/Sugu.app/Contents/MacOS/Sugu" --measure-draw
+# Exit 1 is the draw budget missed, which SUGU_BUDGETS=report only reports.
+"${PRODUCTS:?}/Sugu.app/Contents/MacOS/Sugu" --measure-draw || {
+  status=$?
+  [[ "${SUGU_BUDGETS:-}" == report && $status == 1 ]] || exit $status
+}
 # No share-alike file ships in the app (D-072).
 if grep -rlis "CC BY-SA\|CC-BY-SA\|ShareAlike" "${PRODUCTS:?}/Sugu.app/Contents/Resources" --exclude=ThirdPartyNotices.txt; then
   echo "share-alike data in the app" >&2; exit 1
