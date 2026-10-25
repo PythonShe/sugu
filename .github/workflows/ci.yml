@@ -1,10 +1,8 @@
-# Runs scripts/ci.sh on every push to main and pull request, by hand, and
-# before every release build (release.yml).
+# Runs scripts/ci.sh on pull requests, by hand, and before every release
+# build (release.yml). Pushes to main are checked locally with scripts/ci.sh.
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
   workflow_call:
