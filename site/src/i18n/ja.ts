@@ -61,8 +61,9 @@ export default {
   },
   licenses: {
     title: 'ライセンス',
-    sugu: 'Sugu は無料のプロプライエタリソフトウェアです。',
-    license: 'Sugu ライセンス',
+    sugu: 'Sugu は GNU 一般公衆利用許諾書（バージョン 3 以降）のもとで提供されるフリーソフトウェアです。',
+    source: 'ソースコード',
+    license: 'GNU 一般公衆利用許諾書',
     notices: 'サードパーティのライセンス表記',
   },
   footer: { copyright: '© 2026 Zheng She' },

@@ -61,8 +61,9 @@ export default {
   },
   licenses: {
     title: '授權',
-    sugu: 'Sugu 是免費的專有軟體。',
-    license: 'Sugu 授權',
+    sugu: 'Sugu 是自由軟體，以 GNU 通用公共授權條款第 3 版或更新版本授權。',
+    source: '原始碼',
+    license: 'GNU 通用公共授權條款',
     notices: '第三方聲明',
   },
   footer: { copyright: '© 2026 Zheng She' },

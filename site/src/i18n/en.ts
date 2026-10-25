@@ -63,8 +63,9 @@ export default {
   },
   licenses: {
     title: 'Licenses',
-    sugu: 'Sugu is proprietary software, free of charge.',
-    license: 'Sugu License',
+    sugu: 'Sugu is free software under the GNU General Public License, version 3 or later.',
+    source: 'Source code',
+    license: 'GNU General Public License',
     notices: 'Third-party notices',
   },
   footer: { copyright: '© 2026 Zheng She' },
