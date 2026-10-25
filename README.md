@@ -1,32 +1,28 @@
 # Sugu
 
-**Sugu** (すぐ — *"immediately"*) is a free, privacy-first input method for macOS, built for Japanese and Chinese composition.
+**Sugu** (すぐ, *"immediately"*) is a free, open-source input method for macOS for Japanese and Chinese. The right word should appear immediately, in the first candidate slot.
 
-The name is the thesis: the right word should appear *immediately* — in the first candidate slot, with no wait.
-
-## Principles
-
-- **Local-first, privacy-first** — an input method reads everything you type. Sugu sends nothing you type: composition, conversion and learning stay on your Mac, and you can see the words it has learned and delete what it has learned. On macOS 27 or later, Apple's on-device language model can translate and rewrite if you turn it on, on your Mac too.
-- **One input source** — Chinese, Japanese and English live in one input source, so switching never depends on macOS input-source switching.
-- **Fast and accurate, measured** — latency and memory budgets are checked by a benchmark that drives the whole input pipeline, and accuracy is measured on public test sets.
-- **Free** — no price, no account, no paid tier.
+- **Private:** composition, conversion and learning stay on your Mac. Sugu sends nothing you type; it only checks for updates and downloads what you ask for.
+- **One input source:** Chinese, Japanese and English in one input source, switched with Shift, Caps Lock or the かな/英数 keys.
+- **Measured:** latency, memory and accuracy are checked by a benchmark that drives the whole input pipeline.
 
 ## Features
 
-- **Chinese** through [librime](https://github.com/rime/librime) with the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin and the common shuangpin schemes, fuzzy pinyin, Zhuyin on the standard, Eten or IBM layouts, Simplified, Traditional (standard, Taiwan or Hong Kong forms) or Japanese kanji forms (per app if you like), sentences corrected by a character language model built from [Tatoeba](https://tatoeba.org), emoji and symbols after the words that name them (from [CLDR](https://cldr.unicode.org)), an optional grammar model, and rime-ice as an optional download.
-- **Japanese** through [AzooKeyKanaKanjiConverter](https://github.com/azooKey/AzooKeyKanaKanjiConverter): romaji or kana input (JIS or US keyboards), clause-by-clause or live conversion ranked by a character language model built from [Tatoeba](https://tatoeba.org), predictions, typo tolerance, Chinese forms of Japanese names, and the Zenzai neural converter as an optional download.
-- **Modes** switched with Shift or Caps Lock, ⌃⇧Space, or the かな/英数 keys; per-app defaults, English in terminals and password fields.
-- **Learning you control** — Sugu learns your words and phrasing as you write; an inspector to search, pin and delete learned words, "forget the last hour", per-app opt-out, expiry, undo of the last commit with ⌃⌫, ⇧⌫ to forget a learned candidate, and Add Word from the input menu.
-- **Dictionaries** imported from Google Japanese Input, Microsoft IME, ATOK, Sogou, RIME and macOS text replacements; sync between Macs through a folder you choose.
-- Words already before the caret — or, if you turn it on, anywhere in the field — rank first, without being stored.
-- Habits from other input methods: reconversion of the selection, F6–F10 and the Emacs and Kotoeri control keys, 英数 twice to retype as romaji, `[` `]` to take one character of a word, Google's z-symbols, and symbols by their Japanese names.
-- Dates, numbers and arithmetic as candidates; native candidate window with Liquid Glass on macOS 26; VoiceOver, Increase Contrast and Dark Mode; English, Simplified Chinese, Traditional Chinese and Japanese interface.
+- **Chinese** with [librime](https://github.com/rime/librime) and the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin, shuangpin, fuzzy pinyin and Zhuyin; Simplified or Traditional characters; emoji and symbols; rime-ice as an optional download.
+- **Japanese** with [AzooKeyKanaKanjiConverter](https://github.com/azooKey/AzooKeyKanaKanjiConverter): romaji or kana input, clause-by-clause or live conversion, predictions, typo tolerance; the Zenzai neural converter as an optional download.
+- **Learning you control:** an inspector to search, pin and delete learned words, "forget the last hour", per-app opt-out, and undo of the last commit.
+- **Dictionaries** imported from Google Japanese Input, Microsoft IME, ATOK, Sogou, RIME and macOS text replacements, and synced between Macs through a folder you choose.
+- Familiar keys from other input methods: reconversion, F6–F10, Emacs and Kotoeri control keys, Google's z-symbols.
+- Interface in English, Japanese, and Simplified and Traditional Chinese, with VoiceOver and Dark Mode.
 
 ## Install
 
-Requires macOS 14 or later. Download `Sugu-<version>.pkg` from [sugu.zheng-she.com](https://sugu.zheng-she.com) and open it; Sugu is added to the input menu. If it is missing, add it in **System Settings › Keyboard › Input Sources › Edit**, under Chinese, Simplified; log out and back in if it is not listed yet. Sugu checks for updates itself and installs them with an administrator's password; the checks can be turned off in its settings.
+Requires macOS 14 or later. Download the installer from [sugu.zheng-she.com](https://sugu.zheng-she.com) or [GitHub Releases](https://github.com/PythonShe/sugu/releases) and open it; Sugu then appears in the input menu. If it doesn't, add it in **System Settings › Keyboard › Input Sources › Edit**, under Chinese, Simplified. Sugu updates itself.
 
-To uninstall, remove Sugu from **Input Sources**, then in Terminal:
+<details>
+<summary>Uninstall</summary>
+
+Remove Sugu from **Input Sources**, then in Terminal:
 
 ```bash
 killall Sugu
@@ -37,30 +33,27 @@ rm -rf ~/Library/Caches/com.zheng-she.inputmethod.Sugu ~/Library/HTTPStorages/co
 defaults delete com.zheng-she.inputmethod.Sugu
 ```
 
+</details>
+
 ## Building
 
 Requires Xcode 27 or later, [XcodeGen](https://github.com/yonaskolb/XcodeGen), CMake and Ninja.
 
 ```bash
-scripts/build-librime.sh   # librime + octagram → Frameworks/librime.xcframework
-scripts/fetch-data.sh      # rime-wanxiang dictionary sources, Tatoeba sentences, CLDR emoji names
-scripts/build-data.sh      # compiled dictionaries and language model → Data/
+scripts/build-librime.sh   # librime → Frameworks/
+scripts/fetch-data.sh      # dictionary and corpus sources
+scripts/build-data.sh      # dictionaries and language models → Data/
 scripts/generate-project.sh
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS' build
+scripts/install-dev.sh     # install the build for the current user
 ```
 
-`scripts/ci.sh` runs everything above plus the tests and the benchmark (`sugu-bench`, with its test sets in `Bench/`). `scripts/install-dev.sh` installs a build for the current user; `scripts/package-dev.sh` makes an unsigned installer package of one, for testing the package install.
+`scripts/ci.sh` runs the full check: builds, tests and the benchmark. The app is in `Sugu/`, and the engines, input logic and learning are in `Packages/SuguKit/`, which builds and tests on its own. [docs/architecture.md](docs/architecture.md) describes how they fit together.
 
-| Path | Contents |
-|---|---|
-| `Sugu/` | The input method app: InputMethodKit wiring, candidate window, settings |
-| `Packages/SuguKit/` | Input state machine, engines, learning, dictionaries — testable without installing anything |
-| `Bench/` | Accuracy test sets |
-| `docs/` | [Architecture](docs/architecture.md) and architecture decisions (`adr/`) |
-| `scripts/` | Dependency, data, release and install scripts |
-| `todo.md`, `progress.md`, `decision.md`, `release.md` | Work plan, build log, implementation decisions and release plan |
-| `site/` | The home page at [sugu.zheng-she.com](https://sugu.zheng-she.com) (Astro, Cloudflare Pages) |
+## Contributing
+
+Bug reports, ideas and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-Proprietary, free of charge — see [LICENSE](LICENSE) and [ADR 0006](docs/adr/0006-proprietary-license-and-distribution.md). Sugu includes third-party software and data under their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt); the Chinese dictionary is rime-wanxiang by amzxyz (CC-BY-4.0), and the language models are computed from sentences by the contributors of Tatoeba (CC BY 2.0 FR). rime-ice (GPL-3.0) and the Zenzai model (CC-BY-SA-4.0) are never bundled and are downloaded only at the user's request.
+Sugu is licensed under the [GNU General Public License, version 3 or later](LICENSE). Bundled third-party software and data keep their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt).
