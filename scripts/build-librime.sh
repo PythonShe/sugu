@@ -55,6 +55,8 @@ cmake_dep() { # dir [args...]
   local dir="$1"; shift
   cmake -S "$dir" -B "$dir/build-sugu" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG -flto=full" \
+    -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG -flto=full" \
     -DCMAKE_INSTALL_PREFIX="$PREFIX" \
     -DCMAKE_PREFIX_PATH="$PREFIX" \
     -DBUILD_SHARED_LIBS=OFF \
@@ -92,7 +94,8 @@ cmake_dep "$WORK/src/librime" \
   -DBOOST_ROOT="$BOOST_DIR" \
   -DBoost_INCLUDE_DIR="$BOOST_DIR"
 
-# One archive carrying librime and every dependency it links against.
+# One archive carrying librime and every dependency it links against, as
+# LLVM bitcode (full LTO): the app's link optimizes across all of them.
 LIBS=("$PREFIX/lib/librime.a" "$PREFIX/lib/libleveldb.a" "$PREFIX/lib/libmarisa.a"
       "$PREFIX/lib/libyaml-cpp.a" "$PREFIX/lib/libopencc.a")
 for lib in "${LIBS[@]}"; do [[ -f "$lib" ]] || { echo "missing $lib" >&2; exit 1; }; done
@@ -114,9 +117,44 @@ module CRime {
 }
 EOF
 
+# Laid out by hand: xcodebuild -create-xcframework cannot read the
+# architectures of an archive of bitcode.
 rm -rf "$OUT"
-xcodebuild -create-xcframework -library "$WORK/librime-all.a" -headers "$HEADERS" \
-  -output "$OUT" >/dev/null
+mkdir -p "$OUT/macos-arm64_x86_64"
+cp "$WORK/librime-all.a" "$OUT/macos-arm64_x86_64/"
+cp -R "$HEADERS" "$OUT/macos-arm64_x86_64/Headers"
+cat > "$OUT/Info.plist" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AvailableLibraries</key>
+	<array>
+		<dict>
+			<key>BinaryPath</key>
+			<string>librime-all.a</string>
+			<key>HeadersPath</key>
+			<string>Headers</string>
+			<key>LibraryIdentifier</key>
+			<string>macos-arm64_x86_64</string>
+			<key>LibraryPath</key>
+			<string>librime-all.a</string>
+			<key>SupportedArchitectures</key>
+			<array>
+				<string>arm64</string>
+				<string>x86_64</string>
+			</array>
+			<key>SupportedPlatform</key>
+			<string>macos</string>
+		</dict>
+	</array>
+	<key>CFBundlePackageType</key>
+	<string>XFWK</string>
+	<key>XCFrameworkFormatVersion</key>
+	<string>1.0</string>
+</dict>
+</plist>
+EOF
 
 # OpenCC conversion tables used by the Simplified/Traditional filters.
 mkdir -p "$ROOT/.vendor/opencc"
