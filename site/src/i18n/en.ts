@@ -1,12 +1,12 @@
 export default {
-  description: 'Sugu is a free input method for typing Chinese and Japanese on the Mac.',
+  description: 'Sugu is a free, open-source input method for typing Chinese and Japanese on the Mac.',
   nav: { changelog: 'Changelog', privacy: 'Privacy', licenses: 'Licenses', language: 'Language' },
   home: {
     pageTitle: 'Sugu – Chinese and Japanese Input for Mac',
     title: 'The right word, right away.',
     lead: 'Sugu is a Chinese and Japanese input method for the Mac. It puts the word you mean first, moves between Chinese, Japanese and English in a single input source, and does all its work on your Mac.',
     download: 'Download',
-    requirement: 'Free · macOS 14 or later',
+    requirement: 'Free and open source · macOS 14 or later',
     version: (version: string) => `Version ${version}`,
     features: [
       { title: 'One input source. Three languages.', body: 'Move between Chinese, Japanese and English with Shift, Caps Lock, or the かな and 英数 keys.' },
