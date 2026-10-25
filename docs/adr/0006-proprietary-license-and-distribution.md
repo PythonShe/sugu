@@ -1,5 +1,10 @@
 # Proprietary license and distribution from Sugu's own domain
 
+> Since 2026-10-25 Sugu is GPL-3.0-or-later and its repository is public
+> (decision.md D-104); decisions 1, 2 and 5 no longer hold. Releases stay
+> on `sugu.zheng-she.com` (decision 4), and bundled components stay
+> permissive (decision 3).
+
 Sugu was licensed Apache-2.0 with the intent to publish its repository.
 On 2026-10-20 the owner decided to make it proprietary and free of charge,
 and to release it from the project's own domain rather than GitHub

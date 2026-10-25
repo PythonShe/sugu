@@ -1,7 +1,7 @@
 # Sugu Rules
 
-Sugu is a proprietary, free, privacy-first input method for macOS for
-Japanese and Chinese composition. Single-component repo — Swift / AppKit / InputMethodKit.
+Sugu is a free, open-source (GPL-3.0-or-later), privacy-first input method
+for macOS for Japanese and Chinese composition. Single-component repo — Swift / AppKit / InputMethodKit.
 `AGENTS.md` is a verbatim copy of `CLAUDE.md`; after editing either, re-copy it
 over the other in the same commit. Product decisions live in `docs/adr/`,
 implementation decisions in `decision.md`, the work plan in `todo.md`, the
@@ -59,8 +59,10 @@ pnpm --dir site check && pnpm --dir site build   # the home page
 
 ## 3. Product & License
 
-- License: **proprietary** (`LICENSE`), free of charge; the repository is
-  private and releases come only from `sugu.zheng-she.com` (ADR 0006).
+- License: **GPL-3.0-or-later** (`LICENSE`); the repository is public,
+  outside commits carry a DCO sign-off (`CONTRIBUTING.md`), and releases
+  come from `sugu.zheng-she.com` and the repository's GitHub releases
+  (D-104).
 - Zero telemetry; composition, conversion, and learning resolve on-device.
   The only network traffic is update checks and user-initiated downloads;
   Private Cloud Compute is for development builds only, which carry its
@@ -69,12 +71,14 @@ pnpm --dir site check && pnpm --dir site build   # the home page
   < 16 ms; resident memory < 200 MB in the default configuration.
 - Bundled third-party code and data are under permissive or
   attribution-only licenses; GPL, LGPL and share-alike stay user downloads.
-- Public-facing docs describe the project only.
+- Public-facing docs (README, CONTRIBUTING, SECURITY, the site) describe the
+  project only, without ADR or decision numbers.
 
 ## 4. Git Conventions
 
 - Standing authorization: commit and push in logical groups as work
-  completes, directly to `main`.
+  completes, directly to `main`. Never force-push; `main` and the `v*`
+  tags are protected against it.
 - Commit messages are a single title line:
   `<type>(<scope>): <description>` — types: `feat` `fix` `refactor` `docs`
   `chore` `test` `perf` `style`.

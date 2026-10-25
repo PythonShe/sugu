@@ -1,6 +1,6 @@
 # Sugu
 
-Sugu is a proprietary, free, privacy-first input method for macOS covering
+Sugu is a free, open-source, privacy-first input method for macOS covering
 Japanese and Chinese composition. This glossary pins the domain language;
 decisions live in `docs/adr/`.
 

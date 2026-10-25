@@ -234,3 +234,11 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Zenzai on the engine's dictionary in memory (fork `takeZenzaiModel(from:)`); a `--zenzai` soak
 - [x] Zenzai keeps taught words: user words found past dictionary prefixes, no v2 condition in v3 prompts, taught words kept whole
 - [ ] Soak the AppKit candidate window
+
+## 26. Open source (D-104)
+- [x] GPL-3.0-or-later: `LICENSE`, notices, copyright line, source link in Settings and on the site
+- [x] README, CONTRIBUTING (DCO), SECURITY, issue and pull request templates
+- [x] CI on every push and pull request; DCO check
+- [x] GitHub releases again, after the R2 publish
+- [ ] Repository settings, rulesets (no force push), security features
+- [ ] Make the repository public

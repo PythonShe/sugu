@@ -3,8 +3,8 @@
 Everything between today's `main` and a 1.0 with working updates.
 Decisions it builds on: D-020 (distribution), D-045 (Private Cloud
 Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
-(pipeline, signed feed), D-086 (proprietary, private repository), D-087
-(releases on R2), ADR 0006. Rewritten 2026-10-20.
+(pipeline, signed feed), D-087 (releases on R2), D-104 (GPL-3.0-or-later,
+public repository). Rewritten 2026-10-20.
 
 ## Shape
 
@@ -18,7 +18,7 @@ Compute signing), D-072 (release readiness), D-084 (feed domain), D-085
   - `releases.json`, `latest.json`, then `appcast.xml` last;
   - the debug symbols at `symbols/<version>/Sugu-<version>-<build>.dSYMs.zip`, which the site never serves (the bucket's r2.dev address is off).
 - **Home page:** `site/` (Astro) on Cloudflare Pages project `sugu`; its functions serve the same paths from the bucket, plus `/download/` → newest `.pkg`.
-- **Repository:** private. No GitHub releases; tags mark releases. Tags are annotated (`git tag -a vX.Y.Z -m vX.Y.Z`): the build number is the tag's day, and the release refuses a lightweight tag.
+- **Repository:** public, GPL-3.0-or-later; each release's tag is its source. Each tagged release is also a GitHub release with the same `.pkg` and `.zip` (`RELEASE_TO_GITHUB=true`), created after the publish to R2 succeeded; the update feed stays on R2. Tags are annotated (`git tag -a vX.Y.Z -m vX.Y.Z`): the build number is the tag's day, and the release refuses a lightweight tag.
 
 ## Built (not yet run)
 
@@ -94,4 +94,4 @@ Variables: `APPLE_TEAM_ID`, `SPARKLE_PUBLIC_ED_KEY`, optional `LLM_MODEL` (defau
 - [ ] Taiwanese readings and forms (Zhuyin).
 - [ ] Score the built-in Chinese and Japanese input methods on the same sets (needs foreground typing).
 - [ ] Measure the installed app's footprint during real typing, next to Apple Pinyin (24 MB) and Apple Japanese (46 MB).
-- [ ] Have a lawyer read `LICENSE` (D-086).
+- [x] ~~Have a lawyer read `LICENSE`~~: it is the GPL's own text now (D-104).

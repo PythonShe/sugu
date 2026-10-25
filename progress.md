@@ -3,6 +3,11 @@
 Running log of what was built, verified, and what is next. Newest first.
 
 ## 2026-10-25
+- Open source under GPL-3.0-or-later (D-104): `LICENSE`, notices,
+  copyright line, a source link in Settings › Advanced and on the site's
+  licenses page; a compact README with CONTRIBUTING (DCO sign-off),
+  SECURITY and issue templates; CI on every push and pull request, a DCO
+  check, and GitHub releases again after the publish to R2.
 - Hardening before 1.0 from four audits and a memory measurement
   (D-103), no leak found:
   - the app builds with the package pins;

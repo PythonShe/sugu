@@ -117,3 +117,5 @@ so it is labelled experimental.
 ### 2026-10-20 · Amendment: proprietary license
 Sugu is now proprietary and free of charge (ADR 0006). Decision 8's
 reasoning still holds: a GPL fork could not ship under `LICENSE` either.
+Since 2026-10-25 Sugu is GPL-3.0-or-later (decision.md D-104), so a GPL
+dependency is no longer ruled out by the license.

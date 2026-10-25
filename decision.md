@@ -197,6 +197,7 @@ any call made without the owner present. Each entry: what, why, reversibility.
   measured p99 1.2 ms (the first draw, loading fonts, takes ~12 ms).
 
 ## D-019 · CI runs on demand while the repository is private (2026-10-20)
+- Superseded by D-104: CI runs on every push to `main` and pull request.
 - `scripts/ci.sh` is the single full check (dependencies, Release build,
   package tests, `sugu-bench --check`); `.github/workflows/ci.yml` runs it
   on `workflow_dispatch` only, because macOS runner minutes are billed for
@@ -1552,6 +1553,7 @@ any call made without the owner present. Each entry: what, why, reversibility.
   before the first real release's feed job can pass.
 
 ## D-086 · Proprietary, free of charge; the repository stays private (2026-10-20)
+- Superseded by D-104: GPL-3.0-or-later, public repository.
 - Owner decision: "go proprietary". Recorded in ADR 0006. `LICENSE` is a
   freeware license: use of unmodified copies from sugu.zheng-she.com at
   no cost; no redistribution, modification or reverse engineering beyond
@@ -2032,3 +2034,48 @@ checked against the code before it was changed.
   - the AppKit candidate window in the soak;
   - a store on a full disk, which the unit test covers only by a failed
     write.
+
+## D-104 · GPL-3.0-or-later and a public repository (2026-10-25)
+- Owner decision: publish the repository, open source, issues and pull
+  requests welcome, DCO sign-off rather than a contributor agreement. This
+  supersedes ADR 0006 decisions 1, 2 and 5 and D-086; releases stay on R2
+  under `sugu.zheng-she.com` (D-087).
+- Why GPL-3.0-or-later: every bundled component (BSD, MIT, BSL-1.0,
+  Unicode, Apache-2.0, and the CC-BY data as separate works) is compatible
+  with it. AGPL adds only network-use terms, which a local input method
+  never meets, and puts off reuse; LGPL suits libraries and cannot take in
+  GPL or CC BY-SA parts. Under GPL-3.0, rime-ice (GPL-3.0) and the Zenzai
+  model (CC-BY-SA-4.0, one-way compatible) may be bundled, but they stay
+  downloads the user starts, and `scripts/ci.sh` still keeps share-alike
+  data out of the bundle.
+- Without a contributor agreement, contributed code stays GPL: relicensing
+  Sugu later needs every contributor's consent.
+- Earlier versions keep their licenses: Apache-2.0 before 2026-10-20, the
+  proprietary Sugu License from then to this change (0.9.1 and 0.9.2).
+- `LICENSE` is the GPL's text (SHA-256 3972dc97…6986). The notices begin
+  with the GPL notice and the source address, and the installer shows the
+  GPL. Settings › Advanced links the source code next to the website. The
+  copyright line names the license, and the site's licenses page links the
+  source.
+- Releases are GitHub releases again besides R2 (`RELEASE_TO_GITHUB=true`):
+  the job runs after the publish to R2 succeeded, so a release refused
+  there never appears on GitHub with other bytes. The update feed and the
+  site stay on R2. 0.9.1 and 0.9.2 are not backfilled.
+- Each release's corresponding source is its tag in the public
+  repository; `scripts/fetch-data.sh` and `scripts/build-data.sh` rebuild
+  `Data/` from pinned sources. Modified builds install with
+  `scripts/install-dev.sh`, without any of the owner's keys.
+- CI (`ci.yml`) runs on every push to `main` and pull request, now that
+  GitHub-hosted runners cost nothing for public repositories, with
+  read-only permissions; pull request runs get no secrets. `dco.yml`
+  checks that each pull-request commit carries its author's
+  `Signed-off-by`.
+- GitHub: rulesets keep `main` and the `v*` tags from force pushes and
+  deletion, and tags from being moved; pull requests to `main` need CI and
+  DCO to pass and keep history linear, with the owner able to bypass.
+  Squash merges only. Wiki and projects are off; private vulnerability
+  reporting, secret scanning with push protection, and Dependabot alerts
+  are on; outside contributors' workflow runs need approval.
+- Public docs (README, CONTRIBUTING, SECURITY, issue and pull request
+  templates) are kept short and name no ADRs or decisions. The working
+  notes stay tracked.
