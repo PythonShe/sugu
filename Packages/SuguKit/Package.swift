@@ -31,7 +31,7 @@ let package = Package(
         // names (decision.md D-101).
         .package(
             url: "https://github.com/PythonShe/AzooKeyKanaKanjiConverter",
-            revision: "8d10d75e746dc69188660687016eef1c685894a6",
+            revision: "6d2f148d2726af2489fab16f27e9b02cd83a5801",
             traits: ["Zenzai"]
         ),
         // Keep in step with SPARKLE_VERSION in scripts/versions.sh.

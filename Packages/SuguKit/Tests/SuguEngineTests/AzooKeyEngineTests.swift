@@ -275,6 +275,35 @@ import SuguRime
         #expect(engine.state.segments.map(\.text).joined() == "私は学生です")
     }
 
+    /// Words the user taught reach Zenzai's lattice, and Zenzai keeps them
+    /// whole once it takes their start. Needs a model, as above.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUGU_ZENZAI_MODEL"] != nil))
+    func zenzaiKeepsTaughtWords() async throws {
+        let model = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUGU_ZENZAI_MODEL"]))
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("sugu-azookey-tests")
+        var configuration = AzooKeyEngine.Configuration(workingDirectory: work)
+        let engine = AzooKeyEngine(configuration: configuration)
+        engine.adopt(try #require(await AzooKeyEngine.loadZenzai(model, workingDirectory: work)))
+        configuration.zenzaiModel = model
+        engine.update(configuration)
+        let taught = [
+            ("きりたにかなで", "桐谷奏", "kiritanikanadesannniaimashita"),
+            ("あまのしずく", "天野雫", "amanoshizukuhawatashinotomodachidesu"),
+            ("くろさきりお", "黒崎莉央", "kurosakiriosannkaradenwagakimashita"),
+            ("さくらばみお", "桜庭澪", "sakurabamiohapianogajouzudesu"),
+        ]
+        engine.setUserWords(taught.map { .init(reading: $0.0, text: $0.1, isEstablished: false) })
+        for (_, word, typed) in taught {
+            engine.insert(typed)
+            #expect(engine.convert())
+            let text = engine.state.segments.map(\.text).joined()
+            #expect(text.hasPrefix(word), "\(typed) → \(text)")
+            // The rest is converted too, not left in kana.
+            #expect(text.dropFirst(word.count).unicodeScalars.contains { $0.properties.isIdeographic }, "\(text)")
+            engine.clear()
+        }
+    }
+
     @Test func theLanguageModelRanksSentencesThatReadNaturally() throws {
         var builder = CharacterLanguageModelBuilder()
         builder.minimumCount = 1
