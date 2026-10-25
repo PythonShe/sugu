@@ -36,6 +36,13 @@ final class AdvancedPane: SettingsPane {
         link.contentTintColor = .linkColor
         link.setAccessibilityRole(.link)
         form.row(String(localized: "Website:"), link)
+        let source = form.makeButton("github.com/PythonShe/sugu") {
+            NSWorkspace.shared.open(URL(string: "https://github.com/PythonShe/sugu")!)
+        }
+        source.isBordered = false
+        source.contentTintColor = .linkColor
+        source.setAccessibilityRole(.link)
+        form.row(String(localized: "Source code:"), source)
         form.button(String(localized: "Show"), label: String(localized: "Acknowledgements:")) { [weak self] in self?.showNotices() }
     }
 

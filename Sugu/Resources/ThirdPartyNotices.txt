@@ -1,7 +1,14 @@
 Sugu — Third-Party Notices
 
-Sugu is proprietary software (see LICENSE). It includes the software
-and data listed below, each under its own license.
+Sugu is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your
+option) any later version. It comes with ABSOLUTELY NO WARRANTY. The
+license is at https://www.gnu.org/licenses/gpl-3.0.html, and the source
+code at https://github.com/PythonShe/sugu.
+
+Sugu includes the software and data listed below, each under its own
+license.
 
 ================================================================================
 

@@ -81,8 +81,15 @@ entry() {
 {
   echo "Sugu — Third-Party Notices"
   echo
-  echo "Sugu is proprietary software (see LICENSE). It includes the software"
-  echo "and data listed below, each under its own license."
+  echo "Sugu is free software: you can redistribute it and/or modify it under"
+  echo "the terms of the GNU General Public License as published by the Free"
+  echo "Software Foundation, either version 3 of the License, or (at your"
+  echo "option) any later version. It comes with ABSOLUTELY NO WARRANTY. The"
+  echo "license is at https://www.gnu.org/licenses/gpl-3.0.html, and the source"
+  echo "code at https://github.com/PythonShe/sugu."
+  echo
+  echo "Sugu includes the software and data listed below, each under its own"
+  echo "license."
 } >"$TMP"
 
 entry "librime $LIBRIME_REF" "https://github.com/rime/librime" "BSD-3-Clause" "$RIME/librime/LICENSE"
