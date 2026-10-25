@@ -24,7 +24,9 @@ Running log of what was built, verified, and what is next. Newest first.
   keys, and a failed librime deployment. It found a composition broken by
   a deployment queued while settings changed back. Fixed: no engine is
   handed out until the deployment has run or been skipped.
-- Version 1.0.0; Zenzai ships without the Experimental label.
+- Version 1.0.0; Zenzai ships without the Experimental label and keeps
+  taught words: 0% → 70% on the taught-names set with Zenzai, nothing else
+  changed, through three fixes in the AzooKey fork.
 
 ## 2026-10-22
 - Releases offer Apple's model on this Mac only: the Private Cloud Compute

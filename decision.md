@@ -440,7 +440,7 @@ any call made without the owner present. Each entry: what, why, reversibility.
   to the model's own reading in sentences (taught names 0% → 0%, against
   30% → 90% without it). Zenzai reranks AzooKey's lattice by the language
   model and rewrites the result, and the dynamic user dictionary does not
-  bind it.
+  bind it. Fixed for 1.0 (D-103).
 
 ## D-033 · Kana input maps physical keys (2026-10-20)
 - Kana input was selectable but typed the Latin layout's letters, so
@@ -1924,6 +1924,10 @@ checked against the code before it was changed.
     user words and the greetings of D-099.
   - `takeZenzaiModel(from:)`, added 2026-10-25 (D-103): a converter takes
     over the Zenzai model another loaded.
+  - Taught words under Zenzai, added 2026-10-25 (D-103): the lookup finds
+    a user word read past every dictionary prefix; zenz-v3 prompts leave
+    out the user dictionary condition; a taught word is judged by its
+    first token and kept whole after it.
   - Its tests pass, but for `testMozcEvaluationData`, which crashes on
     stock 0.11.2 too.
 - In Sugu the kana shows as typed, and a commit is learned under the
@@ -1998,7 +2002,26 @@ checked against the code before it was changed.
   F6–F10, ⌃⌫, 英数 and かな (twice too), ⌥, ⌃⇧K/J/R and the Emacs keys.
   `--failed-deploy` gives librime no data; `--zenzai` converts with a
   model.
-- Zenzai ships in 1.0 without the Experimental label.
+- Zenzai ships in 1.0 without the Experimental label, and keeps the words
+  the user taught (bench with Zenzai: taught names 0% → 70% top-1, the
+  taught word itself kept in 9 of 10 sentences; the main set unchanged at
+  89%; without Zenzai every result unchanged). Three causes, each fixed in
+  the fork:
+  - AzooKey's lookup stops extending a reading once the dictionary has no
+    word starting with it, and only then asks the dynamic user
+    dictionary, so 桐谷奏 (キリタニカナデ, past キリタニ) was never found
+    when a lattice is built at once, which Zenzai always does. Readings a
+    user word continues now stay reachable.
+  - Every prompt carried the user words as `辞書:…`, a zenz-v2 condition
+    that zenz-v3 has no tag for; read as stray text, it turned what
+    followed a user word into kana. It goes to v2 models only.
+  - Zenzai's review rewrote a user word midway (黒崎莉央 → 黒崎莉音). A
+    word the user taught is now judged by its first token, with the
+    preference AzooKey gives its own learned words, and kept whole once
+    taken; Zenzai still chooses between it and another word by context.
+  The remaining miss is 琴葉駅, which the model rejects at its first token.
+  The fork's own Zenzai tests need azooKeyMac's model in a fixed place and
+  fail without it, before these changes and after alike.
 - Not done:
   - the AppKit candidate window in the soak;
   - a store on a full disk, which the unit test covers only by a failed

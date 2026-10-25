@@ -232,4 +232,5 @@ Progress notes live in `progress.md`; decisions in `decision.md`.
 - [x] Memory: generational caches; the Settings window released on close
 - [x] Fuzzer: fields, settings, redeploys, pauses, learned words, reconversion, secure input, the remaining keys; `--failed-deploy`
 - [x] Zenzai on the engine's dictionary in memory (fork `takeZenzaiModel(from:)`); a `--zenzai` soak
+- [x] Zenzai keeps taught words: user words found past dictionary prefixes, no v2 condition in v3 prompts, taught words kept whole
 - [ ] Soak the AppKit candidate window
