@@ -56,4 +56,4 @@ Bug reports, ideas and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBU
 
 ## License
 
-Sugu is licensed under the [GNU General Public License, version 3 or later](LICENSE). Bundled third-party software and data keep their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt).
+Copyright © 2026 Zheng She. Sugu is licensed under the [GNU General Public License, version 3 or later](LICENSE). Bundled third-party software and data keep their own licenses, listed in [ThirdPartyNotices.txt](Sugu/Resources/ThirdPartyNotices.txt).

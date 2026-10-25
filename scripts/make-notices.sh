@@ -81,6 +81,8 @@ entry() {
 {
   echo "Sugu — Third-Party Notices"
   echo
+  echo "Copyright © 2026 Zheng She"
+  echo
   echo "Sugu is free software: you can redistribute it and/or modify it under"
   echo "the terms of the GNU General Public License as published by the Free"
   echo "Software Foundation, either version 3 of the License, or (at your"
