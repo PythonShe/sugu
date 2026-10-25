@@ -19,6 +19,8 @@ const t = messagesFor(locale);
 const [latest] = await releases();
 const href = (target: Locale, page: string = path) => `/${target}/${page}`;
 const pageTitle = title ? `${title} – Sugu` : t.home.pageTitle;
+/** The site's name in search results (schema.org WebSite), on the home pages. */
+const website = { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Sugu', url: new URL('/', Astro.site).href };
 /** Open Graph wants a territory with each language. */
 const ogLocale: Record<Locale, string> = { en: 'en_US', ja: 'ja_JP', 'zh-Hans': 'zh_CN', 'zh-Hant': 'zh_TW' };
 ---
@@ -44,6 +46,7 @@ const ogLocale: Record<Locale, string> = { en: 'en_US', ja: 'ja_JP', 'zh-Hans': 
     <meta property="og:locale" content={ogLocale[locale]} />
     {locales.filter((other) => other !== locale).map((other) => <meta property="og:locale:alternate" content={ogLocale[other]} />)}
     <meta name="twitter:card" content="summary" />
+    {path === '' && <script type="application/ld+json" set:html={JSON.stringify(website)} />}
     <link rel="icon" href={faviconGraphite} type="image/svg+xml" media="(prefers-color-scheme: light)" />
     <link rel="icon" href={faviconPaper} type="image/svg+xml" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)" />

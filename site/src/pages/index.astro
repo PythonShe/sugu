@@ -1,5 +1,8 @@
 ---
 import { defaultLocale, languageNames, locales } from '../i18n/locales';
+
+/** The site's name in search results (schema.org WebSite). */
+const website = { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Sugu', url: new URL('/', Astro.site).href };
 ---
 
 <!doctype html>
@@ -9,6 +12,7 @@ import { defaultLocale, languageNames, locales } from '../i18n/locales';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Sugu</title>
+    <script type="application/ld+json" set:html={JSON.stringify(website)} />
     <script is:inline define:vars={{ locales, defaultLocale }}>
       // The visitor's language, else English.
       const match = (language) => {
