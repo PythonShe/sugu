@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { locales } from '../i18n/locales';
+import { pagePath } from '../lib/paths';
 
 /** Every page in every language, each listing its translations. */
 const pages = ['', 'changelog/', 'privacy/', 'licenses/'];
 
 export const GET: APIRoute = ({ site }) => {
-  const url = (locale: string, page: string) => new URL(`/${locale}/${page}`, site).href;
+  const url = (locale: (typeof locales)[number], page: string) => new URL(pagePath(locale, page), site).href;
   const entries = pages.flatMap((page) =>
     locales.map((locale) => {
       const alternates = locales

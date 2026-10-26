@@ -1,0 +1,219 @@
+---
+import Base from '../layouts/Base.astro';
+import iconLight from '../../../Assets/svg/sugu-icon-stroke-light.svg?url';
+import iconDark from '../../../Assets/svg/sugu-icon-stroke-dark.svg?url';
+import type { Locale } from '../i18n/locales';
+import { messagesFor } from '../i18n/messages';
+import { releases } from '../lib/releases';
+import { pagePath } from '../lib/paths';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = messagesFor(locale);
+const [latest] = await releases();
+const [source, chinese, japanese, learns, local, dictionaries] = t.home.features;
+// The icon's brush stroke, from Assets/svg/sugu-icon-stroke-light.svg.
+const stroke =
+  'M194.91 535.91C216.86 532.86 239.42 531.64 267.47 531.64L742.47 531.64C747.35 531.64 749.79 530.42 749.79 527.99C749.79 526.77 749.18 525.55 746.74 523.11C711.98 493.84 701.01 485.30 664.42 457.25C641.86 483.47 635.16 492.01 614.42 518.84L267.47 518.84C236.98 518.84 211.37 516.40 190.64 512.13Z';
+---
+
+<Base locale={locale} path="">
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'Sugu',
+      description: t.description,
+      url: new URL(pagePath(locale), Astro.site).href,
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: `macOS ${latest?.minimumSystemVersion ?? '14.0'}`,
+      inLanguage: ['zh-Hans', 'zh-Hant', 'ja', 'en'],
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      ...(latest && { softwareVersion: latest.version, datePublished: latest.date, downloadUrl: new URL('/download/', Astro.site).href }),
+    })}
+  />
+  <section class="hero">
+    <svg class="mark" viewBox="170 310 680 400" aria-hidden="true">
+      <defs>
+        <clipPath id="brush"><rect data-brush x="170" y="440" width="600" height="110" /></clipPath>
+      </defs>
+      <path class="ink" d={stroke} clip-path="url(#brush)" />
+      <rect class="caret" data-caret x="775.68" y="330.72" width="53.56" height="362.56" rx="26.78" />
+    </svg>
+    <h1>{t.home.title}</h1>
+    <div class="hero-foot">
+      <p class="lead">{t.home.lead}</p>
+      <div class="cta">
+        {latest && (
+          <a class="button icon" href="/download/">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path class="arrow" d="M12 3.5v11M7.5 10 12 14.5 16.5 10" /><path d="M5 19.5h14" /></svg>
+            {t.home.download}
+          </a>
+        )}
+        <p class="meta">{t.home.requirement}{latest && <><br />{t.home.version(latest.version)}</>}</p>
+      </div>
+    </div>
+  </section>
+
+  <ul class="bento">
+    <li class="card wide" data-card="keys">
+      <div class="keys" aria-hidden="true"><kbd>⇧</kbd><kbd>⇪</kbd><kbd lang="ja">英数</kbd><kbd lang="ja">かな</kbd></div>
+      <h2>{source.title}</h2>
+      <p>{source.body}</p>
+    </li>
+    <li class="card" data-card>
+      <span class="glyph" lang="zh-Hans" aria-hidden="true">拼</span>
+      <h2>{chinese.title}</h2>
+      <p>{chinese.body}</p>
+    </li>
+    <li class="card" data-card>
+      <span class="glyph" lang="ja" aria-hidden="true">あ</span>
+      <h2>{japanese.title}</h2>
+      <p>{japanese.body}</p>
+    </li>
+    <li class="card wide" data-card="learns">
+      <div class="strip" lang="ja" aria-hidden="true">
+        <i class="highlight" data-highlight></i>
+        <ol data-strip>
+          <li aria-selected="true">今夜</li>
+          <li>紺屋</li>
+          <li>今や</li>
+          <li>こんや</li>
+        </ol>
+      </div>
+      <h2>{learns.title}</h2>
+      <p>{learns.body}</p>
+    </li>
+    <li class="card wide inverted" data-card>
+      <h2>{local.title}<span class="inline-caret" aria-hidden="true"></span></h2>
+      <p>{local.body}</p>
+    </li>
+    <li class="card" data-card>
+      <span class="glyph" lang="ja" aria-hidden="true">辞</span>
+      <h2>{dictionaries.title}</h2>
+      <p>{dictionaries.body}</p>
+    </li>
+  </ul>
+
+  <section class="install">
+    <h2>{t.home.install.title}</h2>
+    <ol>
+      {t.home.install.steps.map((step, index) => (
+        <li>
+          <span class="numeral">{index + 1}</span>
+          <p>{step}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  {latest && (
+    <section class="coda">
+      <picture>
+        <source srcset={iconDark} media="(prefers-color-scheme: dark)" />
+        <img src={iconLight} alt="" width="96" height="96" />
+      </picture>
+      <a class="button icon" href="/download/">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="arrow" d="M12 3.5v11M7.5 10 12 14.5 16.5 10" /><path d="M5 19.5h14" /></svg>
+        {t.home.download}
+      </a>
+    </section>
+  )}
+</Base>
+
+<script>
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+  // The stroke is laid down left to right, the way a brush moves; then the caret arrives.
+  const brush = document.querySelector<SVGRectElement>('[data-brush]')!;
+  const caret = document.querySelector<SVGRectElement>('[data-caret]')!;
+  if (!still) {
+    const width = brush.width.baseVal.value;
+    const started = performance.now();
+    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+    brush.setAttribute('width', '0');
+    const draw = (now: number) => {
+      const progress = Math.min((now - started - 250) / 1200, 1);
+      brush.setAttribute('width', String(Math.max(0, ease(progress)) * width));
+      if (progress < 1) requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+    caret
+      .animate([{ opacity: 0, transform: 'scaleY(0.6)' }, { opacity: 1, transform: 'none' }], {
+        duration: 500,
+        delay: 1300,
+        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+        fill: 'backwards',
+      })
+      .finished.then(() => caret.classList.add('blink'));
+  }
+
+  // The candidate strip: the highlight moves to the visitor's word, and the word moves to the front.
+  const strip = document.querySelector<HTMLOListElement>('[data-strip]')!;
+  const highlight = document.querySelector<HTMLElement>('[data-highlight]')!;
+  const select = (item: Element) => {
+    for (const el of strip.children) el.toggleAttribute('aria-selected', el === item);
+    const { offsetLeft, offsetWidth } = item as HTMLElement;
+    highlight.style.transform = `translateX(${offsetLeft}px)`;
+    highlight.style.width = `${offsetWidth}px`;
+  };
+  const [learned, other] = strip.children;
+  const learn = async () => {
+    await wait(700);
+    select(learned);
+    await wait(900);
+    // FLIP: reorder, then let every item glide from where it was.
+    const items = [...strip.children] as HTMLElement[];
+    const before = new Map(items.map((item) => [item, item.offsetLeft]));
+    strip.prepend(learned);
+    for (const item of items) {
+      const shift = before.get(item)! - item.offsetLeft;
+      if (shift) item.animate([{ transform: `translateX(${shift}px)` }, { transform: 'none' }], { duration: 560, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+    }
+    select(learned);
+  };
+
+  // The four keys, pressed once in turn.
+  const press = async () => {
+    await wait(400);
+    for (const key of document.querySelectorAll<HTMLElement>('kbd')) {
+      key.animate([{ transform: 'none' }, { transform: 'translateY(1.5px)', boxShadow: '0 0 0 1px var(--hairline)' }, { transform: 'none' }], {
+        duration: 240,
+        easing: 'ease-out',
+      });
+      await wait(200);
+    }
+  };
+
+  document.documentElement.classList.add('js');
+  if (!still) {
+    // Start from before the word was learned; the strip sits below the fold.
+    strip.prepend(other);
+    select(other);
+  } else {
+    select(learned);
+  }
+  document.fonts.ready.then(() => select(strip.querySelector('[aria-selected]')!));
+
+  const cards = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const card = entry.target as HTMLElement;
+        card.classList.add('in');
+        cards.unobserve(card);
+        if (still) continue;
+        if (card.dataset.card === 'learns') learn();
+        if (card.dataset.card === 'keys') press();
+      }
+    },
+    { rootMargin: '0px 0px -15% 0px' },
+  );
+  document.querySelectorAll('[data-card]').forEach((card) => cards.observe(card));
+</script>

@@ -3,8 +3,9 @@ import '../styles/global.css';
 import faviconGraphite from '../../../Assets/svg/sugu-favicon-graphite.svg?url';
 import faviconPaper from '../../../Assets/svg/sugu-favicon-paper.svg?url';
 import shareImage from '../../../Assets/png/sugu-icon-stroke-light.png?url';
-import { languageNames, locales, type Locale } from '../i18n/locales';
+import { defaultLocale, languageNames, locales, type Locale } from '../i18n/locales';
 import { messagesFor } from '../i18n/messages';
+import { pagePath } from '../lib/paths';
 import { releases } from '../lib/releases';
 
 interface Props {
@@ -17,7 +18,7 @@ interface Props {
 const { locale, path, title } = Astro.props;
 const t = messagesFor(locale);
 const [latest] = await releases();
-const href = (target: Locale, page: string = path) => `/${target}/${page}`;
+const href = (target: Locale, page: string = path) => pagePath(target, page);
 const pageTitle = title ? `${title} – Sugu` : t.home.pageTitle;
 /** The site's name in search results (schema.org WebSite), on the home pages. */
 const website = { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Sugu', url: new URL('/', Astro.site).href };
@@ -31,6 +32,24 @@ const ogLocale: Record<Locale, string> = { en: 'en_US', ja: 'ja_JP', 'zh-Hans': 
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
+    {locale === defaultLocale && path === '' && (
+      <script is:inline define:vars={{ locales, defaultLocale }}>
+        // Readers of another language go to its home page: the one they picked here, else their browser's.
+        const match = (language) => {
+          const tag = language.toLowerCase();
+          if (tag.startsWith('zh')) {
+            return /hant|-tw|-hk|-mo/.test(tag) ? 'zh-Hant' : 'zh-Hans';
+          }
+          return locales.find((locale) => tag.split('-')[0] === locale.toLowerCase());
+        };
+        let picked = null;
+        try {
+          picked = localStorage.getItem('locale');
+        } catch {}
+        const found = locales.includes(picked) ? picked : (navigator.languages || [navigator.language]).map(match).find(Boolean);
+        if (found && found !== defaultLocale) location.replace(`/${found}/`);
+      </script>
+    )}
     <title>{pageTitle}</title>
     <meta name="description" content={t.description} />
     <link rel="canonical" href={new URL(href(locale), Astro.site)} />
@@ -67,7 +86,7 @@ const ogLocale: Record<Locale, string> = { en: 'en_US', ja: 'ja_JP', 'zh-Hans': 
     <footer class="bar">
       <nav aria-label={t.nav.language}>
         {locales.map((other) => (
-          <a href={href(other)} hreflang={other} lang={other} aria-current={other === locale ? 'true' : undefined}>
+          <a href={href(other)} hreflang={other} lang={other} data-locale={other} aria-current={other === locale ? 'true' : undefined}>
             {languageNames[other]}
           </a>
         ))}
@@ -80,3 +99,14 @@ const ogLocale: Record<Locale, string> = { en: 'en_US', ja: 'ja_JP', 'zh-Hans': 
     </footer>
   </body>
 </html>
+
+<script>
+  // The language picked here, which the home page at / follows over the browser's.
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-locale]')) {
+    link.addEventListener('click', () => {
+      try {
+        localStorage.setItem('locale', link.dataset.locale!);
+      } catch {}
+    });
+  }
+</script>

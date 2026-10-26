@@ -1,36 +1,5 @@
 ---
-import { defaultLocale, languageNames, locales } from '../i18n/locales';
-
-/** The site's name in search results (schema.org WebSite). */
-const website = { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Sugu', url: new URL('/', Astro.site).href };
+import Home from '../components/Home.astro';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <title>Sugu</title>
-    <script type="application/ld+json" set:html={JSON.stringify(website)} />
-    <script is:inline define:vars={{ locales, defaultLocale }}>
-      // The visitor's language, else English.
-      const match = (language) => {
-        const tag = language.toLowerCase();
-        if (tag.startsWith('zh')) {
-          return /hant|-tw|-hk|-mo/.test(tag) ? 'zh-Hant' : 'zh-Hans';
-        }
-        return locales.find((locale) => tag.split('-')[0] === locale.toLowerCase());
-      };
-      const found = (navigator.languages || [navigator.language]).map(match).find(Boolean);
-      location.replace(`/${found || defaultLocale}/`);
-    </script>
-  </head>
-  <body>
-    <noscript>
-      <ul>
-        {locales.map((locale) => <li><a href={`/${locale}/`} lang={locale}>{languageNames[locale]}</a></li>)}
-      </ul>
-    </noscript>
-  </body>
-</html>
+<Home locale="en" />

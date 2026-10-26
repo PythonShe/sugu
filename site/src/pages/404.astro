@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { languageNames, locales } from '../i18n/locales';
+import { pagePath } from '../lib/paths';
 ---
 
 <!doctype html>
@@ -20,7 +21,7 @@ import { languageNames, locales } from '../i18n/locales';
       <div class="prose">
         <h1>404</h1>
         <nav>
-          {locales.map((locale) => <p><a href={`/${locale}/`} lang={locale}>{languageNames[locale]}</a></p>)}
+          {locales.map((locale) => <p><a href={pagePath(locale)} lang={locale}>{languageNames[locale]}</a></p>)}
         </nav>
       </div>
     </main>
