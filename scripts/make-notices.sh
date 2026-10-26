@@ -50,7 +50,9 @@ TATOEBA_NOTICE="$CACHE/tatoeba-notice.txt"
   echo "(https://opus.nlpl.eu/Tatoeba). The sentences themselves are not included."
   echo "Licensed under Creative Commons Paternité 2.0 France:"
   echo
-  textutil -convert txt -stdout "$CACHE/cc-by-2.0-fr.html" | sed -n '/^Paternité - 2.0/,$p'
+  # The legal code alone, without the web page around it.
+  textutil -convert txt -stdout "$CACHE/cc-by-2.0-fr.html" |
+    sed -n "/^Creative Commons n'est pas un cabinet d'avocats/,/^Creative Commons peut être contacté/p"
 } >"$TATOEBA_NOTICE"
 
 # The X11 key names librime compiles in carry their notice in the header.
