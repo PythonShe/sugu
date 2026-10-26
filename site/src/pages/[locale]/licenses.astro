@@ -17,9 +17,12 @@ const t = messagesFor(locale);
     <h1>{t.licenses.title}</h1>
     <p>{t.licenses.sugu}</p>
     <p><a href="https://github.com/PythonShe/sugu">{t.licenses.source}</a></p>
+    {/* Keeps Cloudflare from replacing the authors' addresses with links to its email decoder. */}
+    <!--email_off-->
     <h2>{t.licenses.license}</h2>
     <pre class="notices" lang="en">{license}</pre>
     <h2>{t.licenses.notices}</h2>
     <pre class="notices" lang="en">{notices}</pre>
+    <!--/email_off-->
   </div>
 </Base>
