@@ -24,7 +24,7 @@
 
 ## Install
 
-Requires macOS 14 or later. Download the installer from [sugu.zheng-she.com](https://sugu.zheng-she.com) or [GitHub Releases](https://github.com/PythonShe/sugu/releases) and open it; Sugu then appears in the input menu. If it doesn't, add it in **System Settings › Keyboard › Input Sources › Edit**, under Chinese, Simplified. Sugu updates itself.
+Requires macOS 14 or later. Download the installer from [sugu.zheng-she.com](https://sugu.zheng-she.com) or [GitHub Releases](https://github.com/PythonShe/sugu/releases) and open it; Sugu then appears in the input menu. If it doesn't, add it in **System Settings › Keyboard › Input Sources › Edit**, under Chinese, Simplified; if it isn't listed yet, log out and back in. Sugu updates itself.
 
 <details>
 <summary>Uninstall</summary>
