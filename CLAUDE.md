@@ -1,13 +1,12 @@
 # Sugu
 
 macOS input method for Japanese and Chinese: Swift 6, AppKit, InputMethodKit.
-`AGENTS.md` is a verbatim copy of this file; after editing either, copy it
-over the other in the same commit.
 
 Working notes are untracked, in `docs/internal/`: `decision.md` (implementation
 decisions, D-numbers), `todo.md`, `progress.md` (newest first) and
 `release.md`. Keep them current; never commit them. Product decisions are in
-`docs/adr/`, the glossary in `docs/CONTEXT.md`.
+`docs/adr/`, code layout in `docs/architecture.md`, the glossary in
+`docs/CONTEXT.md`.
 
 ## Commands
 
@@ -27,8 +26,8 @@ pnpm --dir site check && pnpm --dir site build
   < 16 ms, resident memory < 200 MB in the default configuration.
 - Engines stay behind the `CompositionEngine` protocol. Learned words live in
   Sugu's own store; text read from the document is never persisted.
-- AppKit only, no SwiftUI, laid out in code; no Auto Layout on the keystroke
-  path. Dark mode, VoiceOver and availability-gated newer APIs from the start.
+- No Auto Layout on the keystroke path. Dark mode, VoiceOver and
+  availability-gated newer APIs from the start.
 - Every user-facing string is in `Localizable.xcstrings`, looked up in the
   app's UI code; packages return semantic kinds.
 - Bundled third-party code and data are permissive or attribution-only
@@ -43,11 +42,8 @@ pnpm --dir site check && pnpm --dir site build
 - Public docs (README, CONTRIBUTING, SECURITY, the site) name no ADRs or
   decision numbers.
 
-## Git
+## Commit scopes
 
-- Commit and push to `main` in logical groups as work completes. Never
-  force-push. Tag or release only when asked.
-- One title line: `<type>(<scope>): <description>`. Types: `feat` `fix`
-  `refactor` `docs` `chore` `test` `perf` `style`. Scopes: `shell` (app),
-  `engines` (`engines/rime`, `engines/azookey`), `learning`, `docs`,
-  `workspace` (root files, scripts, CI), `site`; combine as `shell,engines`.
+`shell` (app), `engines` (`engines/rime`, `engines/azookey`), `learning`,
+`docs`, `workspace` (root files, scripts, CI), `site`; combine as
+`shell,engines`.
