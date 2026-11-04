@@ -4,6 +4,17 @@ import SuguCore
 import SuguLearning
 @testable import SuguInput
 
+/// Waits for what a timer brings about. A fixed sleep failed on a loaded CI
+/// machine, where the main actor ran the 450 ms pause past the sleep's 700.
+/// Tests that nothing happens keep their sleep: running late cannot fail them.
+@MainActor
+private func waitUntil(_ condition: () -> Bool) async throws {
+    let deadline = ContinuousClock.now + .seconds(10)
+    while !condition(), ContinuousClock.now < deadline {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+}
+
 /// Apple's language models: revisions of the selection and model
 /// candidates.
 extension InputSessionTests {
@@ -16,13 +27,13 @@ extension InputSessionTests {
         client.selection = "你好，世界"
         session.revise(selectionWith: .translate(to: .english))
         #expect(client.markedText == "你好，世界")
-        try await Task.sleep(for: .milliseconds(50))
+        try await waitUntil { session.display.candidates?.candidates.count == 2 }
         #expect(session.display.candidates?.candidates.map(\.text) == ["你好，世界", "Hello, world"])
         #expect(session.handle(Key.escape))
         #expect(client.document == "你好，世界")
 
         session.revise(selectionWith: .translate(to: .english))
-        try await Task.sleep(for: .milliseconds(50))
+        try await waitUntil { session.display.candidates?.candidates.count == 2 }
         #expect(session.handle(Key.char("2")))
         #expect(client.document == "你好，世界Hello, world")
     }
@@ -43,7 +54,7 @@ extension InputSessionTests {
         assistant.suggestions = CompositionSuggestions(conversions: ["你好世界！", "你好世界"], translations: [.english: "Hello world", .japanese: "こんにちは世界"])
         session.assistant = assistant
         type("nihaoshijie", into: session)
-        try await Task.sleep(for: .milliseconds(700))
+        try await waitUntil { session.display.candidates?.candidates.contains { $0.text == "Hello world" } == true }
         #expect(assistant.requests.count == 1)
         #expect(assistant.requests.first?.translations == [.japanese, .english])
         #expect(session.display.candidates?.candidates.map(\.text).prefix(4) == ["你好世界", "你好世界！", "こんにちは世界", "Hello world"])
@@ -59,7 +70,7 @@ extension InputSessionTests {
         type("nihaoshijie", into: session)
         for _ in 0..<4 { _ = session.handle(Key.backspace) }
         type("ijie", into: session)
-        try await Task.sleep(for: .milliseconds(700))
+        try await waitUntil { session.display.candidates?.candidates.contains { $0.text == "你好世界！" } == true }
         #expect(assistant.requests.count == 1)
         #expect(session.display.candidates?.candidates.map(\.text).contains("你好世界！") == true)
     }
@@ -70,11 +81,11 @@ extension InputSessionTests {
         assistant.suggestions = CompositionSuggestions(conversions: ["你好世界！"])
         session.assistant = assistant
         type("nihaoshijie", into: session)
-        try await Task.sleep(for: .milliseconds(700))
+        try await waitUntil { assistant.requests.count == 1 }
         session.commitComposition()
         // The same reading elsewhere is asked again, with its own context.
         type("nihaoshijie", into: session)
-        try await Task.sleep(for: .milliseconds(700))
+        try await waitUntil { assistant.requests.count == 2 }
         #expect(assistant.requests.count == 2)
         // Turned off, the model's candidates go at once.
         session.preferences.languageModel = .off
@@ -111,7 +122,7 @@ extension InputSessionTests {
         let assistant = FakeAssistant()
         session.assistant = assistant
         type("nihaoshijie", into: session)
-        try await Task.sleep(for: .milliseconds(700))
+        try await waitUntil { !assistant.requests.isEmpty }
         #expect(assistant.requests.map(\.convert) == [false])
         #expect(assistant.requests.first?.translations == [.japanese, .english])
     }
