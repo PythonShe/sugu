@@ -80,13 +80,13 @@ if [[ -n "${R2_ACCESS_KEY_ID:-}" ]]; then
 else
   # The Cloudflare CLI sets no Cache-Control; the site's functions do.
   put() {
-    cf r2 buckets objects upload "$2" --bucket-name "$BUCKET" --file "$1" --content-type "$3" >/dev/null
+    cf r2 objects put "$2" --bucket-name "$BUCKET" --file "$1" --content-type "$3" >/dev/null
   }
   # Whether the bucket holds a file, whatever the site serves; a failed
   # listing stops the publish.
   stored() {
     local output
-    output="$(cf r2 buckets objects list --bucket-name "$BUCKET" --prefix "$1" 2>&1)" \
+    output="$(cf r2 objects list --bucket-name "$BUCKET" --prefix "$1" 2>&1)" \
       || fail "Could not ask the bucket for $1: $output"
     jq -e --arg key "$1" 'any(.[]; .key == $key)' <<<"$output" >/dev/null
   }
