@@ -17,6 +17,7 @@
 
 - **Chinese** with [librime](https://github.com/rime/librime) and the [rime-wanxiang](https://github.com/amzxyz/rime_wanxiang) dictionary: full pinyin, shuangpin, fuzzy pinyin and Zhuyin; Simplified or Traditional characters; emoji and symbols; rime-ice as an optional download.
 - **Japanese** with [AzooKeyKanaKanjiConverter](https://github.com/azooKey/AzooKeyKanaKanjiConverter): romaji or kana input, clause-by-clause or live conversion, predictions, typo tolerance; the Zenzai neural converter as an optional download.
+- **Foreign words in katakana:** type a word as it is spelled in its own language, such as `computer`, `arbeit` or `beethoven`, and its katakana is offered as a candidate; words no dictionary holds get a best guess. A larger dictionary is an optional download.
 - **Learning you control:** an inspector to search, pin and delete learned words, "forget the last hour", per-app opt-out, and undo of the last commit.
 - **Dictionaries** imported from Google Japanese Input, Microsoft IME, ATOK, Sogou, RIME and macOS text replacements, and synced between Macs through a folder you choose.
 - Familiar keys from other input methods: reconversion, F6–F10, Emacs and Kotoeri control keys, Google's z-symbols.

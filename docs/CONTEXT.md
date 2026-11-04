@@ -63,6 +63,12 @@ The input as typed, before conversion: pinyin letters or Zhuyin codes for
 Chinese, kana for Japanese (romaji typed is kept beside it).
 _Avoid_: raw input, pinyin (for the Japanese sense)
 
+**Foreign Word**:
+A word typed as it is spelled in its own language in Japanese mode (`arbeit`),
+which offers its katakana (アルバイト). Known words come from a dictionary;
+others get a guess, which is never the first candidate.
+_Avoid_: loanword (in UI; the data files use it), gairaigo
+
 **Chinese Keyboard**:
 How Chinese is typed: pinyin (full or a double-pinyin scheme) or Zhuyin on
 one of its layouts.
