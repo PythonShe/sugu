@@ -474,7 +474,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "字形："
+            "value": "字元："
           }
         }
       }
@@ -587,7 +587,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "中文字形"
+            "value": "中文字元"
           }
         }
       }
@@ -1324,7 +1324,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "外來詞："
+            "value": "外來語："
           }
         }
       }
@@ -1861,7 +1861,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "日本の漢字"
+            "value": "日本漢字"
           }
         },
         "zh-Hans": {
@@ -2022,19 +2022,19 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "大きな辞書："
+            "value": "大規模辞書："
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "更大的词典："
+            "value": "更大的词库："
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "更大的詞典："
+            "value": "更大的詞庫："
           }
         }
       }
@@ -2536,7 +2536,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このMac上"
+            "value": "このMac"
           }
         },
         "zh-Hans": {
@@ -2548,7 +2548,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "在這台 Mac 上"
+            "value": "在這部 Mac 上"
           }
         }
       }
@@ -2571,7 +2571,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "在這台 Mac 上及 Apple 私密雲端運算中"
+            "value": "在這部 Mac 上與 Apple 私密雲端運算"
           }
         }
       }
@@ -2801,7 +2801,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "標點寬度："
+            "value": "標點符號寬度："
           }
         }
       }
@@ -3398,7 +3398,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示以拉丁字母輸入的外語詞的片假名"
+            "value": "顯示以拉丁字母輸入之外來語的片假名"
           }
         }
       }
@@ -3501,7 +3501,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜狗細胞辞書"
+            "value": "Sogouセル辞書"
           }
         },
         "zh-Hans": {
@@ -3524,7 +3524,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "捜狗双拼"
+            "value": "Sogou双拼"
           }
         },
         "zh-Hans": {
@@ -3547,7 +3547,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "搜狗テキスト"
+            "value": "Sogouテキスト"
           }
         },
         "zh-Hans": {
@@ -3616,7 +3616,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "状態："
+            "value": "状況："
           }
         },
         "zh-Hans": {
@@ -3950,7 +3950,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "無法打開壓縮檔。"
+            "value": "無法開啟壓縮檔。"
           }
         }
       }
@@ -4038,7 +4038,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这个文件中没有可导入的词。"
+            "value": "该文件中没有可导入的词语。"
           }
         },
         "zh-Hant": {
@@ -4297,7 +4297,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輸入全形空格"
+            "value": "輸入全形空白"
           }
         }
       }
@@ -4314,13 +4314,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "用单个 n 输入「ん」"
+            "value": "用单个 n 输入“ん”"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "用單個 n 輸入「ん」"
+            "value": "以單一 n 輸入「ん」"
           }
         }
       }
