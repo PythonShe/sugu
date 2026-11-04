@@ -1,0 +1,160 @@
+# Foreign words typed in Latin letters, and the katakana accepted for them.
+computer	コンピューター コンピュータ	en
+keyboard	キーボード	en
+internet	インターネット	en
+smartphone	スマートフォン スマホ	en
+coffee	コーヒー	en
+television	テレビジョン テレビ	en
+printer	プリンター プリンタ	en
+software	ソフトウェア ソフトウエア	en
+hamburger	ハンバーガー	en
+sandwich	サンドイッチ サンドウィッチ	en
+chocolate	チョコレート	en
+supermarket	スーパーマーケット	en
+elevator	エレベーター エレベータ	en
+escalator	エスカレーター エスカレータ	en
+restaurant	レストラン	en
+hotel	ホテル	en
+bus	バス	en
+taxi	タクシー	en
+camera	カメラ	en
+radio	ラジオ	en
+guitar	ギター	en
+music	ミュージック	en
+service	サービス	en
+strike	ストライキ ストライク	en
+truck	トラック	en
+window	ウィンドウ ウインドウ ウィンドー ウインドー	en
+password	パスワード	en
+download	ダウンロード	en
+meeting	ミーティング	en
+schedule	スケジュール	en
+project	プロジェクト	en
+business	ビジネス	en
+marketing	マーケティング	en
+customer	カスタマー	en
+algorithm	アルゴリズム	en
+database	データベース データーベース	en
+network	ネットワーク	en
+security	セキュリティ セキュリティー	en
+interview	インタビュー	en
+volunteer	ボランティア	en
+cheese	チーズ	en
+banana	バナナ	en
+orange	オレンジ	en
+tomato	トマト	en
+lemon	レモン	en
+elephant	エレファント	en
+umbrella	アンブレラ	en
+butterfly	バタフライ	en
+microwave	マイクロウェーブ マイクロウエーブ	en
+refrigerator	リフリジレーター レフリジレーター	en
+arbeit	アルバイト	de
+energie	エネルギー	de
+thema	テーマ	de
+allergie	アレルギー	de
+gelande	ゲレンデ	de
+karte	カルテ	de
+rucksack	リュックサック	de
+hormon	ホルモン	de
+ideologie	イデオロギー	de
+baumkuchen	バウムクーヘン	de
+cafe	カフェ	fr
+croissant	クロワッサン	fr
+atelier	アトリエ	fr
+enquete	アンケート	fr
+pierrot	ピエロ	fr
+bouquet	ブーケ	fr
+gratin	グラタン	fr
+rendezvous	ランデブー ランデヴー	fr
+pao	パン	pt
+tabaco	タバコ	pt
+botao	ボタン	pt
+sabao	シャボン	pt
+frasco	フラスコ	pt
+castella	カステラ	pt
+bier	ビール	nl
+koffie	コーヒー	nl
+glas	ガラス	nl
+ransel	ランドセル	nl
+gom	ゴム	nl
+pincet	ピンセット	nl
+orgel	オルゴール	nl
+pasta	パスタ	it
+pizza	ピザ ピッツァ	it
+spaghetti	スパゲッティ スパゲティ スパゲッティー	it
+opera	オペラ	it
+gelato	ジェラート	it
+paparazzi	パパラッチ	it
+cappuccino	カプチーノ	it
+paella	パエリア パエリャ パエーリャ	es
+guerrilla	ゲリラ	es
+siesta	シエスタ	es
+mojito	モヒート	es
+ikra	イクラ	ru
+vodka	ウォッカ ウオッカ ウォトカ	ru
+troika	トロイカ	ru
+norma	ノルマ	ru
+sputnik	スプートニク	ru
+intelligentsia	インテリゲンチャ インテリゲンチア	ru
+pirozhki	ピロシキ	ru
+borshch	ボルシチ	ru
+logos	ロゴス	el
+pathos	パトス パソス ペーソス	el
+ethos	エトス エートス	el
+hijab	ヒジャブ ヒジャーブ	ar
+halal	ハラール ハラル	ar
+sultan	スルタン	ar
+kebab	ケバブ	ar
+kimchi	キムチ	ko
+bibimbap	ビビンバ ビビンパ ビビンバプ	ko
+gochujang	コチュジャン	ko
+hangul	ハングル	ko
+mahjong	マージャン マージャン	misc
+aloha	アロハ	misc
+sauna	サウナ	misc
+curry	カレー	misc
+yogurt	ヨーグルト	misc
+orangutan	オランウータン	misc
+kayak	カヤック	misc
+robot	ロボット	misc
+paris	パリ	name
+london	ロンドン	name
+berlin	ベルリン	name
+rome	ローマ	name
+moscow	モスクワ	name
+vienna	ウィーン	name
+amsterdam	アムステルダム	name
+madrid	マドリード マドリッド	name
+lisbon	リスボン	name
+athens	アテネ	name
+cairo	カイロ	name
+newyork	ニューヨーク	name
+washington	ワシントン	name
+germany	ドイツ	name
+france	フランス	name
+italy	イタリア	name
+beethoven	ベートーヴェン ベートーベン	name
+mozart	モーツァルト モーツアルト	name
+einstein	アインシュタイン	name
+shakespeare	シェイクスピア シェークスピア	name
+picasso	ピカソ	name
+napoleon	ナポレオン	name
+muller	ミュラー ミューラー	name
+bach	バッハ	name
+chopin	ショパン	name
+goethe	ゲーテ	name
+nietzsche	ニーチェ	name
+dostoevsky	ドストエフスキー	name
+chatbot	チャットボット	en
+subscription	サブスク サブスクリプション	en
+metaverse	メタバース	en
+podcast	ポッドキャスト	en
+prompt	プロンプト	en
+hallucination	ハルシネーション	en
+deepfake	ディープフェイク	en
+telework	テレワーク	en
+lockdown	ロックダウン	en
+influencer	インフルエンサー	en
+blockchain	ブロックチェーン	en
+cryptocurrency	クリプトカレンシー	en

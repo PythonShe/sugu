@@ -27,6 +27,14 @@ struct LanguageResult: Codable {
     var keysPerCharacter: Double { characters == 0 ? 0 : Double(keysTyped) / Double(characters) }
 }
 
+struct ForeignWordResult: Codable {
+    var keystrokes: [Double] = []
+    var cases = 0
+    var first = 0
+    var onPage = 0
+    var misses: [String] = []
+}
+
 struct LearnedResult: Codable {
     var before: LanguageResult
     var after = LanguageResult()
@@ -82,11 +90,14 @@ struct Report: Codable {
     var phrases: [String: PhraseResult] = [:]
     /// Readings typed after text that decides them, by language.
     var context: [String: ContextResult] = [:]
+    /// Foreign words typed in Latin letters, in Japanese mode.
+    var foreignWords: ForeignWordResult?
 
     var keystrokeP99: Double { percentile(chinese.keystrokes + japanese.keystrokes, 0.99) }
 
     var withinBudgets: Bool {
         keystrokeP99 < Self.keystrokeBudget && memory.footprintMB < Self.memoryBudget
+            && percentile(foreignWords?.keystrokes ?? [], 0.99) < Self.keystrokeBudget
     }
 
     var summary: String {
@@ -127,6 +138,14 @@ struct Report: Codable {
                                    result.mainSet.topOneRate * 100, result.contextSet.topOneRate * 100))
             if !result.after.failures.isEmpty {
                 sections.append("  misses after learning:\n" + result.after.failures.map { "    \($0)" }.joined(separator: "\n"))
+            }
+        }
+        if let foreignWords {
+            sections.append(String(format: "Foreign words (%d): katakana first %d, on the first page %d; keystroke p50 %.2f ms  p99 %.2f ms  max %.2f ms",
+                                   foreignWords.cases, foreignWords.first, foreignWords.onPage,
+                                   percentile(foreignWords.keystrokes, 0.5), percentile(foreignWords.keystrokes, 0.99), foreignWords.keystrokes.max() ?? 0))
+            if !foreignWords.misses.isEmpty {
+                sections.append("  misses:\n" + foreignWords.misses.map { "    \($0)" }.joined(separator: "\n"))
             }
         }
         return (sections + [

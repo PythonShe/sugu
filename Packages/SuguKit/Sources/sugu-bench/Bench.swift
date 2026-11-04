@@ -87,6 +87,10 @@ enum Bench {
         if preferences.contextualN {
             report.contextualN = measure(session, mode: .japanese, cases: try load(bench.appendingPathComponent("ja-n.tsv")))
         }
+        let foreignSet = bench.appendingPathComponent("loanwords.tsv")
+        if !zhuyin, FileManager.default.fileExists(atPath: foreignSet.path) {
+            report.foreignWords = try measureForeignWords(session, set: foreignSet)
+        }
         report.memory = Memory.current()
 
         // The same readings after different text: with the field read and
@@ -222,6 +226,35 @@ enum Bench {
             result.record(expected: test.expected, output: output, inPage: inPage || output == test.expected,
                           keys: keys(for: test.typed, zhuyin: zhuyin).count + 1)
             _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
+            _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
+        }
+        return result
+    }
+
+    /// Foreign words in Japanese mode: whether their katakana is what the
+    /// list shows first, or on the first page, and what typing them costs.
+    private static func measureForeignWords(_ session: InputSession, set: URL) throws -> ForeignWordResult {
+        session.setMode(.japanese)
+        _ = session.handle(key("a"))
+        _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
+        var result = ForeignWordResult()
+        for line in try String(contentsOf: set, encoding: .utf8).split(whereSeparator: \.isNewline) where !line.hasPrefix("#") {
+            let fields = line.split(separator: "\t").map(String.init)
+            guard fields.count >= 2 else { continue }
+            let accepted = fields[1].split(separator: " ").map(String.init)
+            for character in fields[0] {
+                let started = DispatchTime.now().uptimeNanoseconds
+                _ = session.handle(key(character))
+                result.keystrokes.append(Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000)
+            }
+            let page = session.display.candidates?.candidates.map(\.text) ?? []
+            result.cases += 1
+            if let first = page.first, accepted.contains(first) { result.first += 1 }
+            if page.contains(where: accepted.contains) {
+                result.onPage += 1
+            } else {
+                result.misses.append("\(fields[0]) → \(page.prefix(3).joined(separator: " "))")
+            }
             _ = session.handle(KeyInput(keyCode: VirtualKey.escape, characters: "\u{1b}"))
         }
         return result
