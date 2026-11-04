@@ -13,9 +13,9 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
 
     override func build() {
         let model = model
-        form.checkbox(String(localized: "Learn from typing"),
+        form.checkbox(String(localized: "Learn from typing"), spansPane: true,
                       get: { model.preferences.learningEnabled }, set: { model.preferences.learningEnabled = $0 })
-        let phrases = form.checkbox(String(localized: "Learn phrases"),
+        let phrases = form.checkbox(String(localized: "Learn phrases"), spansPane: true,
                                     get: { model.preferences.learnsPhrases }, set: { model.preferences.learnsPhrases = $0 })
         form.onRefresh { phrases.isEnabled = model.preferences.learningEnabled }
         form.popUp(String(localized: "Forget unused words:"), options: [
