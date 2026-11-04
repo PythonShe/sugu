@@ -3,7 +3,11 @@ import InputMethodKit
 
 #if DEBUG
 if let index = CommandLine.arguments.firstIndex(of: "--snapshot-settings"), index + 1 < CommandLine.arguments.count {
-    exit(SettingsSnapshot.run(output: URL(fileURLWithPath: CommandLine.arguments[index + 1])) ? 0 : 1)
+    let output = URL(fileURLWithPath: CommandLine.arguments[index + 1])
+    // Never the real folder: a few runs in a row count as a crash loop, and
+    // recovering from one deletes the librime build the installed Sugu is using.
+    setenv("SUGU_SUPPORT_BASE", output.appendingPathComponent("support").path, 0)
+    exit(SettingsSnapshot.run(output: output) ? 0 : 1)
 }
 #endif
 
