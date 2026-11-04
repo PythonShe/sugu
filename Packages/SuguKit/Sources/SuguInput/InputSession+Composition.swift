@@ -69,6 +69,10 @@ extension InputSession {
     /// Commits the conversion, or the kana typed when there is none, in
     /// katakana while Japanese types katakana.
     func commitConverted(_ engine: any CompositionEngine) {
+        if showsSpelling(engine.state) {
+            commitWhole(engine.state.typedText)
+            return
+        }
         guard showsKatakana(engine.state), let raw = engine.commitRaw() else {
             commit(engine.commitConverted())
             return
@@ -81,6 +85,17 @@ extension InputSession {
     func showsKatakana(_ state: CompositionState) -> Bool {
         typesKatakana && mode == .japanese && state.phase == .composing && !state.isEmpty
             && state.segments.allSatisfy { $0.role == .input }
+    }
+
+    /// Whether the composition shows the letters typed, not their kana: a
+    /// foreign word that leads the list was never romaji, and half-converted
+    /// kana such as mcどなlds reads as neither language. While the caret is
+    /// inside, the kana stay: that is what it moves through.
+    func showsSpelling(_ state: CompositionState) -> Bool {
+        guard mode == .japanese, transformed == nil, list.highlight == nil, state.phase == .composing,
+              state.segments.allSatisfy({ $0.role == .input }), state.caret == state.markedText.count,
+              case .foreignWord = list.candidates.first?.source else { return false }
+        return true
     }
 
     public func cancelComposition() {

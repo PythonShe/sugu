@@ -51,6 +51,30 @@ extension InputSessionTests {
         #expect(candidates(session).prefix(3) == ["コンピューター", "コンピュータ", "こんぷてr"])
     }
 
+    @Test func aLeadingWordShowsItsSpellingAndReturnCommitsIt() throws {
+        let session = try foreignSession()
+        type("computer", into: session)
+        #expect(client.markedText == "computer")
+        _ = session.handle(Key.enter)
+        #expect(client.document == "computer")
+    }
+
+    @Test func aWordThatDoesNotLeadKeepsItsKana() throws {
+        let session = try foreignSession()
+        type("take", into: session)
+        #expect(!session.showsSpelling(japanese.state))
+        session.cancelComposition()
+        type("blog", into: session)
+        #expect(!session.showsSpelling(japanese.state))
+    }
+
+    @Test func steppingIntoTheListShowsTheCandidate() throws {
+        let session = try foreignSession()
+        type("computer", into: session)
+        _ = session.handle(Key.tab)
+        #expect(client.markedText == "コンピューター")
+    }
+
     @Test func spaceStillConvertsTheKana() throws {
         let session = try foreignSession()
         type("computer", into: session)

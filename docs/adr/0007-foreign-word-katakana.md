@@ -15,7 +15,9 @@ are a growing vocabulary, so the design has to keep up with new words.
 2. **Candidates, not conversion.** Space keeps converting the kana, so ordinary
    typing behaves as before. A dictionary match leads the candidate list, ahead
    of the hiragana, unless its letters also read as a native Japanese word
-   (`take`, 竹), when it stays behind the ordinary conversions.
+   (`take`, 竹), when it stays behind the ordinary conversions. While a dictionary
+   word leads the list, the composition shows the letters typed rather than
+   half-formed kana (mcどなlds), and Return commits those letters.
 
 3. **A permissive dictionary in the app, a larger one as a download.** UniDic
    (BSD), CLDR (Unicode) and filtered Wikidata (CC0) ship with Sugu. JMdict and

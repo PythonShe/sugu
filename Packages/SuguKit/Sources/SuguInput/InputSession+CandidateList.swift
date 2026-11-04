@@ -92,6 +92,10 @@ extension InputSession {
                     segments = [CompositionSegment(WidthConversion.katakana(state.reading), role: .input)]
                     caret = state.markedText == state.reading ? state.caret : state.reading.count
                 }
+                if showsSpelling(state) {
+                    segments = [CompositionSegment(state.typedText, role: .input)]
+                    caret = state.typedText.count
+                }
                 // Show a highlighted prediction inline while it is chosen, and
                 // Sugu's own candidates, which replace the whole reading.
                 if composition(of: engine) == .staged, let highlighted = list.highlighted,
