@@ -1,6 +1,7 @@
 #!/bin/bash
-# The full check: the dependencies (scripts/prepare.sh), then the app, the
-# package tests, and the benchmark against the budgets in CLAUDE.md. CI runs
+# The full check: the dependencies (scripts/prepare.sh), then the package
+# tests, the app, and the benchmark against the budgets in CLAUDE.md, quickest
+# to fail first: on a hosted runner the app's two builds take many minutes. CI runs
 # exactly this; it also runs locally without installing or launching
 # anything. Hosted runners are slower than a Mac, so with
 # SUGU_BUDGETS=report the budgets are measured but do not fail the check.
@@ -14,6 +15,8 @@ scripts/prepare.sh
 scripts/make-notices.sh >/dev/null
 git diff --exit-code --stat Sugu/Resources/ThirdPartyNotices.txt \
   || { echo "ThirdPartyNotices.txt is out of date: run scripts/make-notices.sh" >&2; exit 1; }
+
+swift test --package-path Packages/SuguKit
 
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS,arch=arm64' \
   -configuration Release CODE_SIGNING_ALLOWED=NO -onlyUsePackageVersionsFromResolvedFile build -quiet
@@ -38,7 +41,6 @@ DEBUG_PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration
 SNAPSHOTS="$(mktemp -d)"
 "${DEBUG_PRODUCTS:?}/Sugu.app/Contents/MacOS/Sugu" --snapshot-settings "$SNAPSHOTS"
 rm -rf "${SNAPSHOTS:?}"
-swift test --package-path Packages/SuguKit
 CHECK=--check
 [[ "${SUGU_BUDGETS:-}" == report ]] && CHECK=""
 # shellcheck disable=SC2086 # CHECK is one flag or none.
