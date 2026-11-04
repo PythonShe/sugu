@@ -4,8 +4,8 @@ import SuguInput
 import SuguLearning
 
 final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
-    private let wordsEditor = TableEditor(height: 220, width: 460)
-    private let appsEditor = TableEditor(height: 96, width: 460)
+    private let wordsEditor = TableEditor(height: 200)
+    private let appsEditor = TableEditor(height: 96)
     private let search = NSSearchField()
     private var words: [LearnedWord] = []
     private var noLearnApps: [String] = []
@@ -39,24 +39,20 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
         form.gap()
         search.placeholderString = String(localized: "Search")
         search.delegate = self
-        search.widthAnchor.constraint(equalToConstant: 460).isActive = true
-        let wordsLabel = String(localized: "Words:")
-        form.row(wordsLabel, search)
 
         let table = wordsEditor.table
-        wordsEditor.addColumn("text", title: String(localized: "Word"), width: 100, sortKey: "text")
-        wordsEditor.addColumn("reading", title: String(localized: "Reading"), width: 90, sortKey: "reading")
-        wordsEditor.addColumn("mode", title: String(localized: "Mode"), width: 64, sortKey: "mode")
-        wordsEditor.addColumn("count", title: String(localized: "Uses"), width: 36, sortKey: "count")
-        wordsEditor.addColumn("lastUsed", title: String(localized: "Last Used"), width: 76, sortKey: "lastUsed")
-        wordsEditor.addColumn("pinned", title: String(localized: "Pinned"), width: 40, sortKey: "pinned")
+        wordsEditor.addColumn("text", title: String(localized: "Word"), width: 140, sortKey: "text")
+        wordsEditor.addColumn("reading", title: String(localized: "Reading"), width: 110, sortKey: "reading")
+        wordsEditor.addColumn("mode", title: String(localized: "Mode"), width: 70, sortKey: "mode")
+        wordsEditor.addColumn("count", title: String(localized: "Uses"), width: 45, sortKey: "count")
+        wordsEditor.addColumn("lastUsed", title: String(localized: "Last Used"), width: 110, sortKey: "lastUsed")
+        wordsEditor.addColumn("pinned", title: String(localized: "Pinned"), width: 45, sortKey: "pinned")
         table.sortDescriptors = [NSSortDescriptor(key: "lastUsed", ascending: false)]
         table.dataSource = self
         table.delegate = self
         wordsEditor.onAdd = { [weak self] in self?.addWord() }
         wordsEditor.onRemove = { [weak self] in self?.deleteSelectedWords() }
-        form.row(nil, wordsEditor)
-        wordsEditor.setAccessibilityLabel(SettingsForm.name(wordsLabel))
+        form.table(String(localized: "Words:"), wordsEditor, accessory: search)
 
         let forget = form.makeButton(String(localized: "Forget Last Hour…")) { [weak self] in
             self?.confirm(String(localized: "Forget what was learned in the last hour?"), action: String(localized: "Forget"), destructive: true) {
@@ -68,10 +64,10 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
                 model.deleteAllWords()
             }
         }
-        form.row(nil, NSStackView(views: [forget, deleteAll]))
+        form.fullWidth(NSStackView(views: [forget, deleteAll]))
 
         form.gap()
-        appsEditor.addColumn("app", title: String(localized: "App"), width: 440)
+        appsEditor.addColumn("app", title: String(localized: "App"), width: 500)
         appsEditor.table.headerView = nil
         appsEditor.table.dataSource = self
         appsEditor.table.delegate = self
@@ -87,7 +83,7 @@ final class LearningPane: SettingsPane, NSTableViewDataSource, NSTableViewDelega
             let selected = appsEditor.table.selectedRowIndexes.compactMap { self.noLearnApps.indices.contains($0) ? self.noLearnApps[$0] : nil }
             model.preferences.noLearnApps.removeAll { selected.contains($0) }
         }
-        form.row(String(localized: "Never learn in:"), appsEditor)
+        form.table(String(localized: "Never learn in:"), appsEditor)
 
         if !model.hasStore {
             wordsEditor.setEnabled(false)

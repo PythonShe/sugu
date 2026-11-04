@@ -31,7 +31,8 @@ fi
 
 xcodebuild -project Sugu.xcodeproj -scheme Sugu -destination 'platform=macOS,arch=arm64' \
   -onlyUsePackageVersionsFromResolvedFile test -quiet
-# The settings window and every pane, built offscreen by the debug app.
+# The settings window and every pane, built offscreen by the debug app, which
+# fails when a pane would reshape the window.
 DEBUG_PRODUCTS="$(xcodebuild -project Sugu.xcodeproj -scheme Sugu -configuration Debug \
   -showBuildSettings 2>/dev/null | awk '$1 == "BUILT_PRODUCTS_DIR" { print $3 }')"
 SNAPSHOTS="$(mktemp -d)"

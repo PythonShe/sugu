@@ -8,6 +8,8 @@ import AppKit
 final class SettingsForm {
     let grid: NSGridView
     private var refreshers: [() -> Void] = []
+    private var widestLabel: CGFloat = 0
+    private var hasRowsAcrossColumns = false
     init() {
         grid = NSGridView(numberOfColumns: 2, rows: 0)
         grid.rowSpacing = 8
@@ -20,6 +22,13 @@ final class SettingsForm {
 
     func refresh() {
         for refresher in refreshers { refresher() }
+    }
+
+    /// A row across both columns widens them, and the labels' column would
+    /// take the slack, pushing the labelled rows to the pane's far side.
+    fileprivate func keepLabelColumnNarrow() {
+        guard hasRowsAcrossColumns, widestLabel > 0 else { return }
+        grid.column(at: 0).width = ceil(widestLabel)
     }
 
     /// Runs `update` now and on every refresh.
@@ -43,6 +52,7 @@ final class SettingsForm {
             }
             view.setAccessibilityLabel(Self.name(label))
         }
+        if let title { widestLabel = max(widestLabel, title.intrinsicContentSize.width) }
         let row = grid.addRow(with: [title ?? NSGridCell.emptyContentView, view])
         if view is NSScrollView || view is NSStackView && (view as? NSStackView)?.orientation == .vertical {
             row.rowAlignment = .none
@@ -65,20 +75,39 @@ final class SettingsForm {
 
     /// A control that spans both columns, left-aligned under the labels.
     func fullWidth(_ view: NSView) {
+        hasRowsAcrossColumns = true
         let row = grid.addRow(with: [view, NSGridCell.emptyContentView])
         row.mergeCells(in: NSRange(location: 0, length: 2))
         row.cell(at: 0).xPlacement = .fill
         row.rowAlignment = .none
     }
 
+    /// A table across the whole pane, its name above it: beside a label
+    /// column it would leave too little room for its columns, or widen the
+    /// pane and the window with it. `accessory` shares the name's line.
+    func table(_ label: String, _ editor: TableEditor, accessory: NSView? = nil) {
+        let title = NSTextField(labelWithString: label)
+        if let accessory {
+            let line = NSStackView(views: [title, accessory])
+            line.distribution = .fill
+            accessory.setContentHuggingPriority(.defaultLow - 1, for: .horizontal)
+            accessory.setAccessibilityLabel(Self.name(label))
+            fullWidth(line)
+        } else {
+            fullWidth(title)
+        }
+        editor.setAccessibilityLabel(Self.name(label))
+        fullWidth(editor)
+    }
+
     // MARK: Controls
 
     @discardableResult
-    func checkbox(_ title: String, label: String? = nil, get: @escaping () -> Bool, set: @escaping (Bool) -> Void) -> NSButton {
+    func checkbox(_ title: String, label: String? = nil, spansPane: Bool = false, get: @escaping () -> Bool, set: @escaping (Bool) -> Void) -> NSButton {
         let box = NSButton(checkboxWithTitle: title, target: nil, action: nil)
         bind(box) { set(($0 as? NSButton)?.state == .on) }
         onRefresh { box.state = get() ? .on : .off }
-        row(label, box)
+        if spansPane { fullWidth(box) } else { row(label, box) }
         return box
     }
 
@@ -142,6 +171,12 @@ final class SettingsForm {
 /// model changes.
 @MainActor
 class SettingsPane: NSViewController {
+    /// Every pane's width, so switching panes changes only the window's
+    /// height. Every pane's toolbar item fits without an overflow menu: eight
+    /// English labels need 550.
+    static let width: CGFloat = 560
+    static let margin: CGFloat = 20
+
     let model: SettingsModel
     let form = SettingsForm()
 
@@ -164,17 +199,16 @@ class SettingsPane: NSViewController {
 
     override func loadView() {
         build()
+        form.keepLabelColumnNarrow()
         let container = makeContainer()
         container.addSubview(form.grid)
         NSLayoutConstraint.activate([
-            form.grid.topAnchor.constraint(equalTo: container.topAnchor, constant: 20),
-            form.grid.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -20),
-            form.grid.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 20),
-            form.grid.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -20),
+            form.grid.topAnchor.constraint(equalTo: container.topAnchor, constant: Self.margin),
+            form.grid.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -Self.margin),
+            form.grid.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: Self.margin),
+            form.grid.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Self.margin),
             form.grid.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            // Every pane's toolbar item fits without an overflow menu: eight
-            // English labels need 550.
-            container.widthAnchor.constraint(greaterThanOrEqualToConstant: 560),
+            container.widthAnchor.constraint(greaterThanOrEqualToConstant: Self.width),
         ])
         view = container
         model.observe { [weak self] change in

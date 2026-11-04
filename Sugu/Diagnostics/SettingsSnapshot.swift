@@ -5,11 +5,13 @@ import SuguDictionaries
 
 /// Renders every settings pane to PNG files without showing a window, in
 /// light and dark appearance, for reviewing layout during development, after
-/// building the settings window as the menu does (CI runs this):
+/// building the settings window as the menu does. CI runs this, and it fails
+/// when a pane is wider than the others, which would reshape the window:
 ///   Sugu.app/Contents/MacOS/Sugu --snapshot-settings <dir>
 @MainActor
 enum SettingsSnapshot {
-    static func run(output: URL) {
+    static func run(output: URL) -> Bool {
+        var fits = true
         _ = NSApplication.shared
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let model = SettingsModel(environment: .shared)
@@ -22,7 +24,12 @@ enum SettingsSnapshot {
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let suffix = appearance == .aqua ? "light" : "dark"
             for pane in SettingsWindowController.Pane.available {
-                render(SettingsWindowController.makePane(pane, model: model).view, appearance: appearance, to: output.appendingPathComponent("\(pane)-\(suffix).png"))
+                let view = SettingsWindowController.makePane(pane, model: model).view
+                if view.fittingSize.width > SettingsPane.width {
+                    print("\(pane) is \(view.fittingSize.width) wide, over \(SettingsPane.width)")
+                    fits = false
+                }
+                render(view, appearance: appearance, to: output.appendingPathComponent("\(pane)-\(suffix).png"))
             }
             let sheet = ImportSheet(model: model) { _ in }
             render(sheet.window.contentView!, appearance: appearance, to: output.appendingPathComponent("import-empty-\(suffix).png"))
@@ -30,6 +37,7 @@ enum SettingsSnapshot {
             loaded.show([sample])
             render(loaded.window.contentView!, appearance: appearance, to: output.appendingPathComponent("import-\(suffix).png"))
         }
+        return fits
     }
 
     private static func render(_ view: NSView, appearance: NSAppearance.Name, to url: URL) {

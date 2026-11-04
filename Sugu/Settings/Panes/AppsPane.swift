@@ -2,25 +2,25 @@ import AppKit
 import SuguCore
 
 final class AppsPane: SettingsPane, NSTableViewDataSource, NSTableViewDelegate {
-    private let editor = TableEditor(height: 200, width: 460)
+    private let editor = TableEditor(height: 200)
     private var apps: [String] = []
     private let modes: [InputMode?] = [nil, .chinese, .japanese, .english]
     private let scripts: [ChineseScript?] = [nil] + ChineseScript.allCases
 
     override func build() {
         let model = model
-        form.checkbox(String(localized: "Remember the mode for each app"),
+        form.checkbox(String(localized: "Remember the mode for each app"), spansPane: true,
                       get: { model.preferences.rememberModePerApp }, set: { model.preferences.rememberModePerApp = $0 })
         form.gap()
-        editor.addColumn("app", title: String(localized: "App"), width: 150)
+        editor.addColumn("app", title: String(localized: "App"), width: 190)
         editor.addColumn("mode", title: String(localized: "Mode"), width: 100)
-        editor.addColumn("script", title: String(localized: "Chinese Characters"), width: 120)
+        editor.addColumn("script", title: String(localized: "Chinese Characters"), width: 130)
         editor.addColumn("escape", title: String(localized: "Esc to English"), width: 90)
         editor.table.dataSource = self
         editor.table.delegate = self
         editor.onAdd = { [weak self] in self?.addApps() }
         editor.onRemove = { [weak self] in self?.removeSelected() }
-        form.row(String(localized: "App rules:"), editor)
+        form.table(String(localized: "App rules:"), editor)
         reload()
     }
 

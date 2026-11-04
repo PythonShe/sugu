@@ -11,7 +11,7 @@ final class TableEditor: NSStackView {
     var onAdd: (() -> Void)?
     var onRemove: (() -> Void)?
 
-    init(height: CGFloat, width: CGFloat = 420) {
+    init(height: CGFloat) {
         super.init(frame: .zero)
         orientation = .vertical
         alignment = .leading
@@ -26,7 +26,7 @@ final class TableEditor: NSStackView {
         scroll.borderType = .bezelBorder
         scroll.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            scroll.widthAnchor.constraint(equalToConstant: width),
+            scroll.widthAnchor.constraint(equalToConstant: SettingsPane.width - 2 * SettingsPane.margin),
             scroll.heightAnchor.constraint(equalToConstant: height),
         ])
         buttons.segmentStyle = .smallSquare
