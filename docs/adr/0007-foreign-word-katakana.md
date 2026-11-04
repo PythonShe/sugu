@@ -12,12 +12,15 @@ are a growing vocabulary, so the design has to keep up with new words.
    reads the letters the composition already keeps beside the kana; nothing
    typed leaves the Mac.
 
-2. **Candidates, not conversion.** Space keeps converting the kana, so ordinary
-   typing behaves as before. A dictionary match leads the candidate list, ahead
-   of the hiragana, unless its letters also read as a native Japanese word
-   (`take`, 竹), when it stays behind the ordinary conversions. While a dictionary
-   word leads the list, the composition shows the letters typed rather than
-   half-formed kana (mcどなlds), and Return commits those letters.
+2. **A word that leads is taken by Space.** A dictionary match leads the candidate
+   list, ahead of the hiragana, unless its letters also read as a native Japanese
+   word (`take`, 竹), when it stays behind the ordinary conversions and Space
+   converts the kana as before. While a dictionary word leads, the composition
+   shows the letters typed rather than half-formed kana (mcどなlds), Return commits
+   those letters, Space takes the katakana, and Space again goes down the list.
+   Changed after 1.2.0 from Space always converting the kana: with the letters on
+   screen, that showed kana nobody had seen. The native-word flag is what keeps
+   ordinary romaji from being taken.
 
 3. **A permissive dictionary in the app, a larger one as a download.** UniDic
    (BSD), CLDR (Unicode) and filtered Wikidata (CC0) ship with Sugu. JMdict and
@@ -38,9 +41,9 @@ are a growing vocabulary, so the design has to keep up with new words.
 ## Rejected
 
 - **Dictionary only:** coinages and unseen names would show nothing.
-- **Space converting to the katakana:** faster for these words, but Space would
-  mean two things, and a Japanese word mistyped into a known spelling would
-  convert.
+- **Space always converting the kana:** chosen first and dropped after 1.2.0 (see
+  2). The cost of the change remains: a Japanese word mistyped into a known
+  spelling takes the katakana, and a second Space moves on from it.
 - **Bundling JMdict:** the better coverage does not justify share-alike terms on
   the app's data.
 - **Training on VOICEVOX's kanalizer dataset:** better on English, but it has no

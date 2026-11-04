@@ -401,6 +401,20 @@ extension InputSession {
             }
             return true
         case VirtualKey.space:
+            // A foreign word that leads the list was not typed as romaji, so
+            // Space takes its katakana rather than convert half-formed kana;
+            // Space again goes down the list, where the kana are.
+            if !converting, transformed == nil, foreignWordLeads {
+                if list.highlight == nil, showsSpelling(engine.state) {
+                    list.setHighlight(0)
+                    publish()
+                    return true
+                }
+                if list.highlight != nil {
+                    moveHighlight(by: key.modifiers.contains(.shift) ? -1 : 1)
+                    return true
+                }
+            }
             transformed = nil
             if converting {
                 showsConversionWindow = true

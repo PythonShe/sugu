@@ -113,11 +113,49 @@ extension InputSessionTests {
         #expect(client.markedText == "take1")
     }
 
-    @Test func spaceStillConvertsTheKana() throws {
+    @Test func spaceTakesAWordThatLeads() throws {
         let session = try foreignSession()
         type("computer", into: session)
         _ = session.handle(Key.space)
+        #expect(client.markedText == "コンピューター")
+        #expect(client.document.isEmpty)
+        _ = session.handle(Key.enter)
+        #expect(client.document == "コンピューター")
+        #expect(store.lookup("computer", mode: .japanese).map(\.text) == ["コンピューター"])
+    }
+
+    @Test func spaceAgainGoesDownTheListToTheKana() throws {
+        let session = try foreignSession()
+        type("computer", into: session)
+        _ = session.handle(Key.space)
+        _ = session.handle(Key.space)
+        #expect(client.markedText == "コンピュータ")
+        _ = session.handle(Key.space)
         #expect(client.markedText == "こんぷてr")
+    }
+
+    @Test func typingOnCommitsTheWordSpaceTook() throws {
+        let session = try foreignSession()
+        type("computer", into: session)
+        _ = session.handle(Key.space)
+        type("take", into: session)
+        #expect(client.document == "コンピューター")
+    }
+
+    @Test func spaceConvertsAWordThatDoesNotLead() throws {
+        let session = try foreignSession()
+        type("take", into: session)
+        _ = session.handle(Key.space)
+        #expect(client.markedText == "竹")
+        #expect(japanese.state.phase == .converting)
+    }
+
+    @Test func spaceConvertsWithTheCaretInsideTheWord() throws {
+        let session = try foreignSession()
+        type("computer", into: session)
+        _ = session.handle(KeyInput(keyCode: VirtualKey.left, characters: "\u{F702}"))
+        _ = session.handle(Key.space)
+        #expect(japanese.state.phase == .converting)
     }
 
     @Test func choosingItCommitsAndTeachesTheSpelling() throws {

@@ -91,10 +91,20 @@ final class FakeEngine: CompositionEngine {
     func accepts(_ character: Character) -> Bool {
         character.isASCIILowercaseLetter || character == "'" || (acceptsSymbols && !character.isWhitespace)
     }
-    func insert(_ text: String) { input += text; converting = false; refresh() }
+    func insert(_ text: String) { input += text; converting = false; caretFromEnd = 0; refresh() }
     func deleteBackward() { if !input.isEmpty { input.removeLast() }; refresh() }
     func deleteForward() {}
-    func moveCaret(_ motion: CaretMotion) {}
+    /// How far the caret is left of the end of the input.
+    private var caretFromEnd = 0
+    func moveCaret(_ motion: CaretMotion) {
+        switch motion {
+        case .left: caretFromEnd = min(caretFromEnd + 1, input.count)
+        case .right: caretFromEnd = max(caretFromEnd - 1, 0)
+        case .start: caretFromEnd = input.count
+        case .end: caretFromEnd = 0
+        }
+        refresh()
+    }
     func convert() -> Bool {
         guard converts, !input.isEmpty else { return false }
         if converting { highlighted += 1 } else { converting = true; highlighted = 0 }
@@ -145,7 +155,7 @@ final class FakeEngine: CompositionEngine {
         let shown = converting ? (words[safe: highlighted] ?? input) : input
         state = CompositionState(
             segments: [CompositionSegment(shown, role: converting ? .focused : .input)],
-            caret: shown.count,
+            caret: shown.count - (converting ? 0 : caretFromEnd),
             candidates: words.enumerated().map { Candidate(text: $1, source: .engine(index: $0), name: properNouns.contains($1) ? .place : nil) },
             highlightedIndex: converting ? highlighted : nil,
             phase: converting ? .converting : .composing,

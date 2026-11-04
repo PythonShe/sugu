@@ -92,10 +92,12 @@ extension InputSession {
     /// kana such as mcどなlds reads as neither language. While the caret is
     /// inside, the kana stay: that is what it moves through.
     func showsSpelling(_ state: CompositionState) -> Bool {
-        guard mode == .japanese, transformed == nil, list.highlight == nil, state.phase == .composing,
-              state.segments.allSatisfy({ $0.role == .input }), state.caret == state.markedText.count,
-              case .foreignWord = list.candidates.first?.source else { return false }
-        return true
+        mode == .japanese && transformed == nil && list.highlight == nil && state.phase == .composing
+            && state.segments.allSatisfy { $0.role == .input } && state.caret == state.markedText.count && foreignWordLeads
+    }
+
+    var foreignWordLeads: Bool {
+        if case .foreignWord = list.candidates.first?.source { true } else { false }
     }
 
     public func cancelComposition() {
