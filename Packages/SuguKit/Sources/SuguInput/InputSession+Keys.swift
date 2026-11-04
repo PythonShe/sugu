@@ -375,6 +375,15 @@ extension InputSession {
 
     // MARK: Staged conversion (AzooKey)
 
+    /// Whether digits choose from the predictions on screen. A number being
+    /// typed goes on (the 0 of 2024, the 1 of 3.14); kana input's number row
+    /// is kana.
+    private func numberKeysChoose(in state: CompositionState) -> Bool {
+        guard preferences.japaneseNumberKeysChoose, preferences.japanesePredictions, !preferences.kanaInput else { return false }
+        let typed = state.typedText
+        return !(typed.last?.isASCIIDigit ?? false) && !typed.allSatisfy { $0.isASCIIDigit || ".,:/-".contains($0) }
+    }
+
     /// Typing shows predictions; Space converts, then moves through the
     /// focused clause's candidates; arrows move and resize clauses.
     private func handleStaged(_ key: KeyInput, engine: any CompositionEngine) -> Bool {
@@ -456,6 +465,12 @@ extension InputSession {
             engine.deleteBackward()
             engine.insert(symbol)
             refresh()
+            return true
+        }
+        // A number with no row to choose stays typed, like any other digit.
+        if !converting, transformed == nil, numberKeysChoose(in: engine.state), let digit = character.selectionDigit,
+           list.index(onPage: digit == 0 ? 9 : digit - 1) != nil {
+            selectOnPage(digit)
             return true
         }
         if engine.accepts(character) {
@@ -576,4 +591,8 @@ fileprivate extension Character {
         guard isASCIIDigitCharacter else { return nil }
         return asciiDigitValue
     }
+}
+
+private extension Character {
+    var isASCIIDigit: Bool { isASCII && isNumber }
 }

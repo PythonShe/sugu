@@ -27,9 +27,12 @@ final class JapanesePane: SettingsPane {
                                      get: { model.preferences.phoneticRomaji }, set: { model.preferences.phoneticRomaji = $0 })
         let contextualN = form.checkbox(String(localized: "Type ん with a single n"),
                                         get: { model.preferences.contextualN }, set: { model.preferences.contextualN = $0 })
+        let numberKeys = form.checkbox(String(localized: "Choose candidates with number keys"),
+                                       get: { model.preferences.japaneseNumberKeysChoose }, set: { model.preferences.japaneseNumberKeysChoose = $0 })
         form.onRefresh {
             phonetic.isEnabled = !model.preferences.kanaInput
             contextualN.isEnabled = !model.preferences.kanaInput
+            numberKeys.isEnabled = !model.preferences.kanaInput && model.preferences.japanesePredictions
         }
 
         form.gap()

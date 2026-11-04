@@ -615,6 +615,29 @@
         }
       }
     },
+    "Choose candidates with number keys": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数字キーで候補を選択"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用数字键选择候选字词"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用數字鍵選擇候選字詞"
+          }
+        }
+      }
+    },
     "Choose…": {
       "extractionState": "manual",
       "localizations": {

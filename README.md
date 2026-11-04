@@ -20,7 +20,7 @@
 - **Foreign words in katakana:** type a word as it is spelled in its own language, such as `computer`, `arbeit` or `beethoven`, and its katakana is offered as a candidate; words no dictionary holds get a best guess. A larger dictionary is an optional download.
 - **Learning you control:** an inspector to search, pin and delete learned words, "forget the last hour", per-app opt-out, and undo of the last commit.
 - **Dictionaries** imported from Google Japanese Input, Microsoft IME, ATOK, Sogou, RIME and macOS text replacements, and synced between Macs through a folder you choose.
-- Familiar keys from other input methods: reconversion, F6–F10, Emacs and Kotoeri control keys, Google's z-symbols.
+- Familiar keys from other input methods: number keys to choose candidates, reconversion, F6–F10, Emacs and Kotoeri control keys, Google's z-symbols.
 - Interface in English, Japanese, and Simplified and Traditional Chinese, with VoiceOver and Dark Mode.
 
 ## Install

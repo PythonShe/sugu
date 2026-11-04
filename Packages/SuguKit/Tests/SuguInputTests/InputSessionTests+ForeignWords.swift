@@ -75,6 +75,44 @@ extension InputSessionTests {
         #expect(client.markedText == "コンピューター")
     }
 
+    @Test func aNumberKeyChoosesAForeignWord() throws {
+        let session = try foreignSession()
+        type("computer", into: session)
+        _ = session.handle(Key.char("1"))
+        #expect(client.document == "コンピューター")
+    }
+
+    @Test func numberKeysKeepTypingANumber() throws {
+        let session = try foreignSession()
+        japanese.acceptsSymbols = true
+        japanese.table["2"] = ["2", "二", "②"]
+        japanese.table["20"] = ["20", "二十"]
+        type("2", into: session)
+        _ = session.handle(Key.char("0"))
+        #expect(client.document.isEmpty)
+        #expect(client.markedText == "20")
+    }
+
+    @Test func aNumberKeyPastTheListIsTyped() throws {
+        let session = try foreignSession()
+        japanese.acceptsSymbols = true
+        type("take", into: session)
+        let rows = candidates(session).count
+        #expect(rows < 9)
+        _ = session.handle(Key.char("9"))
+        #expect(client.document.isEmpty)
+        #expect(client.markedText == "take9")
+    }
+
+    @Test func theNumberKeySwitchLeavesDigitsTyped() throws {
+        let session = try foreignSession { $0.japaneseNumberKeysChoose = false }
+        japanese.acceptsSymbols = true
+        type("take", into: session)
+        _ = session.handle(Key.char("1"))
+        #expect(client.document.isEmpty)
+        #expect(client.markedText == "take1")
+    }
+
     @Test func spaceStillConvertsTheKana() throws {
         let session = try foreignSession()
         type("computer", into: session)

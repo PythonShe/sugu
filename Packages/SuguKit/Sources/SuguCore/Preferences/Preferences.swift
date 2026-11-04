@@ -41,6 +41,8 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var zenzaiEnabled = false
     /// Foreign words typed in Latin letters also offer their katakana.
     public var foreignWordKatakana = true
+    /// Number keys choose from the predictions, as they do in Chinese.
+    public var japaneseNumberKeysChoose = true
 
     // MARK: Language model (ADR 0004)
     public var languageModel: LanguageModelLevel = .off
@@ -120,6 +122,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.contextualN, into: &contextualN)
         load(.fullWidthSpace, into: &fullWidthSpace)
         load(.foreignWordKatakana, into: &foreignWordKatakana)
+        load(.japaneseNumberKeysChoose, into: &japaneseNumberKeysChoose)
         load(.zenzaiEnabled, into: &zenzaiEnabled)
         load(.languageModel, into: &languageModel)
         load(.modelForSelection, into: &modelForSelection)
