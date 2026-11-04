@@ -10,6 +10,7 @@ cd "$ROOT"
 [[ -d Frameworks/librime.xcframework ]] || scripts/build-librime.sh
 scripts/fetch-data.sh
 [[ -f Data/Rime/build/sugu.table.bin && -f Data/Rime/opencc/emoji.txt && -f Data/LM/ja.lm && -f Data/LM/zh.lm ]] || scripts/build-data.sh
+[[ -f Data/Lexicon/loanwords.bin && -f Data/Lexicon/katakana-guesser.bin ]] || scripts/build-loanwords.sh
 
 # Every pinned package has an entry in the notices (D-072).
 python3 -I -c 'import json, re, sys

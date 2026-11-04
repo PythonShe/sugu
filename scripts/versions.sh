@@ -34,6 +34,25 @@ CLDR_ANNOTATIONS_ZH_SHA256=df647e5e09048f1d8f3605e5f6a04c6f616e5398c047039fc5e51
 CLDR_ANNOTATIONS_ZH_HANT_SHA256=ca3b5553a153308ab455b6566fc5dc52e002b2fe9eb50114c8c3c100105ddc67
 CLDR_ANNOTATIONS_LICENSE_SHA256=830ec6dd25a943b70a31d74caa56b08b34c35f5c9679fba664c1658712849271
 
+# Foreign words. UniDic's lemmas name their source spelling (BSD, chosen from
+# BSD, GPL or LGPL; only lex.csv and the license are taken from its 3 GB
+# package, by range request). CLDR's names of languages, territories and
+# cities (Unicode-3.0). scripts/data/wikidata-katakana.tsv.gz (CC0) is tracked.
+UNIDIC_URL=https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-cwj-202512_full.zip
+UNIDIC_VERSION=202512
+UNIDIC_LEX_SHA256=bd00a695ba897a3250965257341e1929ae062dfa2e63b223a05bcc02f22e74a2
+UNIDIC_BSD_SHA256=9980b1824f0d1dac41ea93dc96780c222e5cca3c4d1b5677ac8ab923a8533c3f
+CLDR_NAMES_REF=release-49
+CLDR_NAMES_LICENSE_SHA256=65eb33419e22a297550a811b5b535f5e532f9a7e0114b516c0ea18afd53c3804
+CLDR_NAMES_SHA256_de=e5289a46e85cd2384660eeac0f1665a9aa90299f4e6c2864ec138402c0fff632
+CLDR_NAMES_SHA256_en=f8cbf26964d0e349fc96d9e5a56292edcbaab25c8e64177ca4f111773dfb79cf
+CLDR_NAMES_SHA256_es=85eb95dea0f020b13f7f615b09c86ebe568d71fd71f59c3720e23a65b9cddf50
+CLDR_NAMES_SHA256_fr=7aa6b2f783d3223fb7e8fd1b4e0f3782d9731f2f91f829e93747e20ac7b3c268
+CLDR_NAMES_SHA256_it=a9e8612bd4b80477de74bfac9ad2e86f1d73cf7d4c4bec1b365debb6469cbde8
+CLDR_NAMES_SHA256_ja=d42a5c7327f6708cb9f13384ae2b7638ccaeafc17dc80a0a56dfe1491bc21c54
+CLDR_NAMES_SHA256_nl=d423c9f9a880650153fc548bc8cbbc575c3478dd16b208d467ee30d0d0d52332
+CLDR_NAMES_SHA256_pt=f5511280d86e4382116882525ae0c88c906dd6fe0cbc892122f768f2fafd46ec
+
 # License texts for bundled code that ships without one in its sources
 # (scripts/make-notices.sh).
 LLAMA_CPP_REF=b4846

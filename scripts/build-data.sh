@@ -1,7 +1,8 @@
 #!/bin/bash
 # Compiles the bundled data into Data/: prebuilt librime tables and config
-# (Data/Rime), word lists (Data/Lexicon) and character language models
-# (Data/LM). Needs build-librime.sh and fetch-data.sh to have run.
+# (Data/Rime), word lists and foreign-word data (Data/Lexicon) and character
+# language models (Data/LM). Needs build-librime.sh and fetch-data.sh to have
+# run.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,6 +12,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [[ -d "$ROOT/.vendor/wanxiang" ]] || { echo "Missing .vendor/wanxiang: run scripts/fetch-data.sh first." >&2; exit 1; }
 [[ -d "$ROOT/.vendor/tatoeba" ]] || { echo "Missing .vendor/tatoeba: run scripts/fetch-data.sh first." >&2; exit 1; }
 [[ -d "$ROOT/.vendor/cldr" ]] || { echo "Missing .vendor/cldr: run scripts/fetch-data.sh first." >&2; exit 1; }
+[[ -d "$ROOT/.vendor/unidic" ]] || { echo "Missing .vendor/unidic: run scripts/fetch-data.sh first." >&2; exit 1; }
+[[ -d "$ROOT/.vendor/cldr-names" ]] || { echo "Missing .vendor/cldr-names: run scripts/fetch-data.sh first." >&2; exit 1; }
 
 swift build --package-path "$ROOT/Packages/SuguKit" -c release --product sugu-tool
 TOOL="$(swift build --package-path "$ROOT/Packages/SuguKit" -c release --show-bin-path)/sugu-tool"
@@ -33,3 +36,5 @@ gunzip -c "$ROOT/.vendor/tatoeba/cmn.txt.gz" >"$CORPUS"
 "$TOOL" build-lm --corpus "$CORPUS" --out "$ROOT/Data/LM/zh.lm" --opencc "$ROOT/.vendor/opencc" \
   --exclude "$ROOT/Bench/zh.tsv" --exclude "$ROOT/Bench/zh-learned.tsv" \
   --exclude "$ROOT/Bench/zh-context.tsv"
+
+"$ROOT/scripts/build-loanwords.sh"

@@ -1,8 +1,10 @@
 #!/bin/bash
 # Downloads the bundled data sources: rime-wanxiang dictionaries
 # (CC-BY-4.0) into .vendor/wanxiang, Tatoeba sentences (CC BY 2.0 FR)
-# into .vendor/tatoeba, and CLDR's Chinese emoji annotations
-# (Unicode-DFS-2016) into .vendor/cldr. scripts/build-data.sh compiles them into Data/.
+# into .vendor/tatoeba, CLDR's Chinese emoji annotations (Unicode-DFS-2016)
+# into .vendor/cldr, UniDic's lexicon (BSD) into .vendor/unidic, and CLDR's
+# names (Unicode-3.0) into .vendor/cldr-names. scripts/build-data.sh compiles
+# them into Data/.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -67,6 +69,46 @@ fetch_cldr() {
   echo "CLDR annotations $CLDR_ANNOTATIONS_REF -> $dest"
 }
 
+fetch_unidic() {
+  local dest="$ROOT/.vendor/unidic"
+  if [[ -f "$dest/.ref" && "$(cat "$dest/.ref")" == "$UNIDIC_VERSION" ]]; then
+    echo "UniDic $UNIDIC_VERSION already present"
+    return
+  fi
+  python3 -I "$ROOT/scripts/fetch-zip-member.py" "$UNIDIC_URL" "$TMP/unidic" lex.csv license/BSD
+  echo "$UNIDIC_LEX_SHA256  $TMP/unidic/lex.csv" | shasum -a 256 -c -
+  echo "$UNIDIC_BSD_SHA256  $TMP/unidic/BSD" | shasum -a 256 -c -
+  rm -rf "$dest" && mkdir -p "$dest"
+  mv "$TMP/unidic/lex.csv" "$TMP/unidic/BSD" "$dest/"
+  echo "$UNIDIC_VERSION" > "$dest/.ref"
+  echo "UniDic $UNIDIC_VERSION -> $dest"
+}
+
+fetch_cldr_names() {
+  local dest="$ROOT/.vendor/cldr-names"
+  if [[ -f "$dest/.ref" && "$(cat "$dest/.ref")" == "$CLDR_NAMES_REF" ]]; then
+    echo "CLDR names $CLDR_NAMES_REF already present"
+    return
+  fi
+  local base="https://raw.githubusercontent.com/unicode-org/cldr/$CLDR_NAMES_REF"
+  mkdir -p "$TMP/cldr-names"
+  local language sum
+  for language in de en es fr it ja nl pt; do
+    sum="CLDR_NAMES_SHA256_$language"
+    curl -fsSL -o "$TMP/cldr-names/$language.xml" "$base/common/main/$language.xml"
+    echo "${!sum}  $TMP/cldr-names/$language.xml" | shasum -a 256 -c -
+  done
+  curl -fsSL -o "$TMP/cldr-names/LICENSE" "$base/LICENSE"
+  echo "$CLDR_NAMES_LICENSE_SHA256  $TMP/cldr-names/LICENSE" | shasum -a 256 -c -
+  rm -rf "$dest"
+  mkdir -p "$(dirname "$dest")"
+  mv "$TMP/cldr-names" "$dest"
+  echo "$CLDR_NAMES_REF" > "$dest/.ref"
+  echo "CLDR names $CLDR_NAMES_REF -> $dest"
+}
+
 fetch_wanxiang
 fetch_tatoeba
 fetch_cldr
+fetch_unidic
+fetch_cldr_names

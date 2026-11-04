@@ -16,7 +16,7 @@ OUT="$ROOT/Sugu/Resources/ThirdPartyNotices.txt"
 
 swift package --package-path "$KIT" resolve >/dev/null
 [[ -d "$RIME/librime" ]] || { echo "run scripts/build-librime.sh first" >&2; exit 1; }
-[[ -f "$ROOT/.vendor/wanxiang/LICENSE" && -f "$ROOT/.vendor/cldr/LICENSE" ]] || { echo "run scripts/fetch-data.sh first" >&2; exit 1; }
+[[ -f "$ROOT/.vendor/wanxiang/LICENSE" && -f "$ROOT/.vendor/cldr/LICENSE" && -f "$ROOT/.vendor/unidic/BSD" && -f "$ROOT/.vendor/cldr-names/LICENSE" ]] || { echo "run scripts/fetch-data.sh first" >&2; exit 1; }
 
 # fetch <name> <url> <sha256>: a pinned license text, cached in .vendor as
 # $CACHE/<name>. Called as a plain statement (not in $(...)), so a failed
@@ -42,6 +42,11 @@ fetch sparkle-LICENSE "https://raw.githubusercontent.com/sparkle-project/Sparkle
 fetch cc-by-2.0-fr.html \
   "https://raw.githubusercontent.com/creativecommons/cc-legal-tools-data/$CC_LEGAL_TOOLS_REF/docs/licenses/by/2.0/fr/legalcode.fr.html" \
   "$CC_BY_2_FR_SHA256"
+WIKIDATA_NOTICE="$CACHE/wikidata-notice.txt"
+{
+  echo "Labels of Wikidata items, dedicated to the public domain under CC0 1.0:"
+  echo "https://creativecommons.org/publicdomain/zero/1.0/"
+} >"$WIKIDATA_NOTICE"
 TATOEBA_NOTICE="$CACHE/tatoeba-notice.txt"
 {
   echo "Sugu bundles character n-gram statistics computed from Japanese and"
@@ -113,6 +118,9 @@ entry "azooKey dictionary data" "https://github.com/ensan-hcl/azooKey_dictionary
 entry "azooKey emoji dictionary: Mozc emoji data" "https://github.com/google/mozc" "BSD-3-Clause" "$CACHE/mozc-LICENSE"
 entry "azooKey emoji dictionary: Unicode emoji data and CLDR annotations" "https://www.unicode.org" "Unicode-3.0" "$CACHE/cldr-LICENSE"
 entry "CLDR $CLDR_ANNOTATIONS_REF Chinese emoji annotations (as emoji after Chinese words)" "https://cldr.unicode.org" "Unicode-DFS-2016" "$ROOT/.vendor/cldr/LICENSE"
+entry "UniDic $UNIDIC_VERSION (foreign spellings and katakana, compiled, and the guesser trained on them)" "https://clrd.ninjal.ac.jp/unidic/" "BSD-3-Clause (chosen from GPL-2.0, LGPL-2.1 or BSD-3-Clause)" "$ROOT/.vendor/unidic/BSD"
+entry "CLDR $CLDR_NAMES_REF names of languages, territories and cities (foreign words)" "https://cldr.unicode.org" "Unicode-3.0" "$ROOT/.vendor/cldr-names/LICENSE"
+entry "Wikidata labels (foreign words, and the guesser trained on them)" "https://www.wikidata.org" "CC0-1.0" "$WIKIDATA_NOTICE"
 entry "Tatoeba sentences $TATOEBA_OPUS_VERSION (as the Japanese and Chinese language models)" "https://tatoeba.org" "CC-BY-2.0-FR" "$TATOEBA_NOTICE"
 entry "llama.cpp $LLAMA_CPP_REF (azooKey build, for Zenzai)" "https://github.com/azooKey/llama.cpp" "MIT" "$CACHE/llama.cpp-LICENSE"
 entry "Sparkle $SPARKLE_VERSION" "https://sparkle-project.org" "MIT (bsdiff and other parts: BSD-style, below)" "$CACHE/sparkle-LICENSE"

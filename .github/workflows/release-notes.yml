@@ -66,7 +66,7 @@ jobs:
           echo "Range: $PREVIOUS..HEAD"
 
           # Only what ships in the app changes what users get.
-          PATHS=(Sugu Packages Assets project.yml scripts/versions.sh scripts/build-data.sh scripts/fetch-data.sh)
+          PATHS=(Sugu Packages Assets project.yml scripts/versions.sh scripts/build-data.sh scripts/build-loanwords.sh scripts/data scripts/fetch-data.sh)
           CAP=1000
           COMMITS=$(git log "$PREVIOUS"..HEAD --pretty=format:%s --no-merges -- "${PATHS[@]}" | head -"$CAP" || true)
           TOTAL=$(git rev-list --count --no-merges "$PREVIOUS"..HEAD -- "${PATHS[@]}")
