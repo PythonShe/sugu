@@ -3,6 +3,7 @@ import SuguCore
 
 final class JapanesePane: SettingsPane {
     private var zenzaiDownload: DownloadControl?
+    private var loanwordDownload: DownloadControl?
 
     override func build() {
         let model = model
@@ -32,6 +33,17 @@ final class JapanesePane: SettingsPane {
         }
 
         form.gap()
+        let foreign = form.checkbox(String(localized: "Show katakana for words typed in Latin letters"), label: String(localized: "Foreign words:"),
+                                    get: { model.preferences.foreignWordKatakana }, set: { model.preferences.foreignWordKatakana = $0 })
+        let dictionaryLabel = String(localized: "Larger dictionary:")
+        let dictionary = DownloadControl(item: .loanwordDictionary, name: SettingsForm.name(dictionaryLabel), model: model)
+        loanwordDownload = dictionary
+        form.row(dictionaryLabel, dictionary)
+        form.onRefresh {
+            foreign.isEnabled = !model.preferences.kanaInput
+        }
+
+        form.gap()
         let zenzaiLabel = String(localized: "Neural conversion:")
         let zenzai = form.checkbox(String(localized: "Use Zenzai"), label: zenzaiLabel,
                                    get: { model.preferences.zenzaiEnabled && model.isInstalled(.zenzaiModel) },
@@ -43,6 +55,9 @@ final class JapanesePane: SettingsPane {
     }
 
     override func modelDidChange(_ change: SettingsModel.Change) {
-        if change == .downloads { zenzaiDownload?.update() }
+        if change == .downloads {
+            zenzaiDownload?.update()
+            loanwordDownload?.update()
+        }
     }
 }

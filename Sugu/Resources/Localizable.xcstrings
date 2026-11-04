@@ -1306,6 +1306,29 @@
         }
       }
     },
+    "Foreign words:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外来語："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外来词："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外來詞："
+          }
+        }
+      }
+    },
     "Forget": {
       "localizations": {
         "ja": {
@@ -1989,6 +2012,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "語言："
+          }
+        }
+      }
+    },
+    "Larger dictionary:": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大きな辞書："
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更大的词典："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更大的詞典："
           }
         }
       }
@@ -3330,6 +3376,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Finder 中顯示"
+          }
+        }
+      }
+    },
+    "Show katakana for words typed in Latin letters": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローマ字で入力した外国語のカタカナを表示"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示以拉丁字母输入的外语词的片假名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示以拉丁字母輸入的外語詞的片假名"
           }
         }
       }
