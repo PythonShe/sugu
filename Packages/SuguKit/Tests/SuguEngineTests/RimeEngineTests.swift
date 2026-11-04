@@ -140,6 +140,25 @@ struct RimeEngineTests {
         _ = try await first("nihao")
     }
 
+    /// A session on a build that is gone takes no letters and raises no
+    /// error, so it must not open; deploying again brings Chinese back.
+    @Test func noSessionOpensWithoutTheBuild() async throws {
+        try await Shared.runtime.prepare(RimeSchema(), version: "test")
+        let engine = RimeEngine(runtime: Shared.runtime, script: .simplified)
+        #expect(engine.openSession())
+        try FileManager.default.removeItem(at: Shared.user.appendingPathComponent("build"))
+
+        #expect(!engine.reloadUserDictionary())
+        #expect(!engine.openSession())
+
+        Shared.runtime.setNeedsDeployment()
+        try await Shared.runtime.prepare(RimeSchema(), version: "test")
+        #expect(engine.openSession())
+        engine.insert("nihao")
+        defer { engine.clear() }
+        #expect(engine.state.candidates.first?.text == "你好")
+    }
+
     @Test func fuzzyPinyin() async throws {
         #expect(try await first("zongguo", schema: RimeSchema(fuzzy: [.zZh])) == "中国")
     }

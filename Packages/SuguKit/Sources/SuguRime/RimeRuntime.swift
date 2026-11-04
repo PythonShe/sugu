@@ -99,9 +99,13 @@ public final class RimeRuntime {
         let succeeded = try await maintain()
         // librime reports a failed build step (disk full, an unwritable
         // folder) only in its log; the compiled schema is the evidence.
-        let compiled = directories.user.appendingPathComponent("build/\(RimeSchema.schemaID).schema.yaml")
-        guard succeeded, FileManager.default.fileExists(atPath: compiled.path) else { throw Error.deploymentFailed }
+        guard succeeded, hasCompiledSchema else { throw Error.deploymentFailed }
         self.schema = schema
+    }
+
+    private var hasCompiledSchema: Bool {
+        let compiled = directories.user.appendingPathComponent("build/\(RimeSchema.schemaID).schema.yaml")
+        return FileManager.default.fileExists(atPath: compiled.path)
     }
 
     /// How long a deployment may run before it counts as failed; a full
@@ -147,7 +151,10 @@ public final class RimeRuntime {
 
     /// A new librime session on the Sugu schema.
     func makeSession() throws -> RimeSessionId {
-        guard isReady else { throw Error.sessionUnavailable }
+        // Without its compiled schema librime still selects it, and the
+        // session then takes no letters and reports no error: the build can
+        // vanish under a running process, so failing here starts a rebuild.
+        guard isReady, hasCompiledSchema else { throw Error.sessionUnavailable }
         let id = api.create_session?() ?? 0
         guard id != 0 else { throw Error.sessionUnavailable }
         guard api.select_schema?(id, RimeSchema.schemaID) ?? 0 != 0 else {
