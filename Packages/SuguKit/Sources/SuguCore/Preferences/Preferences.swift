@@ -39,6 +39,8 @@ public struct Preferences: Codable, Sendable, Equatable {
     public var contextualN = false
     public var fullWidthSpace = false
     public var zenzaiEnabled = false
+    /// Foreign words typed in Latin letters also offer their katakana.
+    public var foreignWordKatakana = true
 
     // MARK: Language model (ADR 0004)
     public var languageModel: LanguageModelLevel = .off
@@ -117,6 +119,7 @@ public struct Preferences: Codable, Sendable, Equatable {
         load(.phoneticRomaji, into: &phoneticRomaji)
         load(.contextualN, into: &contextualN)
         load(.fullWidthSpace, into: &fullWidthSpace)
+        load(.foreignWordKatakana, into: &foreignWordKatakana)
         load(.zenzaiEnabled, into: &zenzaiEnabled)
         load(.languageModel, into: &languageModel)
         load(.modelForSelection, into: &modelForSelection)

@@ -147,6 +147,9 @@ extension InputSession {
             // Dates, numerals and results are made fresh each time; learning
             // them would pin yesterday's date to the reading.
             commitWhole(candidate.text, undoable: engine.traits.learnsCommits)
+        case .foreignWord(let spelling):
+            let learns = engine.traits.learnsCommits
+            commitWhole(candidate.text, word: candidate.text, spelling: spelling, learn: learns, undoable: learns)
         case .latin:
             commitWhole(candidate.text)
         case .model(let learns):
@@ -159,13 +162,15 @@ extension InputSession {
 
     /// Commits `text` for the whole composition, which the engine drops:
     /// one of Sugu's own candidates, or a form of the input. `word` is what
-    /// the commit teaches as a word of the reading.
-    func commitWhole(_ text: String, word: String? = nil, learn: Bool = false, undoable: Bool = false) {
+    /// the commit teaches, as a word of the composition's reading or of the
+    /// foreign `spelling` it was typed as.
+    func commitWhole(_ text: String, word: String? = nil, spelling: String? = nil, learn: Bool = false, undoable: Bool = false) {
         guard let engine = active else { return }
-        let reading = engine.state.reading
+        let reading = spelling ?? engine.state.reading
         engine.clear()
         let record = word.map { Commit(text: $0, reading: reading, clauses: [.init(reading: reading, text: $0)]) }
         commitText(text, reading: reading, learn: learn, record: record, undoable: undoable)
+        if spelling != nil { self.undoable?.readingIsSpelling = true }
     }
 
     /// Forgets the highlighted candidate as a learned word, as ⌃⌦ takes a
@@ -293,7 +298,11 @@ extension InputSession {
         let engine = undoable.engine
         active = engine
         engine.clear()
-        engine.restore(reading: undoable.commit.reading)
+        if undoable.readingIsSpelling {
+            engine.insert(undoable.commit.reading)
+        } else {
+            engine.restore(reading: undoable.commit.reading)
+        }
         showsConversionWindow = true
         refresh()
         return true
@@ -383,4 +392,7 @@ struct PendingUndo {
     var engine: any CompositionEngine
     var mode: InputMode
     var learned: Bool
+    /// The reading is letters typed rather than kana, so they go back in as
+    /// typing.
+    var readingIsSpelling = false
 }

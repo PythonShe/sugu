@@ -28,6 +28,9 @@ public final class ModelLibrary {
         case rimeIce
         /// Zenzai neural model for Japanese conversion (CC-BY-SA-4.0).
         case zenzaiModel
+        /// Foreign words from JMdict and Wiktionary (CC-BY-SA-4.0), on top of
+        /// the bundled ones.
+        case loanwordDictionary
 
         public var download: Download {
             switch self {
@@ -52,6 +55,14 @@ public final class ModelLibrary {
                     sha256: "4de930c06bef8c263aa1aa40684af206db4ce1b96375b3b8ed0ea508e0b14f6c",
                     size: 73_871_968
                 )
+            case .loanwordDictionary:
+                // Compiled by scripts/build-loanword-download.sh, not an
+                // upstream file, so it is served from Sugu's site.
+                Download(
+                    url: URL(string: "https://sugu.zheng-she.com/models/loanwords-extended-\(LoanwordDownload.sha256.prefix(8)).bin")!,
+                    sha256: LoanwordDownload.sha256,
+                    size: LoanwordDownload.size
+                )
             }
         }
 
@@ -60,6 +71,7 @@ public final class ModelLibrary {
             case .grammarModel: "CC-BY-4.0"
             case .rimeIce: "GPL-3.0"
             case .zenzaiModel: "CC-BY-SA-4.0"
+            case .loanwordDictionary: "CC-BY-SA-4.0"
             }
         }
 
@@ -69,6 +81,7 @@ public final class ModelLibrary {
             case .grammarModel: "LTS"
             case .rimeIce: "2026.06.30"
             case .zenzaiModel: "zenz-v3.1-small"
+            case .loanwordDictionary: LoanwordDownload.version
             }
         }
 
@@ -76,7 +89,7 @@ public final class ModelLibrary {
         public var pinned: Release { Release(version: version, download: download) }
 
         /// Whether the item follows its upstream releases.
-        public var followsUpstream: Bool { self != .zenzaiModel }
+        public var followsUpstream: Bool { self != .zenzaiModel && self != .loanwordDictionary }
 
         /// The newest upstream release old enough to offer, if the item
         /// follows upstream.
@@ -88,7 +101,7 @@ public final class ModelLibrary {
             case .rimeIce:
                 // Dated releases only, not the nightly build.
                 try await GitHubReleases.newest("cn_dicts.zip", in: "iDvel/rime-ice", versions: /\d{4}\.\d{2}\.\d{2}/, minimumAge: ModelLibrary.minimumReleaseAge)
-            case .zenzaiModel:
+            case .zenzaiModel, .loanwordDictionary:
                 nil
             }
         }
@@ -196,6 +209,7 @@ public final class ModelLibrary {
         case .grammarModel: engines.locations.hasGrammarModel
         case .rimeIce: engines.locations.hasRimeIce
         case .zenzaiModel: engines.locations.hasZenzaiModel
+        case .loanwordDictionary: engines.locations.hasLoanwordDictionary
         }
     }
 
@@ -259,6 +273,8 @@ public final class ModelLibrary {
             try? fm.removeItem(at: locations.rimeIceTables)
         case .zenzaiModel:
             try? fm.removeItem(at: locations.zenzaiModel)
+        case .loanwordDictionary:
+            try? fm.removeItem(at: locations.loanwordDictionary)
         }
     }
 
@@ -277,6 +293,8 @@ public final class ModelLibrary {
             for old in previous where old != file { try? FileManager.default.removeItem(at: old) }
         case .zenzaiModel:
             try await Downloader.fetch(release.download, to: locations.zenzaiModel, progress: progress)
+        case .loanwordDictionary:
+            try await Downloader.fetch(release.download, to: locations.loanwordDictionary, progress: progress)
         case .rimeIce:
             let fm = FileManager.default
             let work = locations.models.appendingPathComponent("rime-ice-install", isDirectory: true)
@@ -332,4 +350,12 @@ public final class ModelLibrary {
         default: .other(error.localizedDescription)
         }
     }
+}
+
+/// The compiled download `ModelLibrary` offers; scripts/build-loanword-download.sh
+/// prints these values.
+enum LoanwordDownload {
+    static let version = "2026-11-04"
+    static let sha256 = "fdc8a0528fad77e74f1dee2edbefdf13f580f4cf721b606621df3f1be1f5509a"
+    static let size: Int64 = 1_550_494
 }

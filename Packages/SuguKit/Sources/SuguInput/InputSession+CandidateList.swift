@@ -68,7 +68,8 @@ extension InputSession {
             pageSize: list.pageSize,
             chineseScript: chineseScript,
             chineseText: { [engines] in engines.chineseText($0) },
-            offersChineseForms: preferences.enabledModes.contains(.chinese)
+            offersChineseForms: preferences.enabledModes.contains(.chinese),
+            foreignWords: preferences.foreignWordKatakana ? engines.foreignWords : nil
         ))
         return mergingSuggestions(into: candidates, reading: state.reading).filter { !forgotten.contains($0.text) }
     }

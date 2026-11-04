@@ -36,6 +36,16 @@ private final class StubHost: ModelHost {
         return Download(url: source, sha256: checksum ?? digest, size: Int64(data.count))
     }
 
+    /// site/server/updates.ts answers 404 for any other name, which no build
+    /// or test would otherwise notice until someone pressed Download.
+    @Test func downloadsFromTheSiteUseANameItServes() {
+        for item in ModelLibrary.Item.allCases where item.download.url.host == "sugu.zheng-she.com" {
+            let file = item.download.url.deletingPathExtension().lastPathComponent
+            #expect(file.hasSuffix("-\(item.download.sha256.prefix(8))"), "\(item)")
+            #expect(["gram", "gguf", "zip", "bin"].contains(item.download.url.pathExtension), "\(item)")
+        }
+    }
+
     private func wait(for library: ModelLibrary, _ item: ModelLibrary.Item, until done: (ModelLibrary.State) -> Bool) async {
         for _ in 0..<500 where !done(library.state(of: item)) {
             try? await Task.sleep(for: .milliseconds(10))

@@ -174,6 +174,7 @@ final class FakeEngineSource: EngineSource {
     var readings: [String: String] = [:]
     func chineseReading(of text: String) -> String? { readings[text] }
     func pinyin(of text: String) -> String? { readings[text]?.filter { $0 != "'" } }
+    var foreignWords: ForeignWords?
 }
 
 /// The store's conversions, from the same table: `conversions` gives the

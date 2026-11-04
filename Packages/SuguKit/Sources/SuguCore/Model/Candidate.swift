@@ -12,6 +12,9 @@ public struct Candidate: Sendable, Hashable {
         case latin
         /// The Chinese form of a Japanese name (東京 → 东京).
         case chineseForm
+        /// Katakana for a foreign word typed in Latin letters, learned under
+        /// `spelling` when chosen.
+        case foreignWord(spelling: String)
         /// From a language model (ADR 0004): a conversion, which is learned
         /// when chosen, or a translation or rewrite, which is not.
         case model(learns: Bool)

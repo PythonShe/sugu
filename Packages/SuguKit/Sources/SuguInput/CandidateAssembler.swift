@@ -27,6 +27,8 @@ struct CandidateAssembler {
         var chineseText: (String) -> String? = { _ in nil }
         /// Whether Japanese names also offer their Chinese form.
         var offersChineseForms = false
+        /// Katakana for foreign words typed in Japanese mode; nil when off.
+        var foreignWords: ForeignWords?
     }
 
     func assemble(_ input: Input) -> [Candidate] {
@@ -66,6 +68,8 @@ struct CandidateAssembler {
             latinLast = Candidate(text: state.typedText, source: .latin)
         }
 
+        let foreign = input.mode == .japanese && state.phase == .composing ? foreignCandidates(typed: state.typedText, in: input) : ForeignCandidates()
+
         var seen = Set<String>()
         var result: [Candidate] = []
         func append(_ candidate: Candidate) {
@@ -75,15 +79,25 @@ struct CandidateAssembler {
         // Established words lead; a word chosen once follows the engine's
         // first choice (`LearnedWord.isEstablished`).
         learned.filter(\.isEstablished).forEach { append($0.candidate) }
+        foreign.established.forEach(append)
+        foreign.leading.forEach(append)
         if let first = engine.first { append(first) }
         learned.filter { !$0.isEstablished }.forEach { append($0.candidate) }
+        foreign.taught.forEach(append)
         computedCandidates.forEach(append)
         // Symbols by name come after the words of the same reading the
         // engine likes best (やじるし: 矢印, then →).
         let symbols = input.mode == .japanese ? JapaneseSymbolNames.symbols(for: state.reading).map { Candidate(text: $0, source: .computed) } : []
         engine.dropFirst().prefix(1).forEach(append)
         symbols.forEach(append)
+        foreign.following.forEach(append)
         engine.dropFirst(2).forEach(append)
+        // The best guess goes near the page's end, where the eye finds it
+        // without it ever passing for the engine's choice.
+        if let guess = foreign.guess, seen.insert(guess.text).inserted {
+            result.insert(guess, at: min(result.count, max(1, input.pageSize - 2)))
+        }
+        foreign.otherGuesses.forEach(append)
         if let latinLast {
             if seen.insert(latinLast.text).inserted {
                 result.insert(latinLast, at: min(result.count, max(1, input.pageSize - 1)))
@@ -92,6 +106,42 @@ struct CandidateAssembler {
         if input.mode == .japanese, input.offersChineseForms {
             result = withChineseForms(result, pageSize: input.pageSize, chineseText: input.chineseText, seen: &seen)
         }
+        return result
+    }
+
+    /// A foreign word's candidates, by where they go in the list.
+    private struct ForeignCandidates {
+        /// Words the user chose under this spelling more than once.
+        var established: [Candidate] = []
+        /// Dictionary words that lead: the letters are not a Japanese word.
+        var leading: [Candidate] = []
+        /// Words chosen once, which follow the engine's first choice.
+        var taught: [Candidate] = []
+        /// Dictionary words that stay behind the ordinary conversions.
+        var following: [Candidate] = []
+        var guess: Candidate?
+        var otherGuesses: [Candidate] = []
+    }
+
+    /// Spellings shorter than this are too often just the start of a Japanese
+    /// word to lead the list.
+    private static let leadingSpellingLength = 3
+
+    private func foreignCandidates(typed: String, in input: Input) -> ForeignCandidates {
+        guard let match = input.foreignWords?.match(typed: typed) else { return ForeignCandidates() }
+        func candidate(_ text: String) -> Candidate { Candidate(text: text, source: .foreignWord(spelling: match.spelling)) }
+        var result = ForeignCandidates()
+        for word in store?.lookup(match.spelling, mode: input.mode) ?? [] {
+            if word.isEstablished { result.established.append(candidate(word.shown)) } else { result.taught.append(candidate(word.shown)) }
+        }
+        let words = match.words.map(candidate)
+        if match.alsoJapanese || match.spelling.count < Self.leadingSpellingLength {
+            result.following = words
+        } else {
+            result.leading = words
+        }
+        result.guess = match.guesses.first.map(candidate)
+        result.otherGuesses = match.guesses.dropFirst().map(candidate)
         return result
     }
 

@@ -143,7 +143,8 @@ public final class EngineHub: EngineSource {
     }
 
     private static func userWords(in store: LearnedStore) -> [AzooKeyEngine.UserWord] {
-        store.allWords(mode: .japanese).map { .init(reading: $0.reading, text: $0.text, isEstablished: $0.isEstablished) }
+        // Words kept under a foreign spelling have no kana for AzooKey to match.
+        store.allWords(mode: .japanese).filter { LoanwordSpelling.key($0.reading) == nil }.map { .init(reading: $0.reading, text: $0.text, isEstablished: $0.isEstablished) }
     }
 
     public func setChineseScript(_ script: ChineseScript) {
@@ -153,6 +154,8 @@ public final class EngineHub: EngineSource {
         // Opened at focus rather than on the first keystroke.
         if chinese != nil { _ = converter(for: script) }
     }
+
+    public private(set) lazy var foreignWords: ForeignWords? = ForeignWords(lexicon: locations.lexicon, download: locations.loanwordDictionary)
 
     public func chineseText(_ text: String) -> String? {
         converter(for: chineseScript)?.convert(text)
@@ -482,6 +485,8 @@ public final class EngineHub: EngineSource {
             // An update replaces the tables under the same schema.
             if runtime.schema?.dictionary == .rimeIce { runtime.setNeedsDeployment() }
             redeployChinese()
+        case .loanwordDictionary:
+            foreignWords = ForeignWords(lexicon: locations.lexicon, download: locations.loanwordDictionary)
         case .zenzaiModel:
             // A new or removed model file is loaded afresh.
             zenzaiLoaded = nil

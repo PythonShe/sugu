@@ -30,6 +30,12 @@ public protocol EngineSource: AnyObject {
     /// Chinese text in full pinyin without tones (`nihao`), as a word is
     /// entered by hand; nil when there is no reading.
     func pinyin(of text: String) -> String?
+    /// Katakana for foreign words; nil when the data is missing.
+    var foreignWords: ForeignWords? { get }
+}
+
+extension EngineSource {
+    public var foreignWords: ForeignWords? { nil }
 }
 
 /// Remembers the last mode per app across launches.

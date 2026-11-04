@@ -55,6 +55,11 @@ extension EngineHub {
             models.appendingPathComponent("zenzai.gguf")
         }
 
+        /// The downloaded dictionary of foreign words (JMdict and Wiktionary).
+        public var loanwordDictionary: URL {
+            models.appendingPathComponent("loanwords-extended.bin")
+        }
+
         /// The generated rime-ice manifest; its presence marks rime-ice as
         /// installed.
         public var rimeIceManifest: URL {
@@ -67,6 +72,7 @@ extension EngineHub {
 
         public var hasGrammarModel: Bool { grammarModel != nil }
         public var hasZenzaiModel: Bool { FileManager.default.fileExists(atPath: zenzaiModel.path) }
+        public var hasLoanwordDictionary: Bool { FileManager.default.fileExists(atPath: loanwordDictionary.path) }
         public var hasRimeIce: Bool { FileManager.default.fileExists(atPath: rimeIceManifest.path) }
     }
 }
