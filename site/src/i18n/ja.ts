@@ -50,7 +50,7 @@ export default {
         body: ['Sugu にはテレメトリ、クラッシュレポート、分析、アカウントはありません。通信するのは次の場合だけです。'],
         list: [
           'アップデートの確認。オフにできます。Sugu については sugu.zheng-she.com に接続し、設定を開いたときには 1 日に 1 回まで GitHub に接続して、ダウンロード済みの rime-ice 辞書と文法モデルの新しいリリースを確認します。Mac の情報は送信せず、sugu.zheng-she.com へのリクエストに含まれるのは Sugu のバージョンだけです。',
-          'ユーザが始めたダウンロード。オプションの rime-ice 辞書は GitHub から、文法モデルは GitHub または sugu.zheng-she.com から、Zenzai モデルは Hugging Face からダウンロードします。',
+          'ユーザが始めたダウンロード。オプションの rime-ice 辞書は GitHub から、文法モデルは GitHub または sugu.zheng-she.com から、外来語の大きな辞書は sugu.zheng-she.com から、Zenzai モデルは Hugging Face からダウンロードします。',
         ],
       },
       {

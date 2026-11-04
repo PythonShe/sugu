@@ -50,7 +50,7 @@ export default {
         ],
         list: [
           'Update checks, which you can turn off: to sugu.zheng-she.com for Sugu, and, when you open Settings, at most once a day to GitHub for newer releases of the rime-ice dictionary and grammar model you downloaded. They send nothing about your Mac; the request to sugu.zheng-she.com names Sugu’s version.',
-          'Downloads you start: the optional rime-ice dictionary from GitHub, the grammar model from GitHub or sugu.zheng-she.com, and the Zenzai model from Hugging Face.',
+          'Downloads you start: the optional rime-ice dictionary from GitHub, the grammar model from GitHub or sugu.zheng-she.com, the larger foreign-word dictionary from sugu.zheng-she.com, and the Zenzai model from Hugging Face.',
         ],
       },
       {

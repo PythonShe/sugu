@@ -50,7 +50,7 @@ export default {
         body: ['Sugu 没有遥测、崩溃报告、数据分析，也没有账户。它只在以下情况联网：'],
         list: [
           '检查更新（可以关闭）：连接 sugu.zheng-she.com 检查 Sugu；打开设置时，每天最多一次连接 GitHub，检查你已下载的雾凇拼音词库和语法模型是否有新版本。不发送有关你 Mac 的信息，发往 sugu.zheng-she.com 的请求中只包含 Sugu 的版本号。',
-          '你主动发起的下载：可选的雾凇拼音词库来自 GitHub，语法模型来自 GitHub 或 sugu.zheng-she.com，Zenzai 模型来自 Hugging Face。',
+          '你主动发起的下载：可选的雾凇拼音词库来自 GitHub，语法模型来自 GitHub 或 sugu.zheng-she.com，更大的外来词词典来自 sugu.zheng-she.com，Zenzai 模型来自 Hugging Face。',
         ],
       },
       {
