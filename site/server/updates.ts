@@ -8,6 +8,12 @@ export interface Env {
 
 const immutable = 'public, max-age=31536000, immutable';
 
+/**
+ * Never cached: the edge would otherwise keep a 404 for hours, so a release's
+ * download asked for before its upload would stay missing after it.
+ */
+const notFound = () => new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
+
 /** How each kind of object is served. */
 function kind(key: string): { type: string; cache: string; download?: boolean } | undefined {
   if (key === 'appcast.xml') return { type: 'application/xml', cache: 'no-cache' };
@@ -33,12 +39,12 @@ function kind(key: string): { type: string; cache: string; download?: boolean } 
  */
 export async function serve(request: Request, env: Env, key: string): Promise<Response> {
   const served = kind(key);
-  if (!served) return new Response('Not found', { status: 404 });
+  if (!served) return notFound();
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
   }
   const head = await env.UPDATES.head(key);
-  if (!head) return new Response('Not found', { status: 404 });
+  if (!head) return notFound();
   const headers = new Headers({
     'Content-Type': served.type,
     'Cache-Control': served.cache,
