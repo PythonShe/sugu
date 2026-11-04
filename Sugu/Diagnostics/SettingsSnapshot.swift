@@ -6,7 +6,8 @@ import SuguDictionaries
 /// Renders every settings pane to PNG files without showing a window, in
 /// light and dark appearance, for reviewing layout during development, after
 /// building the settings window as the menu does. CI runs this, and it fails
-/// when a pane is wider than the others, which would reshape the window:
+/// when a pane is wider than the others, which would reshape the window, or
+/// opens with the keyboard in a text field:
 ///   Sugu.app/Contents/MacOS/Sugu --snapshot-settings <dir>
 @MainActor
 enum SettingsSnapshot {
@@ -29,6 +30,10 @@ enum SettingsSnapshot {
                     print("\(pane) is \(view.fittingSize.width) wide, over \(SettingsPane.width)")
                     fits = false
                 }
+                if appearance == .aqua, !opensUnfocused(pane, model: model) {
+                    print("\(pane) opens with the keyboard in a text field")
+                    fits = false
+                }
                 render(view, appearance: appearance, to: output.appendingPathComponent("\(pane)-\(suffix).png"))
             }
             let sheet = ImportSheet(model: model) { _ in }
@@ -38,6 +43,18 @@ enum SettingsSnapshot {
             render(loaded.window.contentView!, appearance: appearance, to: output.appendingPathComponent("import-\(suffix).png"))
         }
         return fits
+    }
+
+    /// Never through the settings window, whose saved frame and pane are the
+    /// installed Sugu's too: a debug build shares its user defaults.
+    private static func opensUnfocused(_ pane: SettingsWindowController.Pane, model: SettingsModel) -> Bool {
+        let window = NSWindow(contentRect: .zero, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.alphaValue = 0
+        window.contentViewController = SettingsWindowController.makePane(pane, model: model)
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        return !(window.firstResponder is NSText)
     }
 
     private static func render(_ view: NSView, appearance: NSAppearance.Name, to url: URL) {

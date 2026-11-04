@@ -70,12 +70,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         if let pane, let index = tabs.tabViewItems.firstIndex(where: { $0.identifier as? String == pane.rawValue }) {
             tabs.selectedTabViewItemIndex = index
         }
+        let opening = window?.isVisible != true
         model.isVisible = true
         // The app being typed in never yields activation to an input method,
         // so the window comes forward on its own rather than behind it.
         NSApp.activate()
         window?.orderFrontRegardless()
         window?.makeKey()
+        // Also here for a window opening, whose pane appeared before it became
+        // key; an edit in progress in a window already open keeps its field.
+        if opening { window?.makeFirstResponder(nil) }
     }
 
     /// Shows the Learning pane with the Add Word sheet, filled from `draft`.

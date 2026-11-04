@@ -222,6 +222,13 @@ class SettingsPane: NSViewController {
         preferredContentSize = view.fittingSize
     }
 
+    /// AppKit gives the keyboard to a pane's first text field, which then
+    /// shows a focus ring nobody asked for. Tab still reaches it.
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        view.window?.makeFirstResponder(nil)
+    }
+
     // MARK: Panels
 
     func presentError(message: String) {
