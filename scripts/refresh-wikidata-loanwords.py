@@ -35,7 +35,9 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 # Whole labels below this many sitelinks are mostly obscure people, whose
 # full names no one types as one word.
 WHOLE_LABEL_SITELINKS = 50
-# A pair seen this often in longer names is a reading, not a coincidence.
+# A pair seen in this many labels' longer names is a reading, not a
+# coincidence. Labels, not items: languages agreeing on one person's name is
+# the evidence for most surnames, which counting items would drop (Nietzsche).
 TOKEN_LABELS = 3
 SOUNDS_ALIKE = 0.6
 
@@ -49,7 +51,7 @@ def fetch(path, body, select):
             query = PREFIXES + f'SELECT {select} WHERE {{ {body.replace("__RESUME__", resume)} }}'
             url = ENDPOINT + "?" + urllib.parse.urlencode({"query": query})
             request = urllib.request.Request(url, headers={"Accept": "text/tab-separated-values", "User-Agent": "sugu-build"})
-            data = ""
+            data = None
             for _ in range(5):
                 try:
                     data = urllib.request.urlopen(request, timeout=120).read().decode("utf-8", "replace")
@@ -57,10 +59,15 @@ def fetch(path, body, select):
                 except OSError as error:
                     print("retrying:", error, file=sys.stderr)
                     time.sleep(10)
+            # A short cache would quietly shrink the tracked extract.
+            if data is None:
+                sys.exit(f"{os.path.basename(path)}: query failed after 5 attempts")
             timed_out = "Operation timed out" in data[-200:]
             rows = [row for row in data.split("\n")[1:] if row.startswith("<http")]
             if timed_out and rows:
                 rows = rows[:-1]
+            if timed_out and not rows:
+                sys.exit(f"{os.path.basename(path)}: query timed out with no usable rows")
             if not rows:
                 return total
             out.write("\n".join(rows) + "\n")

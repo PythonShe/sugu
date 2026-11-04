@@ -14,7 +14,7 @@ mkdir -p "$OUT"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-curl -fsSL -o "$TMP/JMdict_e.gz" "http://ftp.edrdg.org/pub/Nihongo/JMdict_e.gz"
+curl -fsSL --proto '=https' -o "$TMP/JMdict_e.gz" "https://www.edrdg.org/pub/Nihongo/JMdict_e.gz"
 gunzip "$TMP/JMdict_e.gz"
 curl -fsSL -o "$TMP/japanese.jsonl" "https://kaikki.org/dictionary/Japanese/kaikki.org-dictionary-Japanese.jsonl"
 
